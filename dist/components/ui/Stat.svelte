@@ -1,40 +1,98 @@
 <script lang="ts">
+	import Icon from './Icon.svelte';
+	import type { IconName } from '../../icons/icons.js';
+
 	let {
 		label = '',
 		value = '',
+		hint = '',
+		tone = 'default',
+		icon,
+		href,
 		class: extraClass = ''
 	}: {
 		label: string;
 		value: string;
+		/** A second line, such as a change or a count. */
+		hint?: string;
+		/** Colours the hint: up for gains, down for losses. */
+		tone?: 'default' | 'up' | 'down';
+		icon?: IconName;
+		/** Makes the whole tile a link. */
+		href?: string;
 		class?: string;
 	} = $props();
 </script>
 
-<div class="stat {extraClass}">
-	<dt>{label}</dt>
-	<dd>{value}</dd>
-</div>
+<svelte:element this={href ? 'a' : 'div'} {href} class="sui-stat {extraClass}" class:link={!!href}>
+	<div class="top">
+		<span class="label">{label}</span>
+		{#if icon}<Icon name={icon} size={16} />{/if}
+	</div>
+	<div class="value">{value}</div>
+	{#if hint}
+		<div class="hint {tone}">{hint}</div>
+	{/if}
+</svelte:element>
 
 <style>
-	.stat {
+	.sui-stat {
+		display: block;
 		background: var(--card);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
-		padding: 0.75rem 0.9rem;
+		padding: 0.85rem 1rem;
+		text-decoration: none;
+		color: inherit;
+		min-width: 0;
 	}
 
-	dt {
+	.sui-stat.link:hover {
+		border-color: var(--border-strong);
+	}
+
+	.top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
 		color: var(--muted);
+	}
+
+	.top :global(.icon) {
+		color: var(--accent);
+	}
+
+	.label {
 		font-size: 0.72rem;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
-		font-weight: 500;
+		font-weight: 600;
 	}
 
-	dd {
-		margin: 0.3rem 0 0;
+	.value {
+		margin-top: 0.35rem;
 		font-variant-numeric: tabular-nums;
-		font-size: 1.05rem;
-		font-weight: 500;
+		font-size: 1.4rem;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.hint {
+		margin-top: 0.15rem;
+		font-size: 0.8rem;
+		color: var(--muted);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.hint.up {
+		color: var(--up);
+	}
+
+	.hint.down {
+		color: var(--down);
 	}
 </style>

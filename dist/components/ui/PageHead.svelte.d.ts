@@ -1,6 +1,7 @@
 import type { Snippet } from 'svelte';
 type $$ComponentProps = {
     title?: string;
+    subtitle?: string;
     class?: string;
     actions?: Snippet;
     children?: Snippet;

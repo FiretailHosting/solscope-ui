@@ -8,10 +8,10 @@
 	} = $props();
 </script>
 
-<div role="separator" class="separator {orientation} {extraClass}"></div>
+<div role="separator" class="sui-separator {orientation} {extraClass}"></div>
 
 <style>
-	.separator {
+	.sui-separator {
 		background: var(--border);
 	}
 

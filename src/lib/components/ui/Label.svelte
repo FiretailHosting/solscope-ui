@@ -10,12 +10,12 @@
 	let { class: extraClass = '', children, ...rest }: Props = $props();
 </script>
 
-<label class="label {extraClass}" {...rest}>
+<label class="sui-label {extraClass}" {...rest}>
 	{@render children?.()}
 </label>
 
 <style>
-	.label {
+	.sui-label {
 		display: block;
 		font-size: 0.82rem;
 		font-weight: 500;

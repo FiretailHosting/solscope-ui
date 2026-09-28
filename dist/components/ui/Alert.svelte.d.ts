@@ -1,5 +1,5 @@
 import type { Snippet } from 'svelte';
-type Variant = 'default' | 'error' | 'up';
+type Variant = 'default' | 'error' | 'up' | 'warn';
 type $$ComponentProps = {
     variant?: Variant;
     role?: string;

@@ -1,97 +1,115 @@
 /* solscope-ui design tokens
-   Compatible with solscope's existing CSS variable names.
+   A flat, corporate palette: neutral greys, one muted navy accent, no
+   gradients or shadows. Variable names are the ones solscope already uses.
    Import this file once at the app root. */
 
 :root {
+	color-scheme: light;
+
 	/* Backgrounds */
-	--bg: #f8f8fc;
+	--bg: #f3f4f6;
 	--card: #ffffff;
+	--card-alt: #f8f9fa;
 
 	/* Foregrounds */
-	--fg: #0e0e18;
-	--muted: #6b6b8e;
+	--fg: #1c2330;
+	--muted: #5f6b7a;
 
 	/* Borders */
-	--border: #e2e2ee;
+	--border: #d8dde3;
+	--border-strong: #b9c1cb;
 
-	/* Brand accent - violet */
-	--accent: #7c3aed;
-	--accent-subtle: #ede9fe;
+	/* Brand accent - corporate navy */
+	--accent: #1f4f8f;
+	--accent-hover: #183f73;
+	--accent-subtle: #e7eef7;
+	--accent-fg: #ffffff;
 
-	/* Trading colors */
-	--up: #059669;
-	--up-subtle: #d1fae5;
-	--down: #dc2626;
-	--down-subtle: #fee2e2;
+	/* Trading colors, kept muted to sit with the palette */
+	--up: #1d7a4c;
+	--up-subtle: #e6f2ec;
+	--down: #b4322c;
+	--down-subtle: #f8e9e8;
+	--warn: #9a6a00;
+	--warn-subtle: #fbf3e0;
 
-	/* Sidebar */
-	--sidebar-bg: #f1f0f9;
-	--sidebar-fg: #3b3a5c;
-	--sidebar-border: #dddcef;
-	--sidebar-active-bg: #ede9fe;
-	--sidebar-active-fg: #7c3aed;
-	--sidebar-hover-bg: #e8e6f5;
+	/* Sidebar - dark slate in both themes */
+	--sidebar-bg: #1e2733;
+	--sidebar-fg: #aeb8c5;
+	--sidebar-heading: #6f7c8c;
+	--sidebar-border: #2b3644;
+	--sidebar-active-bg: #2b3a4d;
+	--sidebar-active-fg: #ffffff;
+	--sidebar-active-bar: #6d9fd8;
+	--sidebar-hover-bg: #25303e;
 
-	/* Radius */
-	--radius: 8px;
-	--radius-sm: 5px;
-	--radius-lg: 12px;
+	/* Radius - small and square-leaning */
+	--radius: 4px;
+	--radius-sm: 3px;
+	--radius-lg: 6px;
 	--radius-full: 9999px;
 
 	/* Font */
-	--font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-	--font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+	--font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme='light']) {
-		/* Backgrounds - deep space indigo */
-		--bg: #08080f;
-		--card: #101020;
-
-		/* Foregrounds */
-		--fg: #e8e8f4;
-		--muted: #6e6e9a;
-
-		/* Borders */
-		--border: #1e1e36;
-
-		/* Brand accent - brighter violet in dark */
-		--accent: #8b5cf6;
-		--accent-subtle: #1e1040;
-
-		/* Trading colors */
-		--up: #10b981;
-		--up-subtle: #022c1c;
-		--down: #f87171;
-		--down-subtle: #2c0c0c;
-
-		/* Sidebar */
-		--sidebar-bg: #0c0c1c;
-		--sidebar-fg: #a0a0c8;
-		--sidebar-border: #1a1a30;
-		--sidebar-active-bg: #1e1040;
-		--sidebar-active-fg: #a78bfa;
-		--sidebar-hover-bg: #14142a;
+		color-scheme: dark;
+		--bg: #12161c;
+		--card: #1a2029;
+		--card-alt: #1f2631;
+		--fg: #e2e6eb;
+		--muted: #8d98a7;
+		--border: #2b3340;
+		--border-strong: #3c4656;
+		--accent: #5b8fd0;
+		--accent-hover: #74a2da;
+		--accent-subtle: #1f2d40;
+		--accent-fg: #0e141c;
+		--up: #3fa874;
+		--up-subtle: #16291f;
+		--down: #de6a63;
+		--down-subtle: #321b1a;
+		--warn: #d9a441;
+		--warn-subtle: #30271a;
+		--sidebar-bg: #0e1217;
+		--sidebar-fg: #9aa5b3;
+		--sidebar-heading: #5d6978;
+		--sidebar-border: #1d242e;
+		--sidebar-active-bg: #1d2735;
+		--sidebar-active-fg: #ffffff;
+		--sidebar-active-bar: #5b8fd0;
+		--sidebar-hover-bg: #161c24;
 	}
 }
 
 :root[data-theme='dark'] {
-	--bg: #08080f;
-	--card: #101020;
-	--fg: #e8e8f4;
-	--muted: #6e6e9a;
-	--border: #1e1e36;
-	--accent: #8b5cf6;
-	--accent-subtle: #1e1040;
-	--up: #10b981;
-	--up-subtle: #022c1c;
-	--down: #f87171;
-	--down-subtle: #2c0c0c;
-	--sidebar-bg: #0c0c1c;
-	--sidebar-fg: #a0a0c8;
-	--sidebar-border: #1a1a30;
-	--sidebar-active-bg: #1e1040;
-	--sidebar-active-fg: #a78bfa;
-	--sidebar-hover-bg: #14142a;
+	color-scheme: dark;
+	--bg: #12161c;
+	--card: #1a2029;
+	--card-alt: #1f2631;
+	--fg: #e2e6eb;
+	--muted: #8d98a7;
+	--border: #2b3340;
+	--border-strong: #3c4656;
+	--accent: #5b8fd0;
+	--accent-hover: #74a2da;
+	--accent-subtle: #1f2d40;
+	--accent-fg: #0e141c;
+	--up: #3fa874;
+	--up-subtle: #16291f;
+	--down: #de6a63;
+	--down-subtle: #321b1a;
+	--warn: #d9a441;
+	--warn-subtle: #30271a;
+	--sidebar-bg: #0e1217;
+	--sidebar-fg: #9aa5b3;
+	--sidebar-heading: #5d6978;
+	--sidebar-border: #1d242e;
+	--sidebar-active-bg: #1d2735;
+	--sidebar-active-fg: #ffffff;
+	--sidebar-active-bar: #5b8fd0;
+	--sidebar-hover-bg: #161c24;
 }

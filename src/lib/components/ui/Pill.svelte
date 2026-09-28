@@ -14,29 +14,30 @@
 	} = $props();
 </script>
 
-<span class="pill {variant} {extraClass}">
+<span class="sui-pill {variant} {extraClass}">
 	{@render children?.()}
 </span>
 
 <style>
-	.pill {
+	.sui-pill {
 		display: inline-block;
 		font-size: 0.72rem;
-		font-weight: 500;
+		font-weight: 600;
+		letter-spacing: 0.02em;
 		padding: 0.1rem 0.55rem;
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		border: 1px solid var(--border);
 		color: var(--muted);
 		white-space: nowrap;
 	}
 
-	.pill.live {
+	.sui-pill.live {
 		color: var(--down);
 		border-color: var(--down);
 		background: var(--down-subtle);
 	}
 
-	.pill.ok {
+	.sui-pill.ok {
 		color: var(--up);
 		border-color: var(--up);
 		background: var(--up-subtle);

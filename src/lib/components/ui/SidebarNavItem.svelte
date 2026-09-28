@@ -1,75 +1,74 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import Icon from './Icon.svelte';
+	import type { IconName } from '../../icons/icons.js';
 
 	let {
 		href = '',
 		active = false,
 		badge = 0,
-		class: extraClass = '',
 		icon,
+		class: extraClass = '',
+		onclick,
 		children
 	}: {
 		href?: string;
 		active?: boolean;
 		badge?: number;
+		icon?: IconName;
 		class?: string;
-		icon?: Snippet;
+		onclick?: (e: MouseEvent) => void;
 		children?: Snippet;
 	} = $props();
 </script>
 
-<a {href} class="nav-item {extraClass}" class:active aria-current={active ? 'page' : undefined}>
-	{#if icon}
-		<span class="icon">
-			{@render icon()}
-		</span>
-	{/if}
+<a {href} class="sui-nav-item {extraClass}" class:active aria-current={active ? 'page' : undefined} {onclick}>
+	{#if icon}<Icon name={icon} size={17} />{/if}
 	<span class="label">
 		{@render children?.()}
 	</span>
 	{#if badge > 0}
-		<span class="badge">{badge}</span>
+		<span class="badge" aria-label="{badge} unread">{badge > 99 ? '99+' : badge}</span>
 	{/if}
 </a>
 
 <style>
-	.nav-item {
+	.sui-nav-item {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--radius);
+		gap: 0.7rem;
+		padding: 0.55rem 1rem;
+		border-left: 3px solid transparent;
 		text-decoration: none;
 		font-size: 0.875rem;
 		color: var(--sidebar-fg);
-		font-weight: 450;
-		transition: background 120ms, color 120ms;
-		position: relative;
+		transition: background 100ms, color 100ms;
 	}
 
-	.nav-item:hover {
+	.sui-nav-item:hover {
 		background: var(--sidebar-hover-bg);
-		color: var(--fg);
+		color: var(--sidebar-active-fg);
 	}
 
-	.nav-item.active {
+	.sui-nav-item:focus-visible {
+		outline: 2px solid var(--sidebar-active-bar);
+		outline-offset: -2px;
+	}
+
+	.sui-nav-item.active {
 		background: var(--sidebar-active-bg);
 		color: var(--sidebar-active-fg);
-		font-weight: 550;
+		border-left-color: var(--sidebar-active-bar);
+		font-weight: 600;
 	}
 
-	.icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 1.1rem;
-		height: 1.1rem;
-		flex-shrink: 0;
-		opacity: 0.8;
+	.sui-nav-item :global(.icon) {
+		opacity: 0.85;
 	}
 
-	.nav-item.active .icon {
+	.sui-nav-item.active :global(.icon) {
 		opacity: 1;
+		color: var(--sidebar-active-bar);
 	}
 
 	.label {
@@ -84,14 +83,14 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 1.15rem;
-		height: 1.15rem;
+		min-width: 1.25rem;
+		height: 1.1rem;
 		padding: 0 0.3rem;
-		border-radius: var(--radius-full);
+		border-radius: var(--radius-sm);
 		background: var(--down);
 		color: #fff;
 		font-size: 0.68rem;
-		font-weight: 600;
-		line-height: 1;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
 	}
 </style>

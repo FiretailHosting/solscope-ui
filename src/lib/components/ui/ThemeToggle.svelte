@@ -1,31 +1,38 @@
 <script lang="ts">
+	import Icon from './Icon.svelte';
+
 	type Theme = 'system' | 'light' | 'dark';
 
 	let { class: extraClass = '' }: { class?: string } = $props();
 
 	let theme = $state<Theme>('system');
 
+	// Apply the saved choice on load, not only when it is changed.
 	$effect(() => {
-		const saved = localStorage.getItem('theme') as Theme | null;
-		if (saved) theme = saved;
+		try {
+			const saved = localStorage.getItem('theme');
+			if (saved === 'light' || saved === 'dark') theme = saved;
+		} catch {
+			// Storage can be blocked; the system theme still applies.
+		}
+		applyTheme(theme);
 	});
 
 	function cycle() {
 		const order: Theme[] = ['system', 'light', 'dark'];
 		theme = order[(order.indexOf(theme) + 1) % order.length];
-		localStorage.setItem('theme', theme);
+		try {
+			localStorage.setItem('theme', theme);
+		} catch {
+			// The choice just won't persist.
+		}
 		applyTheme(theme);
 	}
 
 	function applyTheme(t: Theme) {
 		const root = document.documentElement;
-		if (t === 'dark') {
-			root.setAttribute('data-theme', 'dark');
-		} else if (t === 'light') {
-			root.setAttribute('data-theme', 'light');
-		} else {
-			root.removeAttribute('data-theme');
-		}
+		if (t === 'system') root.removeAttribute('data-theme');
+		else root.setAttribute('data-theme', t);
 	}
 
 	const labels: Record<Theme, string> = {
@@ -35,25 +42,33 @@
 	};
 </script>
 
-<button class="toggle {extraClass}" onclick={cycle} title="Toggle theme" aria-label="Toggle theme: {labels[theme]}">
-	{labels[theme]}
+<button class="sui-toggle {extraClass}" onclick={cycle} aria-label="Theme: {labels[theme]}. Change theme">
+	<Icon name="theme" size={15} />
+	<span>{labels[theme]}</span>
 </button>
 
 <style>
-	.toggle {
+	.sui-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
 		font: inherit;
 		font-size: 0.78rem;
-		padding: 0.3rem 0.65rem;
+		padding: 0.3rem 0.6rem;
 		border-radius: var(--radius);
-		border: 1px solid var(--border);
-		background: var(--card);
-		color: var(--muted);
+		border: 1px solid currentColor;
+		background: transparent;
+		color: inherit;
+		opacity: 0.85;
 		cursor: pointer;
-		transition: border-color 120ms, color 120ms;
 	}
 
-	.toggle:hover {
-		border-color: var(--accent);
-		color: var(--fg);
+	.sui-toggle:hover {
+		opacity: 1;
+	}
+
+	.sui-toggle:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 </style>

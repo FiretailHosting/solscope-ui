@@ -2,12 +2,13 @@
 	import type { Snippet } from 'svelte';
 
 	let {
-		open = $bindable(true),
+		open = $bindable(false),
 		class: extraClass = '',
 		header,
 		children,
 		footer
 	}: {
+		/** Whether the sidebar is shown on narrow screens. It is always shown on wide ones. */
 		open?: boolean;
 		class?: string;
 		header?: Snippet;
@@ -16,94 +17,94 @@
 	} = $props();
 </script>
 
-<!-- Mobile overlay -->
-{#if !open}
-	<div class="overlay" role="none" onclick={() => (open = false)}></div>
+{#if open}
+	<div class="sui-overlay" role="none" onclick={() => (open = false)}></div>
 {/if}
 
-<aside class="sidebar {extraClass}" class:collapsed={!open} aria-label="Navigation">
+<aside class="sui-sidebar {extraClass}" class:open aria-label="Navigation">
 	{#if header}
-		<div class="sidebar-header">
+		<div class="sui-sidebar-header">
 			{@render header()}
 		</div>
 	{/if}
 
-	<nav class="sidebar-nav">
+	<nav class="sui-sidebar-nav">
 		{@render children?.()}
 	</nav>
 
 	{#if footer}
-		<div class="sidebar-footer">
+		<div class="sui-sidebar-footer">
 			{@render footer()}
 		</div>
 	{/if}
 </aside>
 
 <style>
-	.sidebar {
+	.sui-sidebar {
 		display: flex;
 		flex-direction: column;
-		width: 220px;
-		min-width: 220px;
+		width: 232px;
 		height: 100dvh;
 		position: sticky;
 		top: 0;
 		background: var(--sidebar-bg);
+		color: var(--sidebar-fg);
 		border-right: 1px solid var(--sidebar-border);
 		overflow-y: auto;
 		overflow-x: hidden;
 		flex-shrink: 0;
-		transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
-					width 280ms cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
-	.sidebar-header {
-		padding: 1.1rem 1rem 0.5rem;
+	.sui-sidebar-header {
+		padding: 1rem 1rem 0.75rem;
+		border-bottom: 1px solid var(--sidebar-border);
 		flex-shrink: 0;
 	}
 
-	.sidebar-nav {
+	.sui-sidebar-nav {
 		flex: 1;
-		padding: 0.5rem 0.6rem;
-		overflow-y: auto;
+		padding: 0.5rem 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.15rem;
 	}
 
-	.sidebar-footer {
-		padding: 0.75rem 0.6rem;
+	.sui-sidebar-footer {
+		padding: 0.75rem;
 		border-top: 1px solid var(--sidebar-border);
 		flex-shrink: 0;
 	}
 
-	/* Mobile: sidebar slides in from left */
-	@media (max-width: 768px) {
-		.sidebar {
+	.sui-overlay {
+		display: none;
+	}
+
+	/* Narrow screens: off-canvas, sliding in over a dimmed page. */
+	@media (max-width: 860px) {
+		.sui-sidebar {
 			position: fixed;
 			left: 0;
 			top: 0;
 			z-index: 50;
-			box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
-		}
-
-		.sidebar.collapsed {
 			transform: translateX(-100%);
+			transition: transform 200ms ease-out;
 		}
-	}
 
-	.overlay {
-		display: none;
-	}
+		.sui-sidebar.open {
+			transform: none;
+		}
 
-	@media (max-width: 768px) {
-		.overlay {
+		.sui-overlay {
 			display: block;
 			position: fixed;
 			inset: 0;
-			background: rgba(0, 0, 0, 0.45);
+			background: rgba(10, 14, 20, 0.5);
 			z-index: 40;
-			backdrop-filter: blur(2px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.sui-sidebar {
+			transition: none;
 		}
 	}
 </style>

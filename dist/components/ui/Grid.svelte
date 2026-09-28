@@ -14,19 +14,19 @@
 	} = $props();
 </script>
 
-<div class="grid {extraClass}" style="--min-w: {minWidth}; --cols: {cols}">
+<div class="sui-grid {extraClass}" style="--min-w: {minWidth}; --cols: {cols}">
 	{@render children?.()}
 </div>
 
 <style>
-	.grid {
+	.sui-grid {
 		display: grid;
 		grid-template-columns: repeat(var(--cols, 2), minmax(var(--min-w, 15rem), 1fr));
 		gap: 1rem;
 	}
 
 	@media (max-width: 640px) {
-		.grid {
+		.sui-grid {
 			grid-template-columns: 1fr;
 		}
 	}

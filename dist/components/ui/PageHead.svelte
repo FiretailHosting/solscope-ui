@@ -3,21 +3,26 @@
 
 	let {
 		title = '',
+		subtitle = '',
 		class: extraClass = '',
 		actions,
 		children
 	}: {
 		title?: string;
+		subtitle?: string;
 		class?: string;
 		actions?: Snippet;
 		children?: Snippet;
 	} = $props();
 </script>
 
-<div class="page-head {extraClass}">
+<div class="sui-page-head {extraClass}">
 	<div class="title-area">
 		{#if title}
 			<h1>{title}</h1>
+		{/if}
+		{#if subtitle}
+			<p class="subtitle">{subtitle}</p>
 		{/if}
 		{@render children?.()}
 	</div>
@@ -29,7 +34,7 @@
 </div>
 
 <style>
-	.page-head {
+	.sui-page-head {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -44,9 +49,15 @@
 
 	h1 {
 		margin: 0;
-		font-size: 1.5rem;
-		letter-spacing: -0.025em;
-		font-weight: 700;
+		font-size: 1.35rem;
+		letter-spacing: -0.015em;
+		font-weight: 650;
+	}
+
+	.subtitle {
+		margin: 0.2rem 0 0;
+		font-size: 0.875rem;
+		color: var(--muted);
 	}
 
 	.actions {
