@@ -1,19 +1,15 @@
 # solscope-ui
 
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
-Built on Svelte 5 with a shadcn-inspired design system.
-Dark and light mode, CSS variable theming.
+Built on Svelte 5 with a flat, corporate design: neutral greys, one navy accent, no gradients or shadows.
+Dark and light mode, CSS variable theming, and a technical icon set drawn for the library, with no dependencies.
 
 ## Install
 
-```
-npm install @firetailhosting/solscope-ui
-```
-
-Requires a `.npmrc` pointing `@firetailhosting` at GitHub Packages:
+The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-@firetailhosting:registry=https://npm.pkg.github.com
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.2.0"
 ```
 
 ## Usage
@@ -45,13 +41,15 @@ Then use components:
 
 | Component | Description |
 |-----------|-------------|
-| `Alert` | Error, notice, and success messages |
+| `Alert` | Notice, warning, error and success messages |
 | `AppShell` | Full-page layout wrapper with sidebar slot |
 | `Badge` | Inline status badge (default, up, down, accent) |
-| `Button` | Button with variants: default, primary, danger, ghost |
-| `Card` | Content container with border and background |
+| `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon` |
+| `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
+| `EmptyState` | Icon, title, text and actions for a list with nothing in it |
 | `FormField` | Label + input + hint wrapper |
 | `Grid` | Responsive 2-column grid |
+| `Icon` | One of the library's icons by `name`; decorative unless given a `label` |
 | `Input` | Styled text input |
 | `Label` | Form label |
 | `ModeSwitch` | Paper/Live trading mode toggle |
@@ -60,18 +58,26 @@ Then use components:
 | `Select` | Styled select dropdown |
 | `SegmentedControl` | Tab-style button group |
 | `Separator` | Horizontal or vertical rule |
-| `Sidebar` | Collapsible navigation sidebar |
-| `SidebarNavItem` | Sidebar navigation link with active state and badge |
-| `Stat` | Stat tile with label and value |
+| `Sidebar` | Navigation sidebar; always shown on wide screens, `open` slides it in on narrow ones |
+| `SidebarNavItem` | Sidebar link with `icon`, active state and badge |
+| `SidebarSection` | Titled group of sidebar links |
+| `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href` |
 | `Table` | Styled data table with overflow scroll |
 | `Textarea` | Styled textarea |
 | `ThemeToggle` | Cycles through auto/light/dark themes |
 
+## Icons
+
+`Icon` draws from `icons`, a map of 24px line icons with chamfered corners and small node dots.
+`bun run dev` opens a gallery of every icon and component.
+Add an icon by adding its paths to `src/lib/icons/icons.ts`.
+
 ## Theming
 
 Colors are defined as CSS variables in `tokens.css`.
-The sidebar uses separate `--sidebar-*` tokens for flexibility.
+The sidebar is dark slate in both themes, with its own `--sidebar-*` tokens.
 Override any token in your app's CSS to customize.
+Component classes are prefixed `sui-` so they cannot collide with an app's own class names.
 
 ### Sidebar layout
 
@@ -81,7 +87,7 @@ Override any token in your app's CSS to customize.
   import { AppShell, Sidebar, SidebarNavItem } from '@firetailhosting/solscope-ui';
   import { page } from '$app/state';
 
-  let sidebarOpen = $state(true);
+  let menuOpen = $state(false);
 
   const links = [
     { href: '/portfolio', label: 'Portfolio' },
@@ -92,12 +98,12 @@ Override any token in your app's CSS to customize.
 
 <AppShell>
   {#snippet sidebar()}
-    <Sidebar bind:open={sidebarOpen}>
+    <Sidebar bind:open={menuOpen}>
       {#snippet header()}
         <a href="/" style="font-weight: 650;">solscope</a>
       {/snippet}
       {#each links as link}
-        <SidebarNavItem href={link.href} active={page.url.pathname.startsWith(link.href)}>
+        <SidebarNavItem href={link.href} icon="orders" active={page.url.pathname.startsWith(link.href)}>
           {link.label}
         </SidebarNavItem>
       {/each}
@@ -107,11 +113,11 @@ Override any token in your app's CSS to customize.
 </AppShell>
 ```
 
-## Publishing
+## Releasing
 
-Tag a release to publish to GitHub Packages:
+Run `bun run package` so `dist/` is current, commit it, then tag the release:
 
 ```
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```

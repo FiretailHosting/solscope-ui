@@ -10,46 +10,57 @@
 	} = $props();
 </script>
 
-<div class="table-wrap">
-	<table class="table {extraClass}">
+<div class="sui-table-wrap">
+	<table class="sui-table {extraClass}">
 		{@render children?.()}
 	</table>
 </div>
 
 <style>
-	.table-wrap {
+	.sui-table-wrap {
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 	}
 
-	.table {
+	.sui-table {
 		width: 100%;
 		border-collapse: collapse;
 		font-size: 0.88rem;
 		font-variant-numeric: tabular-nums;
 	}
 
-	.table :global(th) {
+	.sui-table :global(th) {
 		text-align: left;
-		font-weight: 500;
+		font-weight: 600;
 		color: var(--muted);
-		font-size: 0.72rem;
+		font-size: 0.7rem;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		padding: 0 0.6rem 0.6rem;
+		letter-spacing: 0.07em;
+		padding: 0.55rem 0.9rem;
+		background: var(--card-alt);
+		border-bottom: 1px solid var(--border);
+		white-space: nowrap;
 	}
 
-	.table :global(td) {
-		padding: 0.6rem 0.6rem;
+	.sui-table :global(td) {
+		padding: 0.6rem 0.9rem;
 		border-top: 1px solid var(--border);
 		vertical-align: middle;
 	}
 
-	.table :global(.num) {
+	.sui-table :global(tbody tr:first-child td) {
+		border-top: 0;
+	}
+
+	.sui-table :global(tbody tr:hover td) {
+		background: var(--card-alt);
+	}
+
+	.sui-table :global(.num) {
 		text-align: right;
 	}
 
-	.table :global(tr:last-child td) {
+	.sui-table :global(tr:last-child td) {
 		border-bottom: none;
 	}
 </style>

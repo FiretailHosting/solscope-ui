@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import Icon from './Icon.svelte';
+	import type { IconName } from '../../icons/icons.js';
 
 	type Variant = 'default' | 'primary' | 'danger' | 'ghost';
 	type Size = 'default' | 'sm' | 'lg';
@@ -8,99 +10,115 @@
 	interface Props extends HTMLButtonAttributes {
 		variant?: Variant;
 		size?: Size;
+		/** Renders a link styled as a button. */
+		href?: string;
+		/** Icon before the label. */
+		icon?: IconName;
 		children?: Snippet;
 	}
 
 	let {
 		variant = 'default',
 		size = 'default',
+		href,
+		icon,
 		class: extraClass = '',
 		children,
 		...rest
 	}: Props = $props();
+
+	const iconSize = $derived(size === 'sm' ? 14 : 16);
 </script>
 
-<button class="btn {variant} {size} {extraClass}" {...rest}>
-	{@render children?.()}
-</button>
+{#if href}
+	<a {href} class="sui-btn {variant} {size} {extraClass}">
+		{#if icon}<Icon name={icon} size={iconSize} />{/if}
+		{@render children?.()}
+	</a>
+{:else}
+	<button class="sui-btn {variant} {size} {extraClass}" {...rest}>
+		{#if icon}<Icon name={icon} size={iconSize} />{/if}
+		{@render children?.()}
+	</button>
+{/if}
 
 <style>
-	.btn {
+	.sui-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.4rem;
+		gap: 0.45rem;
 		font: inherit;
+		font-weight: 500;
 		cursor: pointer;
 		border-radius: var(--radius);
-		border: 1px solid var(--border);
+		border: 1px solid var(--border-strong);
 		background: var(--card);
 		color: var(--fg);
 		text-decoration: none;
 		white-space: nowrap;
-		transition: border-color 120ms, background 120ms, color 120ms, opacity 120ms;
+		transition: border-color 100ms, background 100ms, color 100ms;
 	}
 
-	.btn:hover:not(:disabled) {
-		border-color: var(--accent);
+	.sui-btn:hover:not(:disabled) {
+		background: var(--card-alt);
+		border-color: var(--muted);
 	}
 
-	.btn:disabled {
+	.sui-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
 
-	.btn:focus-visible {
+	.sui-btn:focus-visible {
 		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
 	/* Sizes */
 	.default {
-		font-size: 0.9rem;
-		padding: 0.45rem 0.95rem;
+		font-size: 0.875rem;
+		padding: 0.45rem 0.9rem;
 	}
 
 	.sm {
 		font-size: 0.78rem;
-		padding: 0.25rem 0.65rem;
+		padding: 0.25rem 0.6rem;
 	}
 
 	.lg {
-		font-size: 1rem;
-		padding: 0.65rem 1.25rem;
+		font-size: 0.95rem;
+		padding: 0.6rem 1.2rem;
 	}
 
 	/* Variants */
-	.btn.primary {
+	.sui-btn.primary {
 		background: var(--accent);
 		border-color: var(--accent);
-		color: #fff;
+		color: var(--accent-fg);
 	}
 
-	.btn.primary:hover:not(:disabled) {
-		background: var(--accent);
-		border-color: var(--accent);
-		opacity: 0.88;
+	.sui-btn.primary:hover:not(:disabled) {
+		background: var(--accent-hover);
+		border-color: var(--accent-hover);
 	}
 
-	.btn.danger {
+	.sui-btn.danger {
 		color: var(--down);
-		border-color: var(--border);
 	}
 
-	.btn.danger:hover:not(:disabled) {
+	.sui-btn.danger:hover:not(:disabled) {
 		border-color: var(--down);
 		background: var(--down-subtle);
 	}
 
-	.btn.ghost {
+	.sui-btn.ghost {
 		border-color: transparent;
 		background: transparent;
 	}
 
-	.btn.ghost:hover:not(:disabled) {
-		background: var(--card);
+	.sui-btn.ghost:hover:not(:disabled) {
+		background: var(--card-alt);
 		border-color: var(--border);
 	}
 </style>

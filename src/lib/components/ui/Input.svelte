@@ -8,27 +8,27 @@
 	let { class: extraClass = '', ...rest }: Props = $props();
 </script>
 
-<input class="input {extraClass}" {...rest} />
+<input class="sui-input {extraClass}" {...rest} />
 
 <style>
-	.input {
+	.sui-input {
 		font: inherit;
 		font-size: 0.9rem;
 		padding: 0.45rem 0.7rem;
 		border-radius: var(--radius);
-		border: 1px solid var(--border);
-		background: var(--bg);
+		border: 1px solid var(--border-strong);
+		background: var(--card);
 		color: var(--fg);
 		min-width: 0;
 		width: 100%;
 		transition: border-color 120ms;
 	}
 
-	.input::placeholder {
+	.sui-input::placeholder {
 		color: var(--muted);
 	}
 
-	.input:focus {
+	.sui-input:focus {
 		outline: 2px solid var(--accent);
 		outline-offset: -1px;
 	}

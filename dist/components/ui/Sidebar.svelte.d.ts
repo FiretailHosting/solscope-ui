@@ -1,5 +1,6 @@
 import type { Snippet } from 'svelte';
 type $$ComponentProps = {
+    /** Whether the sidebar is shown on narrow screens. It is always shown on wide ones. */
     open?: boolean;
     class?: string;
     header?: Snippet;

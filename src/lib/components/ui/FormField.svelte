@@ -14,7 +14,7 @@
 	} = $props();
 </script>
 
-<div class="field {extraClass}">
+<div class="sui-field {extraClass}">
 	{#if label}
 		<span class="field-label">{label}</span>
 	{/if}
@@ -25,7 +25,7 @@
 </div>
 
 <style>
-	.field {
+	.sui-field {
 		display: flex;
 		flex-direction: column;
 		gap: 0.3rem;
