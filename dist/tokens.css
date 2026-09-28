@@ -1,0 +1,97 @@
+/* solscope-ui design tokens
+   Compatible with solscope's existing CSS variable names.
+   Import this file once at the app root. */
+
+:root {
+	/* Backgrounds */
+	--bg: #f8f8fc;
+	--card: #ffffff;
+
+	/* Foregrounds */
+	--fg: #0e0e18;
+	--muted: #6b6b8e;
+
+	/* Borders */
+	--border: #e2e2ee;
+
+	/* Brand accent - violet */
+	--accent: #7c3aed;
+	--accent-subtle: #ede9fe;
+
+	/* Trading colors */
+	--up: #059669;
+	--up-subtle: #d1fae5;
+	--down: #dc2626;
+	--down-subtle: #fee2e2;
+
+	/* Sidebar */
+	--sidebar-bg: #f1f0f9;
+	--sidebar-fg: #3b3a5c;
+	--sidebar-border: #dddcef;
+	--sidebar-active-bg: #ede9fe;
+	--sidebar-active-fg: #7c3aed;
+	--sidebar-hover-bg: #e8e6f5;
+
+	/* Radius */
+	--radius: 8px;
+	--radius-sm: 5px;
+	--radius-lg: 12px;
+	--radius-full: 9999px;
+
+	/* Font */
+	--font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		/* Backgrounds - deep space indigo */
+		--bg: #08080f;
+		--card: #101020;
+
+		/* Foregrounds */
+		--fg: #e8e8f4;
+		--muted: #6e6e9a;
+
+		/* Borders */
+		--border: #1e1e36;
+
+		/* Brand accent - brighter violet in dark */
+		--accent: #8b5cf6;
+		--accent-subtle: #1e1040;
+
+		/* Trading colors */
+		--up: #10b981;
+		--up-subtle: #022c1c;
+		--down: #f87171;
+		--down-subtle: #2c0c0c;
+
+		/* Sidebar */
+		--sidebar-bg: #0c0c1c;
+		--sidebar-fg: #a0a0c8;
+		--sidebar-border: #1a1a30;
+		--sidebar-active-bg: #1e1040;
+		--sidebar-active-fg: #a78bfa;
+		--sidebar-hover-bg: #14142a;
+	}
+}
+
+:root[data-theme='dark'] {
+	--bg: #08080f;
+	--card: #101020;
+	--fg: #e8e8f4;
+	--muted: #6e6e9a;
+	--border: #1e1e36;
+	--accent: #8b5cf6;
+	--accent-subtle: #1e1040;
+	--up: #10b981;
+	--up-subtle: #022c1c;
+	--down: #f87171;
+	--down-subtle: #2c0c0c;
+	--sidebar-bg: #0c0c1c;
+	--sidebar-fg: #a0a0c8;
+	--sidebar-border: #1a1a30;
+	--sidebar-active-bg: #1e1040;
+	--sidebar-active-fg: #a78bfa;
+	--sidebar-hover-bg: #14142a;
+}
