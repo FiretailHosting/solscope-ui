@@ -52,7 +52,7 @@ Then use components:
 | `Icon` | One of the library's icons by `name`; decorative unless given a `label` |
 | `Input` | Styled text input |
 | `Label` | Form label |
-| `ModeSwitch` | Paper/Live trading mode toggle |
+| `ModeSwitch` | Paper/Live trading mode toggle; `onliveunavailable` keeps Live clickable when `liveEnabled` is false |
 | `PageHead` | Page title with optional actions row |
 | `Pill` | Status pill (default, live, ok) |
 | `Select` | Styled select dropdown |

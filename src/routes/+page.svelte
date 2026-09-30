@@ -21,6 +21,7 @@
 	const names = Object.keys(icons) as IconName[];
 	let tab = $state('one');
 	let mode = $state<'paper' | 'live'>('paper');
+	let liveHelp: HTMLDialogElement;
 </script>
 
 <main>
@@ -60,6 +61,7 @@
 						<button class:active={tab === 'two'} onclick={() => (tab = 'two')}>Two</button>
 					</SegmentedControl>
 					<ModeSwitch bind:value={mode} liveEnabled />
+					<ModeSwitch onliveunavailable={() => liveHelp.showModal()} />
 				</div>
 				<Alert>A neutral notice.</Alert>
 				<Alert variant="warn">A warning.</Alert>
@@ -80,6 +82,12 @@
 			</EmptyState>
 		</Card>
 	</div>
+
+	<dialog bind:this={liveHelp} aria-labelledby="live-help-title">
+		<h2 id="live-help-title">Real money is off</h2>
+		<p>What an app shows when Live is chosen but not enabled.</p>
+		<Button onclick={() => liveHelp.close()}>Close</Button>
+	</dialog>
 </main>
 
 <style>
@@ -128,6 +136,26 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
+	}
+
+	dialog {
+		max-width: 24rem;
+		padding: 1.25rem;
+		color: var(--fg);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+	}
+
+	dialog h2 {
+		margin: 0 0 0.5rem;
+		font-size: 1rem;
+	}
+
+	dialog p {
+		margin: 0 0 1rem;
+		color: var(--muted);
+		font-size: 0.875rem;
 	}
 
 	.inline {
