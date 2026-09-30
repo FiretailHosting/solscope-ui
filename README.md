@@ -9,7 +9,7 @@ Dark and light mode, CSS variable theming, and a technical icon set drawn for th
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.2.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.3.0"
 ```
 
 ## Usage
@@ -75,6 +75,7 @@ Add an icon by adding its paths to `src/lib/icons/icons.ts`.
 ## Theming
 
 Colors are defined as CSS variables in `tokens.css`.
+Text uses IBM Plex Sans 1.1 (weights 400 to 700), self-hosted from `fonts/` under the SIL Open Font License, with the system font stack as a fallback.
 The sidebar is dark slate in both themes, with its own `--sidebar-*` tokens.
 Override any token in your app's CSS to customize.
 Component classes are prefixed `sui-` so they cannot collide with an app's own class names.
