@@ -62,8 +62,10 @@
 	/* Trading colors, kept muted to sit with the palette */
 	--up: #1d7a4c;
 	--up-subtle: #e6f2ec;
+	--up-fg: #ffffff;
 	--down: #b4322c;
 	--down-subtle: #f8e9e8;
+	--down-fg: #ffffff;
 	--warn: #9a6a00;
 	--warn-subtle: #fbf3e0;
 
@@ -104,8 +106,10 @@
 		--accent-fg: #0e141c;
 		--up: #3fa874;
 		--up-subtle: #16291f;
+		--up-fg: #0e141c;
 		--down: #de6a63;
 		--down-subtle: #321b1a;
+		--down-fg: #0e141c;
 		--warn: #d9a441;
 		--warn-subtle: #30271a;
 		--sidebar-bg: #0e1217;
@@ -134,8 +138,10 @@
 	--accent-fg: #0e141c;
 	--up: #3fa874;
 	--up-subtle: #16291f;
+	--up-fg: #0e141c;
 	--down: #de6a63;
 	--down-subtle: #321b1a;
+	--down-fg: #0e141c;
 	--warn: #d9a441;
 	--warn-subtle: #30271a;
 	--sidebar-bg: #0e1217;
