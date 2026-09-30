@@ -4,12 +4,21 @@
 	let {
 		value = $bindable<Mode>('paper'),
 		liveEnabled = false,
-		onchange
+		onchange,
+		onliveunavailable
 	}: {
 		value?: Mode;
 		liveEnabled?: boolean;
 		onchange?: (mode: Mode) => void;
+		/**
+		 * Called when Live is chosen while `liveEnabled` is false. With it, Live
+		 * stays clickable and should open a dialog explaining how to get real
+		 * money; without it, Live is disabled.
+		 */
+		onliveunavailable?: () => void;
 	} = $props();
+
+	const explainsLive = $derived(!liveEnabled && !!onliveunavailable);
 
 	function set(m: Mode) {
 		value = m;
@@ -25,9 +34,14 @@
 		class:active={value === 'live'}
 		class="live-btn"
 		aria-pressed={value === 'live'}
-		onclick={() => set('live')}
-		disabled={!liveEnabled}
-		title={liveEnabled ? 'Real money' : 'Real money is not enabled for your account'}
+		aria-haspopup={explainsLive ? 'dialog' : undefined}
+		onclick={() => (liveEnabled ? set('live') : onliveunavailable?.())}
+		disabled={!liveEnabled && !onliveunavailable}
+		title={liveEnabled
+			? 'Real money'
+			: explainsLive
+				? 'Real money is not enabled for your account. Find out how to get it.'
+				: 'Real money is not enabled for your account'}
 	>
 		Live
 	</button>
