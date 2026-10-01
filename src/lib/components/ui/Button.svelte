@@ -14,6 +14,12 @@
 		href?: string;
 		/** Icon before the label. */
 		icon?: IconName;
+		/**
+		 * Shows a spinner and blocks clicks while an action runs. The spinner
+		 * takes the icon's place, or covers the label when there is no icon,
+		 * so the button keeps its width.
+		 */
+		loading?: boolean;
 		children?: Snippet;
 	}
 
@@ -22,23 +28,70 @@
 		size = 'default',
 		href,
 		icon,
+		loading = false,
+		disabled,
 		class: extraClass = '',
 		children,
 		...rest
 	}: Props = $props();
 
 	const iconSize = $derived(size === 'sm' ? 14 : 16);
+	// Without an icon to replace, the spinner sits over the hidden label.
+	const spinnerCoversLabel = $derived(loading && !icon && !!children);
 </script>
 
-{#if href}
-	<a {href} class="sui-btn {variant} {size} {extraClass}" {...rest as HTMLAnchorAttributes}>
-		{#if icon}<Icon name={icon} size={iconSize} />{/if}
+{#snippet content()}
+	{#if loading}
+		<svg
+			class="sui-btn-spinner"
+			class:covers-label={spinnerCoversLabel}
+			width={iconSize}
+			height={iconSize}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="1.6"
+			stroke-linecap="square"
+			aria-hidden="true"
+			focusable="false"
+		>
+			<path d="M12 3a9 9 0 1 1-9 9" />
+			<circle cx="12" cy="3" r="1.35" fill="currentColor" stroke="none" />
+		</svg>
+	{:else if icon}
+		<Icon name={icon} size={iconSize} />
+	{/if}
+	{#if spinnerCoversLabel}
+		<!-- Transparent, not hidden, so screen readers still read the label. -->
+		<span class="label-under-spinner">{@render children?.()}</span>
+	{:else}
 		{@render children?.()}
+	{/if}
+{/snippet}
+
+{#if href}
+	<!-- A link cannot be disabled, so a loading one drops its href instead. -->
+	<a
+		href={loading ? undefined : href}
+		class="sui-btn {variant} {size} {extraClass}"
+		class:loading
+		class:spinner-covers-label={spinnerCoversLabel}
+		{...rest as HTMLAnchorAttributes}
+		aria-disabled={loading || rest['aria-disabled']}
+		aria-busy={loading || rest['aria-busy']}
+	>
+		{@render content()}
 	</a>
 {:else}
-	<button class="sui-btn {variant} {size} {extraClass}" {...rest}>
-		{#if icon}<Icon name={icon} size={iconSize} />{/if}
-		{@render children?.()}
+	<button
+		class="sui-btn {variant} {size} {extraClass}"
+		class:loading
+		class:spinner-covers-label={spinnerCoversLabel}
+		{...rest}
+		disabled={disabled || loading}
+		aria-busy={loading || rest['aria-busy']}
+	>
+		{@render content()}
 	</button>
 {/if}
 
@@ -73,6 +126,47 @@
 	.sui-btn:focus-visible {
 		outline: 2px solid var(--accent);
 		outline-offset: 2px;
+	}
+
+	/* Loading */
+	.sui-btn.loading {
+		cursor: progress;
+	}
+
+	a.sui-btn.loading {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+
+	.sui-btn.spinner-covers-label {
+		position: relative;
+	}
+
+	.label-under-spinner {
+		opacity: 0;
+	}
+
+	.sui-btn-spinner {
+		flex-shrink: 0;
+		animation: sui-btn-spin 0.8s linear infinite;
+	}
+
+	.sui-btn-spinner.covers-label {
+		position: absolute;
+		inset: 0;
+		margin: auto;
+	}
+
+	@keyframes sui-btn-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.sui-btn-spinner {
+			animation: none;
+		}
 	}
 
 	/* Sizes */
