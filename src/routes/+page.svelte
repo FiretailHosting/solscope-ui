@@ -5,12 +5,14 @@
 		Button,
 		Card,
 		EmptyState,
+		FormField,
 		Icon,
 		icons,
 		ModeSwitch,
 		PageHead,
 		Pill,
 		SegmentedControl,
+		Select,
 		Skeleton,
 		Stat,
 		Table,
@@ -90,6 +92,27 @@
 				<Alert>A neutral notice.</Alert>
 				<Alert variant="warn">A warning.</Alert>
 				<Alert variant="error">An error.</Alert>
+				<Alert icon>A neutral notice with an icon.</Alert>
+				<Alert variant="up" icon>Saved, with an icon.</Alert>
+				<Alert variant="warn" icon>A warning with an icon.</Alert>
+				<Alert variant="error" icon>
+					An error with an icon, long enough to wrap onto a second line so the icon stays on the
+					first.
+				</Alert>
+				<div class="inline">
+					<Select aria-label="Demo select">
+						<option>Inline select</option>
+						<option>Another option</option>
+					</Select>
+					<Select aria-label="Disabled demo select" disabled>
+						<option>Disabled</option>
+					</Select>
+				</div>
+				<FormField label="Full width select">
+					<Select style="width: 100%">
+						<option>Fills its field</option>
+					</Select>
+				</FormField>
 				<div class="skeletons" aria-busy="true">
 					<Skeleton width="60%" />
 					<Skeleton width="40%" height="0.75rem" />
@@ -104,6 +127,13 @@
 				<tbody>
 					<tr><td>USDC</td><td class="num">9,325</td><td class="num">$9,325.00</td></tr>
 					<tr><td>JUP</td><td class="num">442.29</td><td class="num">$150.28</td></tr>
+				</tbody>
+			</Table>
+			<Table rowHover={false}>
+				<thead><tr><th>No row hover</th><th class="num">Value</th></tr></thead>
+				<tbody>
+					<tr><td>Not clickable</td><td class="num">$1.00</td></tr>
+					<tr><td>Also not clickable</td><td class="num">$2.00</td></tr>
 				</tbody>
 			</Table>
 			<EmptyState icon="bots" title="An empty state" text="With a line of explanation and an action.">

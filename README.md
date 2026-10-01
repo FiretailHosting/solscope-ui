@@ -41,7 +41,7 @@ Then use components:
 
 | Component | Description |
 |-----------|-------------|
-| `Alert` | Notice, warning, error and success messages; errors are announced at once, others politely |
+| `Alert` | Notice, warning, error and success messages; errors are announced at once, others politely; `icon` adds one so the variant does not rest on colour alone |
 | `AppShell` | Full-page layout wrapper with sidebar slot |
 | `Badge` | Inline status badge (default, up, down, accent) |
 | `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width |
@@ -63,7 +63,7 @@ Then use components:
 | `SidebarSection` | Titled group of sidebar links |
 | `Skeleton` | Pulsing grey placeholder for loading content: `width`, `height`, `radius`; hidden from screen readers |
 | `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href`; `loading` shows a placeholder value |
-| `Table` | Styled data table with overflow scroll |
+| `Table` | Styled data table with overflow scroll; `rowHover={false}` turns off the row highlight for rows that are not clickable |
 | `Textarea` | Styled textarea |
 | `ThemeToggle` | Cycles through auto/light/dark themes |
 
