@@ -9,7 +9,7 @@ Dark and light mode, CSS variable theming, and a technical icon set drawn for th
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.6.1"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.7.0"
 ```
 
 ## Usage
