@@ -26,7 +26,7 @@
 	}
 </script>
 
-<div class="sui-switch" role="group" aria-label="Money">
+<div class="sui-switch" role="group" aria-label="Trading mode">
 	<button class:active={value === 'paper'} aria-pressed={value === 'paper'} onclick={() => set('paper')}>
 		Paper
 	</button>
@@ -85,7 +85,7 @@
 
 	.live-btn.active {
 		background: var(--down);
-		color: #fff;
+		color: var(--down-fg);
 	}
 
 	button:disabled {

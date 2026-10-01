@@ -28,7 +28,7 @@
 		{@render children?.()}
 	</span>
 	{#if badge > 0}
-		<span class="badge" aria-label="{badge} unread">{badge > 99 ? '99+' : badge}</span>
+		<span class="badge"><span aria-hidden="true">{badge > 99 ? '99+' : badge}</span><span class="visually-hidden">, {badge} unread</span></span>
 	{/if}
 </a>
 
@@ -88,9 +88,18 @@
 		padding: 0 0.3rem;
 		border-radius: var(--radius-sm);
 		background: var(--down);
-		color: #fff;
+		color: var(--down-fg);
 		font-size: 0.68rem;
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 </style>

@@ -32,6 +32,10 @@
 		transition: border-color 120ms;
 	}
 
+	.sui-select[aria-invalid='true'] {
+		border-color: var(--down);
+	}
+
 	.sui-select:focus {
 		outline: 2px solid var(--accent);
 		outline-offset: -1px;

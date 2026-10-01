@@ -5,20 +5,26 @@
 
 	let {
 		variant = 'default',
-		role = 'alert',
+		role,
 		class: extraClass = '',
 		children
 	}: {
 		variant?: Variant;
+		/**
+		 * Defaults to alert for errors, which screen readers announce at once,
+		 * and status for everything else, which waits its turn.
+		 */
 		role?: string;
 		class?: string;
 		children?: Snippet;
 	} = $props();
+
+	const resolvedRole = $derived(role ?? (variant === 'error' ? 'alert' : 'status'));
 </script>
 
-<p {role} class="sui-alert {variant} {extraClass}">
+<div role={resolvedRole} class="sui-alert {variant} {extraClass}">
 	{@render children?.()}
-</p>
+</div>
 
 <style>
 	.sui-alert {

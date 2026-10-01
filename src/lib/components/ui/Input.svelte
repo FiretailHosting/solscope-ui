@@ -28,6 +28,10 @@
 		color: var(--muted);
 	}
 
+	.sui-input[aria-invalid='true'] {
+		border-color: var(--down);
+	}
+
 	.sui-input:focus {
 		outline: 2px solid var(--accent);
 		outline-offset: -1px;

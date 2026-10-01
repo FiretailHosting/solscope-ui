@@ -4,25 +4,31 @@
 	let {
 		label = '',
 		hint = '',
+		error = '',
 		class: extraClass = '',
 		children
 	}: {
 		label?: string;
 		hint?: string;
+		/** Shown in place of the hint. Also set aria-invalid on the input. */
+		error?: string;
 		class?: string;
 		children?: Snippet;
 	} = $props();
 </script>
 
-<div class="sui-field {extraClass}">
+<!-- A label wrapping the input names it, and clicking the text focuses it. -->
+<label class="sui-field {extraClass}">
 	{#if label}
 		<span class="field-label">{label}</span>
 	{/if}
 	{@render children?.()}
-	{#if hint}
+	{#if error}
+		<small class="error" role="alert">{error}</small>
+	{:else if hint}
 		<small class="hint">{hint}</small>
 	{/if}
-</div>
+</label>
 
 <style>
 	.sui-field {
@@ -38,8 +44,13 @@
 		color: var(--muted);
 	}
 
-	.hint {
+	.hint,
+	.error {
 		font-size: 0.75rem;
 		color: var(--muted);
+	}
+
+	.error {
+		color: var(--down);
 	}
 </style>
