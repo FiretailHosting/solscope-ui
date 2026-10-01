@@ -26,3 +26,5 @@ export { default as Textarea } from './components/ui/Textarea.svelte';
 export { default as ThemeToggle } from './components/ui/ThemeToggle.svelte';
 // Icons
 export { icons } from './icons/icons.js';
+// Theme
+export { themeInitScript, themeStorageKey, themes } from './theme.js';
