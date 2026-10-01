@@ -14,17 +14,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@firetailhosting'
 
+      # Install the versions pinned in bun.lock, so the build matches a local one.
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: bun install --frozen-lockfile
 
       - name: Build package
-        run: npm run package
+        run: bun run package
 
       - name: Publish to GitHub Packages
         run: npm publish
