@@ -60,4 +60,11 @@
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
+
+	/* Easier to tap on touch screens; desktop sizes stay as they are. */
+	@media (pointer: coarse) {
+		.sui-segmented :global(button) {
+			min-height: 44px;
+		}
+	}
 </style>

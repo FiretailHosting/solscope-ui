@@ -91,6 +91,13 @@
 		padding: 0.6rem 1.2rem;
 	}
 
+	/* Easier to tap on touch screens; desktop sizes stay as they are. */
+	@media (pointer: coarse) {
+		.sui-btn {
+			min-height: 44px;
+		}
+	}
+
 	/* Variants */
 	.sui-btn.primary {
 		background: var(--accent);

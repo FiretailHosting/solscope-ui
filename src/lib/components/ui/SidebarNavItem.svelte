@@ -62,6 +62,13 @@
 		font-weight: 600;
 	}
 
+	/* Easier to tap on touch screens; desktop sizes stay as they are. */
+	@media (pointer: coarse) {
+		.sui-nav-item {
+			min-height: 44px;
+		}
+	}
+
 	.sui-nav-item :global(.icon) {
 		opacity: 0.85;
 	}
