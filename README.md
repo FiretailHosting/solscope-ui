@@ -41,13 +41,13 @@ Then use components:
 
 | Component | Description |
 |-----------|-------------|
-| `Alert` | Notice, warning, error and success messages |
+| `Alert` | Notice, warning, error and success messages; errors are announced at once, others politely |
 | `AppShell` | Full-page layout wrapper with sidebar slot |
 | `Badge` | Inline status badge (default, up, down, accent) |
 | `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon` |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
-| `FormField` | Label + input + hint wrapper |
+| `FormField` | Label wrapping an input, with a `hint` or an `error` |
 | `Grid` | Responsive 2-column grid |
 | `Icon` | One of the library's icons by `name`; decorative unless given a `label` |
 | `Input` | Styled text input |

@@ -15,7 +15,13 @@
 		children?: Snippet;
 		footer?: Snippet;
 	} = $props();
+
+	function closeOnEscape(event: KeyboardEvent) {
+		if (open && event.key === 'Escape') open = false;
+	}
 </script>
+
+<svelte:window onkeydown={closeOnEscape} />
 
 {#if open}
 	<div class="sui-overlay" role="none" onclick={() => (open = false)}></div>
@@ -86,11 +92,17 @@
 			top: 0;
 			z-index: 50;
 			transform: translateX(-100%);
-			transition: transform 200ms ease-out;
+			/* Hidden once it has slid away, so its links leave the tab order. */
+			visibility: hidden;
+			transition:
+				transform 200ms ease-out,
+				visibility 0s 200ms;
 		}
 
 		.sui-sidebar.open {
 			transform: none;
+			visibility: visible;
+			transition: transform 200ms ease-out;
 		}
 
 		.sui-overlay {

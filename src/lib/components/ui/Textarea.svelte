@@ -30,6 +30,10 @@
 		color: var(--muted);
 	}
 
+	.sui-textarea[aria-invalid='true'] {
+		border-color: var(--down);
+	}
+
 	.sui-textarea:focus {
 		outline: 2px solid var(--accent);
 		outline-offset: -1px;

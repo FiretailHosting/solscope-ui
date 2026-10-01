@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
 	import type { IconName } from '../../icons/icons.js';
 
@@ -31,7 +31,7 @@
 </script>
 
 {#if href}
-	<a {href} class="sui-btn {variant} {size} {extraClass}">
+	<a {href} class="sui-btn {variant} {size} {extraClass}" {...rest as HTMLAnchorAttributes}>
 		{#if icon}<Icon name={icon} size={iconSize} />{/if}
 		{@render children?.()}
 	</a>

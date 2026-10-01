@@ -66,13 +66,13 @@
 	--down: #b4322c;
 	--down-subtle: #f8e9e8;
 	--down-fg: #ffffff;
-	--warn: #9a6a00;
+	--warn: #8a5d00;
 	--warn-subtle: #fbf3e0;
 
 	/* Sidebar - dark slate in both themes */
 	--sidebar-bg: #1e2733;
 	--sidebar-fg: #aeb8c5;
-	--sidebar-heading: #6f7c8c;
+	--sidebar-heading: #8693a3;
 	--sidebar-border: #2b3644;
 	--sidebar-active-bg: #2b3a4d;
 	--sidebar-active-fg: #ffffff;
@@ -114,7 +114,7 @@
 		--warn-subtle: #30271a;
 		--sidebar-bg: #0e1217;
 		--sidebar-fg: #9aa5b3;
-		--sidebar-heading: #5d6978;
+		--sidebar-heading: #7d8999;
 		--sidebar-border: #1d242e;
 		--sidebar-active-bg: #1d2735;
 		--sidebar-active-fg: #ffffff;
@@ -146,7 +146,7 @@
 	--warn-subtle: #30271a;
 	--sidebar-bg: #0e1217;
 	--sidebar-fg: #9aa5b3;
-	--sidebar-heading: #5d6978;
+	--sidebar-heading: #7d8999;
 	--sidebar-border: #1d242e;
 	--sidebar-active-bg: #1d2735;
 	--sidebar-active-fg: #ffffff;
