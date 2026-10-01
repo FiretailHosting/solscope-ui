@@ -61,6 +61,7 @@ Then use components:
 | `Sidebar` | Navigation sidebar; always shown on wide screens, `open` slides it in on narrow ones |
 | `SidebarNavItem` | Sidebar link with `icon`, active state and badge |
 | `SidebarSection` | Titled group of sidebar links |
+| `Skeleton` | Pulsing grey placeholder for loading content: `width`, `height`, `radius`; hidden from screen readers |
 | `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href` |
 | `Table` | Styled data table with overflow scroll |
 | `Textarea` | Styled textarea |

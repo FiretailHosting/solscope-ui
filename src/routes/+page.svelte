@@ -11,6 +11,7 @@
 		PageHead,
 		Pill,
 		SegmentedControl,
+		Skeleton,
 		Stat,
 		Table,
 		ThemeToggle,
@@ -66,6 +67,11 @@
 				<Alert>A neutral notice.</Alert>
 				<Alert variant="warn">A warning.</Alert>
 				<Alert variant="error">An error.</Alert>
+				<div class="skeletons" aria-busy="true">
+					<Skeleton width="60%" />
+					<Skeleton width="40%" height="0.75rem" />
+					<Skeleton width="2.5rem" height="2.5rem" radius="var(--radius-full)" />
+				</div>
 			</div>
 		</Card>
 
@@ -105,6 +111,12 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 		gap: 1rem;
+	}
+
+	.skeletons {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 
 	.icons {
