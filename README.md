@@ -44,7 +44,7 @@ Then use components:
 | `Alert` | Notice, warning, error and success messages; errors are announced at once, others politely |
 | `AppShell` | Full-page layout wrapper with sidebar slot |
 | `Badge` | Inline status badge (default, up, down, accent) |
-| `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon` |
+| `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
 | `FormField` | Label wrapping an input, with a `hint` or an `error` |

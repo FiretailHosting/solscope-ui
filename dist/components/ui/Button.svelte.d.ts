@@ -10,6 +10,12 @@ interface Props extends HTMLButtonAttributes {
     href?: string;
     /** Icon before the label. */
     icon?: IconName;
+    /**
+     * Shows a spinner and blocks clicks while an action runs. The spinner
+     * takes the icon's place, or covers the label when there is no icon,
+     * so the button keeps its width.
+     */
+    loading?: boolean;
     children?: Snippet;
 }
 declare const Button: import("svelte").Component<Props, {}, "">;

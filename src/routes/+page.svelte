@@ -23,6 +23,12 @@
 	let tab = $state('one');
 	let mode = $state<'paper' | 'live'>('paper');
 	let liveHelp: HTMLDialogElement;
+	let saving = $state(false);
+
+	function startSaving() {
+		saving = true;
+		setTimeout(() => (saving = false), 2000);
+	}
 </script>
 
 <main>
@@ -56,6 +62,12 @@
 					<Button variant="primary" icon="plus">Primary</Button>
 					<Button variant="danger" icon="close">Danger</Button>
 					<Button variant="ghost">Ghost</Button>
+				</div>
+				<div class="inline">
+					<Button variant="primary" icon="plus" loading>Placing order</Button>
+					<Button loading>Save</Button>
+					<Button size="sm" loading>Small</Button>
+					<Button variant="primary" onclick={startSaving} loading={saving}>Save changes</Button>
 				</div>
 				<div class="inline">
 					<SegmentedControl label="Demo">
