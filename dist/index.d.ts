@@ -13,7 +13,7 @@ export { default as ModeSwitch } from './components/ui/ModeSwitch.svelte';
 export { default as PageHead } from './components/ui/PageHead.svelte';
 export { default as Pill } from './components/ui/Pill.svelte';
 export { default as Select } from './components/ui/Select.svelte';
-export { default as SegmentedControl } from './components/ui/SegmentedControl.svelte';
+export { default as SegmentedControl, type SegmentedOption } from './components/ui/SegmentedControl.svelte';
 export { default as Separator } from './components/ui/Separator.svelte';
 export { default as Sidebar } from './components/ui/Sidebar.svelte';
 export { default as SidebarNavItem } from './components/ui/SidebarNavItem.svelte';
