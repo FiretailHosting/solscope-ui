@@ -19,6 +19,7 @@ export { default as Separator } from './components/ui/Separator.svelte';
 export { default as Sidebar } from './components/ui/Sidebar.svelte';
 export { default as SidebarNavItem } from './components/ui/SidebarNavItem.svelte';
 export { default as SidebarSection } from './components/ui/SidebarSection.svelte';
+export { default as Skeleton } from './components/ui/Skeleton.svelte';
 export { default as Stat } from './components/ui/Stat.svelte';
 export { default as Table } from './components/ui/Table.svelte';
 export { default as Textarea } from './components/ui/Textarea.svelte';
