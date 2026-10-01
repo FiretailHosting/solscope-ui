@@ -51,7 +51,7 @@
 
 	/* Borders */
 	--border: #d8dde3;
-	--border-strong: #b9c1cb;
+	--border-strong: #8a94a0;
 
 	/* Brand accent - corporate navy */
 	--accent: #1f4f8f;
@@ -99,7 +99,7 @@
 		--fg: #e2e6eb;
 		--muted: #8d98a7;
 		--border: #2b3340;
-		--border-strong: #3c4656;
+		--border-strong: #636f81;
 		--accent: #5b8fd0;
 		--accent-hover: #74a2da;
 		--accent-subtle: #1f2d40;
@@ -131,7 +131,7 @@
 	--fg: #e2e6eb;
 	--muted: #8d98a7;
 	--border: #2b3340;
-	--border-strong: #3c4656;
+	--border-strong: #636f81;
 	--accent: #5b8fd0;
 	--accent-hover: #74a2da;
 	--accent-subtle: #1f2d40;
