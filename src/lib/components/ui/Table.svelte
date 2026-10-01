@@ -2,16 +2,22 @@
 	import type { Snippet } from 'svelte';
 
 	let {
+		rowHover = true,
 		class: extraClass = '',
 		children
 	}: {
+		/**
+		 * Highlights the row under the pointer. Turn it off when rows are not
+		 * clickable, so the highlight does not suggest that they are.
+		 */
+		rowHover?: boolean;
 		class?: string;
 		children?: Snippet;
 	} = $props();
 </script>
 
 <div class="sui-table-wrap">
-	<table class="sui-table {extraClass}">
+	<table class="sui-table {extraClass}" class:row-hover={rowHover}>
 		{@render children?.()}
 	</table>
 </div>
@@ -52,7 +58,7 @@
 		border-top: 0;
 	}
 
-	.sui-table :global(tbody tr:hover td) {
+	.sui-table.row-hover :global(tbody tr:hover td) {
 		background: var(--card-alt);
 	}
 

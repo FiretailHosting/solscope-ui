@@ -24,9 +24,16 @@
 		background: var(--card);
 		color: var(--fg);
 		appearance: none;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235f6b7a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+		/* A 10 by 5 down arrow drawn as two half-filled squares, so it takes
+		   the text colour and follows the theme. */
+		background-image:
+			linear-gradient(45deg, transparent 50%, currentColor 50%),
+			linear-gradient(135deg, currentColor 50%, transparent 50%);
+		background-size: 5px 5px;
 		background-repeat: no-repeat;
-		background-position: right 0.65rem center;
+		background-position:
+			right calc(0.65rem + 6px) center,
+			right calc(0.65rem + 1px) center;
 		min-width: 0;
 		cursor: pointer;
 		transition: border-color 120ms;
