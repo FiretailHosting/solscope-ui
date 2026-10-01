@@ -1,19 +1,54 @@
-<script lang="ts">
+<script lang="ts" module>
+	export type SegmentedOption<OptionValue> = {
+		value: OptionValue;
+		label: string;
+		disabled?: boolean;
+	};
+</script>
+
+<script lang="ts" generics="Value">
 	import type { Snippet } from 'svelte';
 
 	let {
 		label = '',
 		class: extraClass = '',
+		options,
+		value = $bindable(),
+		onchange,
 		children
 	}: {
 		label?: string;
 		class?: string;
+		/** Renders one button per option; without it, `children` are rendered as the buttons. */
+		options?: SegmentedOption<Value>[];
+		/** The selected option's value, for use with `options`. */
+		value?: Value;
+		onchange?: (value: Value) => void;
 		children?: Snippet;
 	} = $props();
+
+	function select(optionValue: Value) {
+		value = optionValue;
+		onchange?.(optionValue);
+	}
 </script>
 
 <div class="sui-segmented {extraClass}" role="group" aria-label={label}>
-	{@render children?.()}
+	{#if options}
+		{#each options as option}
+			<button
+				type="button"
+				class:active={option.value === value}
+				aria-pressed={option.value === value}
+				disabled={option.disabled}
+				onclick={() => select(option.value)}
+			>
+				{option.label}
+			</button>
+		{/each}
+	{:else}
+		{@render children?.()}
+	{/if}
 </div>
 
 <style>
@@ -25,7 +60,7 @@
 		background: var(--card);
 	}
 
-	/* Children are plain <button> elements with class:active */
+	/* Buttons rendered from options, or plain <button> children with class:active */
 	.sui-segmented :global(button) {
 		font: inherit;
 		font-size: 0.82rem;

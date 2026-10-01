@@ -56,7 +56,7 @@ Then use components:
 | `PageHead` | Page title with optional actions row |
 | `Pill` | Status pill (default, live, ok) |
 | `Select` | Styled select dropdown |
-| `SegmentedControl` | Tab-style button group |
+| `SegmentedControl` | Tab-style button group: `options` with `bind:value` and `onchange`, or your own `<button>` children with `class:active` |
 | `Separator` | Horizontal or vertical rule |
 | `Sidebar` | Navigation sidebar; always shown on wide screens, `open` slides it in on narrow ones |
 | `SidebarNavItem` | Sidebar link with `icon`, active state and badge |
@@ -113,6 +113,30 @@ Component classes are prefixed `sui-` so they cannot collide with an app's own c
   {/snippet}
   <main>{@render children()}</main>
 </AppShell>
+```
+
+### Segmented control
+
+```svelte
+<script lang="ts">
+  import { SegmentedControl, type SegmentedOption } from '@firetailhosting/solscope-ui';
+
+  type Range = '1d' | '1w' | 'all';
+  const ranges: SegmentedOption<Range>[] = [
+    { value: '1d', label: '1D' },
+    { value: '1w', label: '1W' },
+    { value: 'all', label: 'All', disabled: true },
+  ];
+  let range = $state<Range>('1w');
+</script>
+
+<SegmentedControl label="Chart range" options={ranges} bind:value={range} />
+
+<!-- Or write the buttons yourself -->
+<SegmentedControl label="Side">
+  <button class:active={side === 'buy'} aria-pressed={side === 'buy'} onclick={() => (side = 'buy')}>Buy</button>
+  <button class:active={side === 'sell'} aria-pressed={side === 'sell'} onclick={() => (side = 'sell')}>Sell</button>
+</SegmentedControl>
 ```
 
 ## Releasing
