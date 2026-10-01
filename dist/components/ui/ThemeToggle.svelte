@@ -71,4 +71,11 @@
 		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
+
+	/* Easier to tap on touch screens; desktop sizes stay as they are. */
+	@media (pointer: coarse) {
+		.sui-toggle {
+			min-height: 44px;
+		}
+	}
 </style>
