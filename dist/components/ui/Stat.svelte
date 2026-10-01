@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from './Icon.svelte';
+	import Skeleton from './Skeleton.svelte';
 	import type { IconName } from '../../icons/icons.js';
 
 	let {
@@ -9,6 +10,7 @@
 		tone = 'default',
 		icon,
 		href,
+		loading = false,
 		class: extraClass = ''
 	}: {
 		label: string;
@@ -20,16 +22,29 @@
 		icon?: IconName;
 		/** Makes the whole tile a link. */
 		href?: string;
+		/**
+		 * Shows a placeholder in place of the value while it loads, at the
+		 * value's height so the tile does not move. The hint shows as given.
+		 */
+		loading?: boolean;
 		class?: string;
 	} = $props();
 </script>
 
-<svelte:element this={href ? 'a' : 'div'} {href} class="sui-stat {extraClass}" class:link={!!href}>
+<svelte:element
+	this={href ? 'a' : 'div'}
+	{href}
+	class="sui-stat {extraClass}"
+	class:link={!!href}
+	aria-busy={loading || undefined}
+>
 	<div class="top">
 		<span class="label">{label}</span>
 		{#if icon}<Icon name={icon} size={16} />{/if}
 	</div>
-	<div class="value">{value}</div>
+	<div class="value">
+		{#if loading}<Skeleton width="6rem" height="0.8em" />{:else}{value}{/if}
+	</div>
 	{#if hint}
 		<div class="hint {tone}">{hint}</div>
 	{/if}
