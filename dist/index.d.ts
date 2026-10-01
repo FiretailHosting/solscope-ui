@@ -24,3 +24,4 @@ export { default as Table } from './components/ui/Table.svelte';
 export { default as Textarea } from './components/ui/Textarea.svelte';
 export { default as ThemeToggle } from './components/ui/ThemeToggle.svelte';
 export { icons, type IconDef, type IconName } from './icons/icons.js';
+export { themeInitScript, themeStorageKey, themes, type Theme } from './theme.js';

@@ -1,16 +1,16 @@
 <script lang="ts">
 	import Icon from './Icon.svelte';
-
-	type Theme = 'system' | 'light' | 'dark';
+	import { themeStorageKey, themes, type Theme } from '../../theme.js';
 
 	let { class: extraClass = '' }: { class?: string } = $props();
 
 	let theme = $state<Theme>('system');
 
 	// Apply the saved choice on load, not only when it is changed.
+	// themeInitScript in app.html has usually applied it already, before first paint.
 	$effect(() => {
 		try {
-			const saved = localStorage.getItem('theme');
+			const saved = localStorage.getItem(themeStorageKey);
 			if (saved === 'light' || saved === 'dark') theme = saved;
 		} catch {
 			// Storage can be blocked; the system theme still applies.
@@ -19,14 +19,17 @@
 	});
 
 	function cycle() {
-		const order: Theme[] = ['system', 'light', 'dark'];
-		theme = order[(order.indexOf(theme) + 1) % order.length];
+		theme = nextTheme(theme);
 		try {
-			localStorage.setItem('theme', theme);
+			localStorage.setItem(themeStorageKey, theme);
 		} catch {
 			// The choice just won't persist.
 		}
 		applyTheme(theme);
+	}
+
+	function nextTheme(current: Theme): Theme {
+		return themes[(themes.indexOf(current) + 1) % themes.length];
 	}
 
 	function applyTheme(t: Theme) {
@@ -36,13 +39,17 @@
 	}
 
 	const labels: Record<Theme, string> = {
-		system: 'Auto',
-		light: 'Light',
-		dark: 'Dark'
+		system: 'Auto theme',
+		light: 'Light theme',
+		dark: 'Dark theme'
 	};
 </script>
 
-<button class="sui-toggle {extraClass}" onclick={cycle} aria-label="Theme: {labels[theme]}. Change theme">
+<button
+	class="sui-toggle {extraClass}"
+	onclick={cycle}
+	aria-label="{labels[theme]}. Switch to {labels[nextTheme(theme)].toLowerCase()}"
+>
 	<Icon name="theme" size={15} />
 	<span>{labels[theme]}</span>
 </button>
@@ -54,6 +61,7 @@
 		gap: 0.4rem;
 		font: inherit;
 		font-size: 0.78rem;
+		white-space: nowrap;
 		padding: 0.3rem 0.6rem;
 		border-radius: var(--radius);
 		border: 1px solid currentColor;
