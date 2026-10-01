@@ -30,3 +30,6 @@ export { default as ThemeToggle } from './components/ui/ThemeToggle.svelte';
 
 // Icons
 export { icons, type IconDef, type IconName } from './icons/icons.js';
+
+// Theme
+export { themeInitScript, themeStorageKey, themes, type Theme } from './theme.js';

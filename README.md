@@ -65,7 +65,7 @@ Then use components:
 | `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href`; `loading` shows a placeholder value |
 | `Table` | Styled data table with overflow scroll; `rowHover={false}` turns off the row highlight for rows that are not clickable |
 | `Textarea` | Styled textarea |
-| `ThemeToggle` | Cycles through auto/light/dark themes |
+| `ThemeToggle` | Cycles through auto, light and dark themes and saves the choice; see [Saved theme](#saved-theme) |
 
 ## Icons
 
@@ -80,6 +80,18 @@ Text uses IBM Plex Sans 1.1 (weights 400 to 700), self-hosted from `fonts/` unde
 The sidebar is dark slate in both themes, with its own `--sidebar-*` tokens.
 Override any token in your app's CSS to customize.
 Component classes are prefixed `sui-` so they cannot collide with an app's own class names.
+
+### Saved theme
+
+`ThemeToggle` saves the chosen theme in `localStorage`, but it only runs once the app's JavaScript starts.
+To stop a saved Dark theme flashing light on every page load, add this script to the `<head>` of `src/app.html`, before `%sveltekit.head%`:
+
+```html
+<script>(function () { try { var theme = localStorage.getItem("theme"); if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme); } catch (error) {} })();</script>
+```
+
+It is the library's `themeInitScript` export, so check it still matches after upgrading.
+It does nothing when the theme is Auto or storage is blocked.
 
 ### Sidebar layout
 
