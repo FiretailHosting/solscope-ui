@@ -62,7 +62,7 @@ Then use components:
 | `SidebarNavItem` | Sidebar link with `icon`, active state and badge |
 | `SidebarSection` | Titled group of sidebar links |
 | `Skeleton` | Pulsing grey placeholder for loading content: `width`, `height`, `radius`; hidden from screen readers |
-| `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href` |
+| `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href`; `loading` shows a placeholder value |
 | `Table` | Styled data table with overflow scroll |
 | `Textarea` | Styled textarea |
 | `ThemeToggle` | Cycles through auto/light/dark themes |

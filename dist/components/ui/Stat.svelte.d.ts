@@ -9,6 +9,11 @@ type $$ComponentProps = {
     icon?: IconName;
     /** Makes the whole tile a link. */
     href?: string;
+    /**
+     * Shows a placeholder in place of the value while it loads, at the
+     * value's height so the tile does not move. The hint shows as given.
+     */
+    loading?: boolean;
     class?: string;
 };
 declare const Stat: import("svelte").Component<$$ComponentProps, {}, "">;

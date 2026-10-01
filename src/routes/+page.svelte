@@ -36,6 +36,7 @@
 		<Stat label="Account value" icon="portfolio" value="$9,550.26" hint="+2.40% all time" tone="up" />
 		<Stat label="Cash available" icon="wallet" value="$9,275.00" hint="USDC not held by orders" />
 		<Stat label="Bots running" icon="bots" value="1 of 2" hint="-0.80% this week" tone="down" />
+		<Stat label="Loading" icon="clock" value="" hint="Value still loading" loading />
 	</div>
 
 	<Card title="Icons" icon="spark">
