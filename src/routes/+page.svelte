@@ -15,12 +15,21 @@
 		Stat,
 		Table,
 		ThemeToggle,
-		type IconName
+		type IconName,
+		type SegmentedOption
 	} from '$lib';
 
 	// A gallery of the library, for checking changes by eye: `bun run dev`.
 	const names = Object.keys(icons) as IconName[];
 	let tab = $state('one');
+	type Range = '1d' | '1w' | '1m' | 'all';
+	const ranges: SegmentedOption<Range>[] = [
+		{ value: '1d', label: '1D' },
+		{ value: '1w', label: '1W' },
+		{ value: '1m', label: '1M' },
+		{ value: 'all', label: 'All', disabled: true }
+	];
+	let range = $state<Range>('1w');
 	let mode = $state<'paper' | 'live'>('paper');
 	let liveHelp: HTMLDialogElement;
 	let saving = $state(false);
@@ -74,6 +83,7 @@
 						<button class:active={tab === 'one'} onclick={() => (tab = 'one')}>One</button>
 						<button class:active={tab === 'two'} onclick={() => (tab = 'two')}>Two</button>
 					</SegmentedControl>
+					<SegmentedControl label="Chart range" options={ranges} bind:value={range} />
 					<ModeSwitch bind:value={mode} liveEnabled />
 					<ModeSwitch onliveunavailable={() => liveHelp.showModal()} />
 				</div>
