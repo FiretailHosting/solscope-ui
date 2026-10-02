@@ -34,6 +34,19 @@ export { default as Table } from './components/ui/Table.svelte';
 export { default as Textarea } from './components/ui/Textarea.svelte';
 export { default as ThemeToggle } from './components/ui/ThemeToggle.svelte';
 
+// LayerChart pieces for drawing a chart inside ChartContainer, so apps use the
+// library's LayerChart version rather than importing it themselves.
+export {
+	Area,
+	Chart,
+	Circle,
+	Html,
+	RectClipPath,
+	Spline,
+	Svg,
+	type ChartState
+} from 'layerchart';
+
 // Icons
 export { icons, type IconDef, type IconName } from './icons/icons.js';
 

@@ -188,6 +188,15 @@ Series colours come from `--chart-1` to `--chart-5`; use them in that order, sin
 </ChartContainer>
 ```
 
+For a custom chart, the library re-exports the LayerChart pieces `Chart`, `Svg`, `Html`, `Area`, `Spline`, `Circle`, `RectClipPath` and the `ChartState` type.
+Import them from the library rather than `layerchart`, so the app uses the library's LayerChart version:
+
+```svelte
+<script lang="ts">
+  import { Area, Chart, ChartContainer, ChartTooltip, Spline, Svg } from '@firetailhosting/solscope-ui';
+</script>
+```
+
 ## Releasing
 
 Run `bun run package` so `dist/` is current, commit it, then tag the release:
