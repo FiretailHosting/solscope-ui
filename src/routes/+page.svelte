@@ -4,6 +4,8 @@
 		Badge,
 		Button,
 		Card,
+		ChartContainer,
+		ChartTooltip,
 		EmptyState,
 		FormField,
 		Icon,
@@ -17,9 +19,11 @@
 		Stat,
 		Table,
 		ThemeToggle,
+		type ChartConfig,
 		type IconName,
 		type SegmentedOption
 	} from '$lib';
+	import { BarChart, LineChart } from 'layerchart';
 
 	// A gallery of the library, for checking changes by eye: `bun run dev`.
 	const names = Object.keys(icons) as IconName[];
@@ -32,6 +36,43 @@
 		{ value: 'all', label: 'All', disabled: true }
 	];
 	let range = $state<Range>('1w');
+
+	// Made-up but steady account values, so the charts look the same on every load.
+	const hour = 60 * 60 * 1000;
+	const now = new Date('2026-10-01T16:00:00Z').getTime();
+	function valueSeries(points: number, step: number) {
+		return Array.from({ length: points }, (_, index) => ({
+			date: new Date(now - (points - 1 - index) * step),
+			value: Math.round(9000 + index * (550 / points) + Math.sin(index * 1.7) * 120)
+		}));
+	}
+	const valueByRange: Record<Range, { date: Date; value: number }[]> = {
+		'1d': valueSeries(24, hour),
+		'1w': valueSeries(7, 24 * hour),
+		'1m': valueSeries(30, 24 * hour),
+		all: []
+	};
+	const valueConfig = {
+		value: { label: 'Account value', color: 'var(--chart-1)' }
+	} satisfies ChartConfig;
+	const formatUsd = (value: number) =>
+		value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+	const formatAxisDate = (date: Date) =>
+		range === '1d'
+			? date.toLocaleTimeString('en-US', { hour: 'numeric', timeZone: 'UTC' })
+			: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+	const orders = [
+		{ month: 'May', buys: 14, sells: 9 },
+		{ month: 'Jun', buys: 22, sells: 17 },
+		{ month: 'Jul', buys: 18, sells: 21 },
+		{ month: 'Aug', buys: 27, sells: 15 },
+		{ month: 'Sep', buys: 19, sells: 12 }
+	];
+	const ordersConfig = {
+		buys: { label: 'Buys', color: 'var(--chart-1)' },
+		sells: { label: 'Sells', color: 'var(--chart-2)' }
+	} satisfies ChartConfig;
 	let mode = $state<'paper' | 'live'>('paper');
 	let liveHelp: HTMLDialogElement;
 	let saving = $state(false);
@@ -54,6 +95,61 @@
 		<Stat label="Cash available" icon="wallet" value="$9,275.00" hint="USDC not held by orders" />
 		<Stat label="Bots running" icon="bots" value="1 of 2" hint="-0.80% this week" tone="down" />
 		<Stat label="Loading" icon="clock" value="" hint="Value still loading" loading />
+	</div>
+
+	<div class="row">
+		<Card title="Account value" icon="portfolio">
+			{#snippet actions()}
+				<SegmentedControl label="Chart range" options={ranges} bind:value={range} />
+			{/snippet}
+			<ChartContainer config={valueConfig}>
+				<LineChart
+					data={valueByRange[range]}
+					x="date"
+					y="value"
+					yBaseline={null}
+					yNice
+					series={[{ key: 'value', label: valueConfig.value.label, color: valueConfig.value.color }]}
+					props={{
+						spline: { strokeWidth: 2 },
+						xAxis: { format: formatAxisDate, ticks: 4 },
+						yAxis: { format: formatUsd, ticks: 4 }
+					}}
+				>
+					{#snippet tooltip()}
+						<ChartTooltip
+							indicator="line"
+							labelFormatter={(date) => formatAxisDate(date as Date)}
+						/>
+					{/snippet}
+				</LineChart>
+			</ChartContainer>
+		</Card>
+
+		<Card title="Orders by month" icon="orders">
+			<ChartContainer config={ordersConfig}>
+				<BarChart
+					data={orders}
+					x="month"
+					seriesLayout="group"
+					groupPadding={0.1}
+					legend
+					series={[
+						{ key: 'buys', label: ordersConfig.buys.label, color: ordersConfig.buys.color },
+						{ key: 'sells', label: ordersConfig.sells.label, color: ordersConfig.sells.color }
+					]}
+					props={{
+						bars: { stroke: 'none', rounded: 'top', radius: 4 },
+						highlight: { area: { fill: 'none' } },
+						yAxis: { ticks: 4 }
+					}}
+				>
+					{#snippet tooltip()}
+						<ChartTooltip indicator="dot" />
+					{/snippet}
+				</BarChart>
+			</ChartContainer>
+		</Card>
 	</div>
 
 	<Card title="Icons" icon="spark">

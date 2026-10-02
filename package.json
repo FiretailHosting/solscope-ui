@@ -52,5 +52,8 @@
 	},
 	"homepage": "https://github.com/FiretailHosting/solscope-ui#readme",
 	"svelte": "./dist/index.js",
-	"types": "./dist/index.d.ts"
+	"types": "./dist/index.d.ts",
+	"dependencies": {
+		"layerchart": "^2.5.1"
+	}
 }

@@ -2,7 +2,8 @@
 
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
 Built on Svelte 5 with a flat, corporate design: neutral greys, one navy accent, no gradients or shadows.
-Dark and light mode, CSS variable theming, and a technical icon set drawn for the library, with no dependencies.
+Dark and light mode, CSS variable theming, and a technical icon set drawn for the library.
+Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 
 ## Install
 
@@ -46,6 +47,8 @@ Then use components:
 | `Badge` | Inline status badge (default, up, down, accent) |
 | `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
+| `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
+| `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
 | `FormField` | Label wrapping an input, with a `hint` or an `error` |
 | `Grid` | Responsive 2-column grid |
@@ -149,6 +152,40 @@ It does nothing when the theme is Auto or storage is blocked.
   <button class:active={side === 'buy'} aria-pressed={side === 'buy'} onclick={() => (side = 'buy')}>Buy</button>
   <button class:active={side === 'sell'} aria-pressed={side === 'sell'} onclick={() => (side = 'sell')}>Sell</button>
 </SegmentedControl>
+```
+
+### Charts
+
+Adapted from [shadcn-svelte's charts](https://shadcn-svelte.com/docs/components/chart).
+Draw the chart with LayerChart and wrap it in `ChartContainer`.
+Series colours come from `--chart-1` to `--chart-5`; use them in that order, since adjacent pairs are checked for colour-blind separation.
+
+```svelte
+<script lang="ts">
+  import { ChartContainer, ChartTooltip, type ChartConfig } from '@firetailhosting/solscope-ui';
+  import { BarChart } from 'layerchart';
+
+  const data = [{ month: 'Aug', buys: 27, sells: 15 }, { month: 'Sep', buys: 19, sells: 12 }];
+  const config = {
+    buys: { label: 'Buys', color: 'var(--chart-1)' },
+    sells: { label: 'Sells', color: 'var(--chart-2)' },
+  } satisfies ChartConfig;
+</script>
+
+<ChartContainer {config}>
+  <BarChart
+    {data}
+    x="month"
+    seriesLayout="group"
+    legend
+    series={[
+      { key: 'buys', label: config.buys.label, color: config.buys.color },
+      { key: 'sells', label: config.sells.label, color: config.sells.color },
+    ]}
+  >
+    {#snippet tooltip()}<ChartTooltip />{/snippet}
+  </BarChart>
+</ChartContainer>
 ```
 
 ## Releasing

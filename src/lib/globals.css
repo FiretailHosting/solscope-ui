@@ -1,6 +1,10 @@
 /* solscope-ui global base styles.
    Import tokens.css first, then this file. */
 
+/* LayerChart's cascade layer order. Its component styles rely on it, and
+   without Tailwind nothing else declares it. */
+@layer theme, base, components, utilities;
+
 *,
 *::before,
 *::after {
@@ -38,4 +42,20 @@ textarea {
 
 h1, h2, h3, h4 {
 	letter-spacing: -0.02em;
+}
+
+/* LayerChart colours from the tokens. Tooltips are moved to <body>, so they
+   are listed too. */
+.lc-root-container,
+.lc-tooltip-root {
+	--color-primary: var(--accent);
+	--color-secondary: var(--muted);
+	--color-info: var(--accent);
+	--color-success: var(--up);
+	--color-warning: var(--warn);
+	--color-danger: var(--down);
+	--color-surface-100: var(--card);
+	--color-surface-200: var(--card-alt);
+	--color-surface-300: var(--border);
+	--color-surface-content: var(--fg);
 }
