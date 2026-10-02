@@ -70,8 +70,8 @@ a,
 }
 
 @media (pointer: coarse) {
-	/* Controls are not text: no selection handles or long-press menu on them.
-	   Inputs and running text are left alone. */
+	/* Controls are not text: no selection handles on them. Inputs and running
+	   text are left alone. */
 	button,
 	[role='button'],
 	.sui-nav-item,
@@ -80,6 +80,14 @@ a,
 	.sui-switch {
 		user-select: none;
 		-webkit-user-select: none;
+	}
+
+	/* No long-press menu on buttons. Links keep theirs: a long press on a
+	   nav item or a tab offers to open it in a new tab, as any link does. */
+	button,
+	[role='button'],
+	.sui-segmented,
+	.sui-switch {
 		-webkit-touch-callout: none;
 	}
 
