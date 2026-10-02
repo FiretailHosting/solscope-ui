@@ -15,7 +15,8 @@
 			"import": "./dist/index.js"
 		},
 		"./tokens.css": "./dist/tokens.css",
-		"./globals.css": "./dist/globals.css"
+		"./globals.css": "./dist/globals.css",
+		"./fonts/*": "./dist/fonts/*"
 	},
 	"files": [
 		"dist"
