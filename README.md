@@ -73,7 +73,7 @@ Then use components:
 | `SidebarSection` | Titled group of sidebar links |
 | `Skeleton` | Pulsing grey placeholder for loading content: `width`, `height`, `radius`; hidden from screen readers |
 | `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href`; `loading` shows a placeholder value |
-| `TabBar` | Phone bottom bar with the main destinations and a More item that opens the drawer; shown only on phones; see [Tab bar](#tab-bar) |
+| `TabBar` | Phone bottom bar with the main destinations and a More item that opens the drawer and can stand for the page shown; shown only on phones; see [Tab bar](#tab-bar) |
 | `Table` | Styled data table with overflow scroll; `rowHover={false}` turns off the row highlight for rows that are not clickable |
 | `Textarea` | Styled textarea |
 | `ThemeToggle` | Cycles through auto, light and dark themes and saves the choice; see [Saved theme](#saved-theme) |
@@ -219,7 +219,8 @@ Escape, the close button, a backdrop tap and `open = false` all close it; focus 
 ```
 
 Each item has `href`, a one-word `label`, an `icon`, `active` for the page shown (set as `aria-current`) and an optional `badge` count, read out as unread.
-`onmore` adds a More item that opens the drawer; `moreBadge` carries a count from a link that lives in the drawer, `moreOpen` sets its `aria-expanded`, and `moreLabel` and `moreIcon` change its look.
+`onmore` adds a More item that opens the drawer; `moreBadge` carries a count from a link that lives in the drawer, `moreOpen` sets its `aria-expanded`, `moreControls` is the drawer's id for `aria-controls`, and `moreLabel` and `moreIcon` change its look.
+`moreActive` marks More as the page shown, with the active look and `aria-current="page"`, when the page is one that lives in the drawer.
 `label` names the `<nav>` (default "Main pages"), distinct from the sidebar's "Navigation".
 The bar is fixed at the bottom under the [phone query](#phone-query), `--tab-bar-height` (3.5rem) tall plus `env(safe-area-inset-bottom)`, and hidden elsewhere.
 Pad the page bottom so content clears it:
