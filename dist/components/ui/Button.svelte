@@ -123,6 +123,16 @@
 		cursor: not-allowed;
 	}
 
+	/* Cannot act right now but still focusable and tappable, so that pressing
+	   it can say why: grey text and border, with the same look under the
+	   pointer. The muted text keeps about 5:1 contrast in both themes. */
+	.sui-btn[aria-disabled='true'],
+	.sui-btn[aria-disabled='true']:hover:not(:disabled) {
+		color: var(--muted);
+		background: var(--card);
+		border-color: var(--border);
+	}
+
 	.sui-btn:focus-visible {
 		outline: 2px solid var(--accent);
 		outline-offset: 2px;
@@ -204,6 +214,13 @@
 		border-color: var(--accent-hover);
 	}
 
+	.sui-btn.primary[aria-disabled='true'],
+	.sui-btn.primary[aria-disabled='true']:hover:not(:disabled) {
+		color: var(--accent-fg);
+		background: var(--muted);
+		border-color: var(--muted);
+	}
+
 	.sui-btn.danger {
 		color: var(--down);
 	}
@@ -211,6 +228,13 @@
 	.sui-btn.danger:hover:not(:disabled) {
 		border-color: var(--down);
 		background: var(--down-subtle);
+	}
+
+	.sui-btn.danger[aria-disabled='true'],
+	.sui-btn.danger[aria-disabled='true']:hover:not(:disabled) {
+		color: var(--muted);
+		background: var(--card);
+		border-color: var(--border);
 	}
 
 	.sui-btn.ghost {
@@ -221,5 +245,12 @@
 	.sui-btn.ghost:hover:not(:disabled) {
 		background: var(--card-alt);
 		border-color: var(--border);
+	}
+
+	.sui-btn.ghost[aria-disabled='true'],
+	.sui-btn.ghost[aria-disabled='true']:hover:not(:disabled) {
+		color: var(--muted);
+		background: transparent;
+		border-color: transparent;
 	}
 </style>

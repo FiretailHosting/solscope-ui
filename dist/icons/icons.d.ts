@@ -58,6 +58,9 @@ export declare const icons: {
     close: {
         d: string[];
     };
+    more: {
+        d: string[];
+    };
     plus: {
         d: string[];
     };
@@ -93,6 +96,9 @@ export declare const icons: {
         d: string[];
     };
     arrowRight: {
+        d: string[];
+    };
+    arrowLeft: {
         d: string[];
     };
     copy: {

@@ -1,28 +1,36 @@
 <script lang="ts">
 	import {
 		Alert,
+		BackLink,
 		Badge,
 		Button,
 		Card,
 		ChartContainer,
+		Dialog,
 		ChartTooltip,
 		EmptyState,
 		FormField,
 		Icon,
 		icons,
+		InlineConfirm,
 		ModeSwitch,
 		PageHead,
 		Pagination,
 		Pill,
+		RowItem,
+		RowList,
 		SegmentedControl,
 		Select,
 		Skeleton,
 		Stat,
+		TabBar,
 		Table,
 		ThemeToggle,
+		Toast,
 		type ChartConfig,
 		type IconName,
-		type SegmentedOption
+		type SegmentedOption,
+		type TabBarItem
 	} from '$lib';
 	import { BarChart, LineChart } from 'layerchart';
 
@@ -86,16 +94,64 @@
 		sells: { label: 'Sells', color: 'var(--chart-2)' }
 	} satisfies ChartConfig;
 	let mode = $state<'paper' | 'live'>('paper');
-	let liveHelp: HTMLDialogElement;
+	let liveHelp = $state(false);
+	let orderDetails = $state(false);
 	let saving = $state(false);
+
+	// The bar shows under PHONE_QUERY: a narrow window with touch emulation.
+	let drawerOpen = $state(false);
+	const tabs: TabBarItem[] = [
+		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', active: true },
+		{ href: '#markets', label: 'Markets', icon: 'markets' },
+		{ href: '#portfolio', label: 'Portfolio', icon: 'portfolio' },
+		{ href: '#bots', label: 'Bots', icon: 'bots', badge: 2 }
+	];
 
 	function startSaving() {
 		saving = true;
 		setTimeout(() => (saving = false), 2000);
 	}
+
+	// The update prompt the app shows: Reload pretends to run, then the toast goes.
+	let updateToast = $state(false);
+	let reloading = $state(false);
+	function reload() {
+		reloading = true;
+		setTimeout(() => {
+			reloading = false;
+			updateToast = false;
+		}, 1500);
+	}
+
+	// An in-place confirm with a made-up action, so the busy state shows.
+	// Cancel finds the button by id, since the row is re-rendered.
+	let archiving = $state(false);
+	let archiveBusy = $state(false);
+	let archived = $state(false);
+	function archive() {
+		archiveBusy = true;
+		setTimeout(() => {
+			archiveBusy = false;
+			archiving = false;
+			archived = true;
+		}, 1500);
+	}
+
+	// Rows as the app lists tokens and bots on a phone.
+	let watched = $state([
+		{ symbol: 'SOL', name: 'Solana', price: '$212.40' },
+		{ symbol: 'JUP', name: 'Jupiter', price: '$0.3401' },
+		{ symbol: 'BONK', name: 'Bonk', price: '$0.00001871' }
+	]);
+	const bots = [
+		{ name: 'Momentum', value: '$4,120.55', status: 'Running', change: '+3.2% all time', tone: 'up' },
+		{ name: 'Dip buyer', value: '$2,980.10', status: 'Paused', change: '-0.8% all time', tone: 'down' },
+		{ name: 'New bot', value: '$0.00', status: 'Paused', change: '--', tone: '' }
+	];
 </script>
 
 <main>
+	<BackLink href="#top" hideInStandalone>Markets</BackLink>
 	<PageHead title="solscope-ui" subtitle="Flat, corporate components with a technical icon set.">
 		{#snippet actions()}
 			<ThemeToggle />
@@ -188,6 +244,14 @@
 					<Button size="sm" loading>Small</Button>
 					<Button variant="primary" onclick={startSaving} loading={saving}>Save changes</Button>
 				</div>
+				<!-- Unavailable but still focusable and tappable, so a press can say why. -->
+				<div class="inline">
+					<Button aria-disabled="true">Default</Button>
+					<Button variant="primary" icon="plus" aria-disabled="true">Primary</Button>
+					<Button variant="danger" icon="close" aria-disabled="true">Danger</Button>
+					<Button variant="ghost" aria-disabled="true">Ghost</Button>
+					<Button disabled>Disabled</Button>
+				</div>
 				<div class="inline">
 					<SegmentedControl label="Demo">
 						<button class:active={tab === 'one'} onclick={() => (tab = 'one')}>One</button>
@@ -195,8 +259,35 @@
 					</SegmentedControl>
 					<SegmentedControl label="Chart range" options={ranges} bind:value={range} />
 					<ModeSwitch bind:value={mode} liveEnabled />
-					<ModeSwitch onliveunavailable={() => liveHelp.showModal()} />
+					<ModeSwitch onliveunavailable={() => (liveHelp = true)} />
 				</div>
+				<div class="inline">
+					<Button onclick={() => (orderDetails = true)}>Long dialog</Button>
+					<Button onclick={() => (updateToast = true)}>Show toast</Button>
+					<Button onclick={() => (drawerOpen = !drawerOpen)} aria-pressed={drawerOpen}>
+						Tab bar More {drawerOpen ? 'open' : 'closed'}
+					</Button>
+				</div>
+				{#if archiving}
+					<InlineConfirm
+						question="Archive Momentum?"
+						detail="It stops, cancels open orders and returns what it can to your account."
+						confirmLabel="Archive"
+						busyLabel="Archiving..."
+						danger
+						busy={archiveBusy}
+						trigger={() => document.getElementById('archive-button')}
+						onconfirm={archive}
+						oncancel={() => (archiving = false)}
+					/>
+				{:else}
+					<div class="inline">
+						<Button id="archive-button" variant="danger" size="sm" icon="close" onclick={() => (archiving = true)}>
+							Archive bot
+						</Button>
+						{#if archived}<span class="muted">Archived (pretend).</span>{/if}
+					</div>
+				{/if}
 				<Alert>A neutral notice.</Alert>
 				<Alert variant="warn">A warning.</Alert>
 				<Alert variant="error">An error.</Alert>
@@ -261,11 +352,76 @@
 		</Card>
 	</div>
 
-	<dialog bind:this={liveHelp} aria-labelledby="live-help-title">
-		<h2 id="live-help-title">Real money is off</h2>
-		<p>What an app shows when Live is chosen but not enabled.</p>
-		<Button onclick={() => liveHelp.close()}>Close</Button>
-	</dialog>
+	<div class="row">
+		<Card title="Row list with actions" icon="watchlist" flush>
+			<RowList label="Watchlist">
+				{#each watched as entry (entry.symbol)}
+					<RowItem href="#{entry.symbol}" value={entry.price} valueLabel="Price">
+						<strong>{entry.name}</strong> <span class="muted">{entry.symbol}</span>
+						{#snippet actions()}
+							<Button
+								size="sm"
+								icon="close"
+								aria-label="Remove {entry.symbol}"
+								onclick={() => (watched = watched.filter((other) => other !== entry))}
+							>
+								Remove
+							</Button>
+						{/snippet}
+					</RowItem>
+				{/each}
+				{#if watched.length === 0}
+					<li class="muted empty">Nothing watched.</li>
+				{/if}
+			</RowList>
+		</Card>
+
+		<Card title="Two-line rows" icon="bots" flush>
+			<RowList label="Bots">
+				{#each bots as bot (bot.name)}
+					<RowItem href="#{bot.name}" value={bot.value} valueLabel="Value" detail={bot.status} noteLabel="Return">
+						<Icon name="bots" size={16} /> {bot.name}
+						{#snippet note()}<span class={bot.tone}>{bot.change}</span>{/snippet}
+					</RowItem>
+				{/each}
+				<RowItem>
+					<Skeleton width="6rem" />
+					{#snippet detail()}<Skeleton width="4rem" />{/snippet}
+					{#snippet value()}<Skeleton width="4.5rem" />{/snippet}
+					{#snippet note()}<Skeleton width="3rem" />{/snippet}
+				</RowItem>
+			</RowList>
+		</Card>
+	</div>
+
+	{#if liveHelp}
+		<Dialog title="Real money is off" onclose={() => (liveHelp = false)}>
+			<p class="dialog-text">What an app shows when Live is chosen but not enabled.</p>
+			{#snippet footer()}
+				<Button onclick={() => (liveHelp = false)}>Close</Button>
+			{/snippet}
+		</Dialog>
+	{/if}
+
+	<!-- A sheet on phones, long enough to scroll under its sticky heading. -->
+	<Dialog bind:open={orderDetails} title="Order details" size="lg">
+		{#each Array.from({ length: 12 }, (_, index) => index + 1) as line (line)}
+			<p class="dialog-text">Line {line} of a long order summary, so the sheet scrolls on a phone.</p>
+		{/each}
+	</Dialog>
+
+	<!-- Fixed over the page: bottom right, or centred above the TabBar on phones. -->
+	{#if updateToast}
+		<Toast
+			message="New version available."
+			actionLabel="Reload"
+			onaction={reload}
+			actionBusy={reloading}
+			ondismiss={() => (updateToast = false)}
+		/>
+	{/if}
+
+	<TabBar items={tabs} moreBadge={3} moreOpen={drawerOpen} onmore={() => (drawerOpen = !drawerOpen)} />
 </main>
 
 <style>
@@ -330,24 +486,33 @@
 		gap: 0.75rem;
 	}
 
-	dialog {
-		max-width: 24rem;
-		padding: 1.25rem;
-		color: var(--fg);
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-lg);
-	}
-
-	dialog h2 {
-		margin: 0 0 0.5rem;
-		font-size: 1rem;
-	}
-
-	dialog p {
-		margin: 0 0 1rem;
+	.dialog-text {
+		margin: 0 0 0.75rem;
 		color: var(--muted);
 		font-size: 0.875rem;
+	}
+
+	/* Content clears the fixed TabBar on phones, PHONE_QUERY. */
+	@media (max-width: 860px) and (pointer: coarse) {
+		main {
+			padding-bottom: calc(2rem + var(--tab-bar-height) + env(safe-area-inset-bottom));
+		}
+	}
+
+	.muted {
+		color: var(--muted);
+	}
+
+	.empty {
+		padding: 0.6rem 1rem;
+	}
+
+	.up {
+		color: var(--up);
+	}
+
+	.down {
+		color: var(--down);
 	}
 
 	.inline {

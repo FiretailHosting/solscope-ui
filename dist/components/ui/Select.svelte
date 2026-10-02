@@ -43,6 +43,15 @@
 		border-color: var(--down);
 	}
 
+	/* 16px or more, so iOS Safari does not zoom in when the field gets focus,
+	   and a 44px tap target. Desktop keeps its size. */
+	@media (pointer: coarse) {
+		.sui-select {
+			font-size: 16px;
+			min-height: 44px;
+		}
+	}
+
 	.sui-select:focus {
 		outline: 2px solid var(--accent);
 		outline-offset: -1px;

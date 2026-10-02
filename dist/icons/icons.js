@@ -59,6 +59,9 @@ export const icons = {
     close: {
         d: ['M5 5l14 14', 'M19 5 5 19']
     },
+    more: {
+        d: ['M3.5 10.5h3v3h-3Z', 'M10.5 10.5h3v3h-3Z', 'M17.5 10.5h3v3h-3Z']
+    },
     plus: {
         d: ['M12 4v16', 'M4 12h16']
     },
@@ -95,6 +98,9 @@ export const icons = {
     },
     arrowRight: {
         d: ['M4 12h15', 'M13 6l6 6-6 6']
+    },
+    arrowLeft: {
+        d: ['M20 12H5', 'M11 6l-6 6 6 6']
     },
     copy: {
         d: ['M9 9h11v11H9Z', 'M5 15H4V4h11v1']

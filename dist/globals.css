@@ -59,3 +59,95 @@ h1, h2, h3, h4 {
 	--color-surface-300: var(--border);
 	--color-surface-content: var(--fg);
 }
+
+/* Touch screens. Nothing here changes a desktop with a mouse. */
+
+/* No grey flash on tap: the pressed states below show the press instead. */
+button,
+a,
+[role='button'] {
+	-webkit-tap-highlight-color: transparent;
+}
+
+@media (pointer: coarse) {
+	/* Controls are not text: no selection handles on them. Inputs and running
+	   text are left alone. */
+	button,
+	[role='button'],
+	.sui-nav-item,
+	.sui-tab-bar a,
+	.sui-segmented,
+	.sui-switch {
+		user-select: none;
+		-webkit-user-select: none;
+	}
+
+	/* No long-press menu on buttons. Links keep theirs: a long press on a
+	   nav item or a tab offers to open it in a new tab, as any link does. */
+	button,
+	[role='button'],
+	.sui-segmented,
+	.sui-switch {
+		-webkit-touch-callout: none;
+	}
+
+	/* 16px or more in every form control, so iOS does not zoom in on focus.
+	   An app that sizes bare inputs itself must do the same. */
+	input,
+	select,
+	textarea {
+		font-size: max(16px, 1em);
+	}
+}
+
+/* Pressed states for screens with no hover, so a tap gives feedback. The
+   library's own controls set theirs; these cover bare buttons and links
+   styled as buttons. */
+@media (hover: none) {
+	button:active:not(:disabled):not([aria-disabled='true']),
+	[role='button']:active:not([aria-disabled='true']) {
+		opacity: 0.7;
+	}
+}
+
+/* Page scroll is locked while the drawer or a modal Dialog is open on a
+   narrow screen, so the page behind does not scroll under it. Nothing
+   applies on a wide screen, where a scrollbar would make the page shift. */
+
+/* A narrow window with a mouse keeps its scrollbar's width as padding, which
+   lockScroll measures, so hiding the scrollbar moves nothing. */
+@media (max-width: 860px) and (pointer: fine) {
+	html.sui-scroll-locked {
+		overflow: hidden;
+	}
+
+	html.sui-scroll-locked body {
+		padding-right: var(--sui-scroll-lock-gutter, 0px);
+	}
+}
+
+/* A phone has no scrollbar to lose, but a touch would still scroll the page
+   under the overlay, so the body is pinned at the scroll position lockScroll
+   saved; lockScroll restores it when the lock lifts. The query is PHONE_QUERY. */
+@media (max-width: 860px) and (pointer: coarse) {
+	html.sui-scroll-locked {
+		overflow: hidden;
+	}
+
+	html.sui-scroll-locked body {
+		position: fixed;
+		top: var(--sui-scroll-lock-top, 0);
+		left: 0;
+		right: 0;
+		overflow: hidden;
+	}
+}
+
+/* Installed on a home screen there is no browser chrome to pull on, so the
+   rubber band at the ends of the page only moves the fixed bars. */
+@media (display-mode: standalone) {
+	html,
+	body {
+		overscroll-behavior-y: none;
+	}
+}

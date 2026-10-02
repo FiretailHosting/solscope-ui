@@ -50,6 +50,14 @@
 		color: var(--sidebar-active-fg);
 	}
 
+	/* A pressed state where there is no hover, so a tap gives feedback. */
+	@media (hover: none) {
+		.sui-nav-item:active {
+			background: var(--sidebar-hover-bg);
+			color: var(--sidebar-active-fg);
+		}
+	}
+
 	.sui-nav-item:focus-visible {
 		outline: 2px solid var(--sidebar-active-bar);
 		outline-offset: -2px;
