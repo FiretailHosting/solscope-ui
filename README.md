@@ -200,6 +200,7 @@ It opens as a modal when mounted, so render it inside an `{#if}` and drop it in 
 Other attributes, such as `aria-describedby`, go on the `<dialog>`.
 Under the [phone query](#phone-query) it docks at the bottom as a sheet with a sticky heading, clear of the status bar and padded for the home indicator; elsewhere it is a centred card.
 Escape, the close button, a backdrop tap and `open = false` all close it; focus goes back to the control that opened it.
+`onclose` is called exactly once per close, however it closed, also when the dialog unmounts while open.
 
 ### Tab bar
 
