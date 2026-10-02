@@ -76,9 +76,11 @@
 		if (target?.isConnected) target.focus();
 	}
 
-	// Escape backs out; the keys come from the buttons inside the group.
+	// Escape backs out of the question only: not the drawer or the Dialog
+	// the panel may sit in. The keys come from the buttons inside the group.
 	function onkeydown(event: KeyboardEvent) {
 		if (event.key !== 'Escape') return;
+		event.preventDefault();
 		event.stopPropagation();
 		cancel();
 	}
