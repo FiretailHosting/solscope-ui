@@ -1,4 +1,4 @@
-| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once, never taking focus and giving it back on dismiss; see [Toast](#toast) |
+| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once, never taking focus and giving it back on dismiss; mounted toasts stack and publish `--toast-stack-height`; see [Toast](#toast) |
 # solscope-ui
 
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
@@ -11,7 +11,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.10.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.11.0"
 ```
 
 ## Usage
@@ -47,7 +47,7 @@ Then use components:
 | `AppShell` | Full-page layout wrapper with sidebar slot |
 | `BackLink` | Link back to the parent page with an arrow, muted or a plain underlined `link`; a 44px tap target on phones, `hideInStandalone` hides it under the app's own Back button; see [Back link](#back-link) |
 | `Badge` | Inline status badge (default, up, down, accent) |
-| `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why |
+| `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why; a dimmed primary loses its fill for a dashed outline, so the state does not rest on colour alone |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
 | `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
@@ -73,7 +73,7 @@ Then use components:
 | `SidebarSection` | Titled group of sidebar links |
 | `Skeleton` | Pulsing grey placeholder for loading content: `width`, `height`, `radius`; hidden from screen readers |
 | `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href`; `loading` shows a placeholder value |
-| `TabBar` | Phone bottom bar with the main destinations and a More item that opens the drawer and can stand for the page shown; shown only on phones; see [Tab bar](#tab-bar) |
+| `TabBar` | Phone bottom bar with the main destinations, the page shown marked by a bar at the top edge and `aria-current`, and a More item that opens the drawer; labels wrap to two lines; shown only on phones; see [Tab bar](#tab-bar) |
 | `Table` | Styled data table with overflow scroll; `rowHover={false}` turns off the row highlight for rows that are not clickable |
 | `Textarea` | Styled textarea |
 | `ThemeToggle` | Cycles through auto, light and dark themes and saves the choice; see [Saved theme](#saved-theme) |
@@ -209,20 +209,28 @@ Escape, the close button, a backdrop tap and `open = false` all close it; focus 
   import { TabBar, type TabBarItem } from '@firetailhosting/solscope-ui';
   const tabs: TabBarItem[] = [
     { href: '/', label: 'Dashboard', icon: 'dashboard', active: page.url.pathname === '/' },
-    { href: '/markets', label: 'Markets', icon: 'markets' },
-    { href: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
-    { href: '/bots', label: 'Bots', icon: 'bots', badge: 2 },
+    { href: '/markets', label: 'Markets', icon: 'markets', active: section('/markets') },
+    { href: '/portfolio', label: 'Portfolio', icon: 'portfolio', active: section('/portfolio') },
+    { href: '/bots', label: 'Bots', icon: 'bots', badge: 2, active: section('/bots') },
   ];
+  // The exact page, or a page inside the section, such as one market.
+  function section(path: string): TabBarItem['active'] {
+    if (page.url.pathname === path) return 'page';
+    return page.url.pathname.startsWith(path + '/') ? 'section' : false;
+  }
 </script>
 
 <TabBar items={tabs} moreBadge={session.unread} moreOpen={menuOpen} onmore={() => (menuOpen = true)} />
 ```
 
-Each item has `href`, a one-word `label`, an `icon`, `active` for the page shown (set as `aria-current`) and an optional `badge` count, read out as unread.
+Each item has `href`, a one-word `label`, an `icon`, `active` for the page shown and an optional `badge` count, read out as unread.
+`active: true` or `'page'` means the item is the exact page shown, set as `aria-current="page"`; `'section'` means the page lives inside the item's section, set as `aria-current="true"`.
+Either way the item is in the accent colour, a heavier weight and has a 3px bar at its top edge, so it is told apart by shape too.
 `onmore` adds a More item that opens the drawer; `moreBadge` carries a count from a link that lives in the drawer, `moreOpen` sets its `aria-expanded`, `moreControls` is the drawer's id for `aria-controls`, and `moreLabel` and `moreIcon` change its look.
-`moreActive` marks More as the page shown, with the active look and `aria-current="page"`, when the page is one that lives in the drawer.
+`moreActive` gives More the active look when the page shown is one that lives in the drawer; it is a menu button, so it carries no `aria-current` and the drawer's own item marks the page.
 `label` names the `<nav>` (default "Main pages"), distinct from the sidebar's "Navigation".
 The bar is fixed at the bottom under the [phone query](#phone-query), `--tab-bar-height` (3.5rem) tall plus `env(safe-area-inset-bottom)`, and hidden elsewhere.
+Labels wrap to two lines under large text or zoom instead of ellipsizing; the bar then grows, and sets `--tab-bar-height` on `<html>` to its measured height, so padding and the Toast anchor that read the token follow it.
 Pad the page bottom so content clears it:
 
 ```css
@@ -328,6 +336,15 @@ It is a `status` live region, so the message is announced once when the toast ap
 The buttons sit in the normal tab order, and Escape while focus is inside calls `ondismiss`.
 After a dismiss from the button or Escape, focus goes back to the element that had it before focus entered the toast, or to `main`, given `tabindex="-1"` if it needs one.
 It fades and slides in, with no motion under reduced motion, and sits above the TabBar and under the drawer and any Dialog.
+Mounted toasts stack on their own, with nothing for the app to pass: the newest sits at the anchor and older ones are pushed up above it, 0.5rem apart, so an app-wide "Update available" toast never covers a page's "Removed X. Undo" one.
+The stack sets `--toast-stack-height` on `<html>`: the heights of the mounted toasts plus a 0.5rem gap for each, in px, removed when none is mounted.
+Add it to the page's scroll padding, so an element scrolled or focused into view stops clear of the toasts:
+
+```css
+html {
+  scroll-padding-bottom: calc(1rem + var(--toast-stack-height, 0px));
+}
+```
 
 ### Home-screen app
 

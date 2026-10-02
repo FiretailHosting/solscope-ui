@@ -4,6 +4,7 @@
 	import type { HTMLAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
 	import Icon from './Icon.svelte';
+	import { stackToast } from '../../toast-stack.js';
 
 	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
 		/** One line of text, or a snippet. */
@@ -56,6 +57,10 @@
 	// The element focus came from when it entered the toast, so a dismiss can
 	// put it back there; nothing when it came from the page body.
 	let focusedBefore: HTMLElement | null = null;
+
+	// Every mounted toast joins one stack, so two never paint over each other:
+	// this one sits at the anchor and pushes the older ones up.
+	onMount(() => stackToast(root!));
 
 	function act() {
 		if (actionBusy) return;
@@ -134,11 +139,13 @@
 <style>
 	/* A small card floating over the page: fixed, so it never moves the
 	   layout. Above the page and the TabBar (30), under the drawer and its
-	   overlay (40, 50); a Dialog is in the top layer, above everything. */
+	   overlay (40, 50); a Dialog is in the top layer, above everything.
+	   --sui-toast-stack-offset is set by the toast stack: how far above the
+	   anchor this toast sits when newer ones are mounted under it. */
 	.sui-toast {
 		position: fixed;
 		right: 1rem;
-		bottom: 1rem;
+		bottom: calc(1rem + var(--sui-toast-stack-offset, 0px));
 		z-index: 35;
 		display: flex;
 		align-items: center;
@@ -152,7 +159,8 @@
 		border: 1px solid var(--border-strong);
 		border-radius: var(--radius-lg);
 		box-shadow: 0 2px 10px rgb(0 0 0 / 0.14);
-		transition: opacity 200ms ease-out, transform 200ms ease-out;
+		/* bottom: an older toast glides up when a new one lands under it. */
+		transition: opacity 200ms ease-out, transform 200ms ease-out, bottom 200ms ease-out;
 	}
 
 	/* Fades and slides up as it appears. */
@@ -222,7 +230,9 @@
 		.sui-toast {
 			left: 1rem;
 			right: 1rem;
-			bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 0.75rem);
+			bottom: calc(
+				var(--tab-bar-height) + env(safe-area-inset-bottom) + 0.75rem + var(--sui-toast-stack-offset, 0px)
+			);
 			width: fit-content;
 			max-width: calc(100vw - 2rem);
 			margin: 0 auto;
