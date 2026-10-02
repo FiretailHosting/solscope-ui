@@ -4,6 +4,7 @@ export { default as AppShell } from './components/ui/AppShell.svelte';
 export { default as Badge } from './components/ui/Badge.svelte';
 export { default as Button } from './components/ui/Button.svelte';
 export { default as Card } from './components/ui/Card.svelte';
+export { default as Dialog } from './components/ui/Dialog.svelte';
 export { default as ChartContainer } from './components/ui/chart/ChartContainer.svelte';
 export { default as ChartTooltip } from './components/ui/chart/ChartTooltip.svelte';
 export { getPayloadConfigFromPayload } from './components/ui/chart/chart-utils.js';
@@ -26,6 +27,7 @@ export { default as SidebarSection } from './components/ui/SidebarSection.svelte
 export { default as Skeleton } from './components/ui/Skeleton.svelte';
 export { default as Stat } from './components/ui/Stat.svelte';
 export { default as Table } from './components/ui/Table.svelte';
+export { default as TabBar } from './components/ui/TabBar.svelte';
 export { default as Textarea } from './components/ui/Textarea.svelte';
 export { default as ThemeToggle } from './components/ui/ThemeToggle.svelte';
 // LayerChart pieces for drawing a chart inside ChartContainer, so apps use the
@@ -35,3 +37,5 @@ export { Area, Chart, Circle, Html, RectClipPath, Spline, Svg } from 'layerchart
 export { icons } from './icons/icons.js';
 // Theme
 export { themeInitScript, themeStorageKey, themes } from './theme.js';
+// Page scroll lock, for an app's own overlays; Sidebar and Dialog use it.
+export { lockScroll, scrollLockClass } from './scroll-lock.js';
