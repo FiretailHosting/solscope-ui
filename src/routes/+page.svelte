@@ -26,6 +26,7 @@
 		TabBar,
 		Table,
 		ThemeToggle,
+		Toast,
 		type ChartConfig,
 		type IconName,
 		type SegmentedOption,
@@ -109,6 +110,17 @@
 	function startSaving() {
 		saving = true;
 		setTimeout(() => (saving = false), 2000);
+	}
+
+	// The update prompt the app shows: Reload pretends to run, then the toast goes.
+	let updateToast = $state(false);
+	let reloading = $state(false);
+	function reload() {
+		reloading = true;
+		setTimeout(() => {
+			reloading = false;
+			updateToast = false;
+		}, 1500);
 	}
 
 	// An in-place confirm with a made-up action, so the busy state shows.
@@ -251,6 +263,7 @@
 				</div>
 				<div class="inline">
 					<Button onclick={() => (orderDetails = true)}>Long dialog</Button>
+					<Button onclick={() => (updateToast = true)}>Show toast</Button>
 					<Button onclick={() => (drawerOpen = !drawerOpen)} aria-pressed={drawerOpen}>
 						Tab bar More {drawerOpen ? 'open' : 'closed'}
 					</Button>
@@ -396,6 +409,17 @@
 			<p class="dialog-text">Line {line} of a long order summary, so the sheet scrolls on a phone.</p>
 		{/each}
 	</Dialog>
+
+	<!-- Fixed over the page: bottom right, or centred above the TabBar on phones. -->
+	{#if updateToast}
+		<Toast
+			message="New version available."
+			actionLabel="Reload"
+			onaction={reload}
+			actionBusy={reloading}
+			ondismiss={() => (updateToast = false)}
+		/>
+	{/if}
 
 	<TabBar items={tabs} moreBadge={3} moreOpen={drawerOpen} onmore={() => (drawerOpen = !drawerOpen)} />
 </main>
