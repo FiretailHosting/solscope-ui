@@ -69,6 +69,13 @@
 	--warn: #8a5d00;
 	--warn-subtle: #fbf3e0;
 
+	/* Chart series, in this order: checked for colour-blind separation */
+	--chart-1: #1f4f8f;
+	--chart-2: #c2477a;
+	--chart-3: #b7791f;
+	--chart-4: #0c8a7b;
+	--chart-5: #8a4fb0;
+
 	/* Sidebar - dark slate in both themes */
 	--sidebar-bg: #1e2733;
 	--sidebar-fg: #aeb8c5;
@@ -112,6 +119,11 @@
 		--down-fg: #0e141c;
 		--warn: #d9a441;
 		--warn-subtle: #30271a;
+		--chart-1: #5b8fd0;
+		--chart-2: #d0628f;
+		--chart-3: #b98526;
+		--chart-4: #23998a;
+		--chart-5: #9f7ed6;
 		--sidebar-bg: #0e1217;
 		--sidebar-fg: #9aa5b3;
 		--sidebar-heading: #7d8999;
@@ -144,6 +156,11 @@
 	--down-fg: #0e141c;
 	--warn: #d9a441;
 	--warn-subtle: #30271a;
+	--chart-1: #5b8fd0;
+	--chart-2: #d0628f;
+	--chart-3: #b98526;
+	--chart-4: #23998a;
+	--chart-5: #9f7ed6;
 	--sidebar-bg: #0e1217;
 	--sidebar-fg: #9aa5b3;
 	--sidebar-heading: #7d8999;

@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.7.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.8.0"
 ```
 
 ## Usage
