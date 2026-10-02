@@ -43,9 +43,16 @@
 	} = $props();
 </script>
 
+<!-- The count is read after the label, so an item is "Bots, 2 unread". -->
 {#snippet badge(count: number)}
 	{#if count > 0}
-		<span class="badge"><span aria-hidden="true">{count > 99 ? '99+' : count}</span><span class="visually-hidden">, {count} unread</span></span>
+		<span class="badge" aria-hidden="true">{count > 99 ? '99+' : count}</span>
+	{/if}
+{/snippet}
+
+{#snippet unread(count: number)}
+	{#if count > 0}
+		<span class="visually-hidden">, {count} unread</span>
 	{/if}
 {/snippet}
 
@@ -57,6 +64,7 @@
 				{@render badge(item.badge ?? 0)}
 			</span>
 			<span class="label">{item.label}</span>
+			{@render unread(item.badge ?? 0)}
 		</a>
 	{/each}
 	{#if onmore}
@@ -66,6 +74,7 @@
 				{@render badge(moreBadge)}
 			</span>
 			<span class="label">{moreLabel}</span>
+			{@render unread(moreBadge)}
 		</button>
 	{/if}
 </nav>

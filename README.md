@@ -201,7 +201,7 @@ Escape, the close button, a backdrop tap and `open = false` all close it; focus 
 Each item has `href`, a one-word `label`, an `icon`, `active` for the page shown (set as `aria-current`) and an optional `badge` count, read out as unread.
 `onmore` adds a More item that opens the drawer; `moreBadge` carries a count from a link that lives in the drawer, `moreOpen` sets its `aria-expanded`, and `moreLabel` and `moreIcon` change its look.
 `label` names the `<nav>` (default "Main pages"), distinct from the sidebar's "Navigation".
-The bar is fixed at the bottom under 860px, `--tab-bar-height` (3.5rem) tall plus `env(safe-area-inset-bottom)`, and not rendered on wider screens.
+The bar is fixed at the bottom under 860px, `--tab-bar-height` (3.5rem) tall plus `env(safe-area-inset-bottom)`, and hidden on wider screens.
 Pad the page bottom so content clears it:
 
 ```css
