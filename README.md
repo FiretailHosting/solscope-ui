@@ -197,6 +197,8 @@ Import them from the library rather than `layerchart`, so the app uses the libra
 </script>
 ```
 
+The package is marked free of side effects apart from its CSS, so pages that use no chart do not download LayerChart.
+
 ## Releasing
 
 Run `bun run package` so `dist/` is current, commit it, then tag the release:

@@ -5,6 +5,9 @@
 	"license": "MIT",
 	"private": false,
 	"type": "module",
+	"sideEffects": [
+		"**/*.css"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
