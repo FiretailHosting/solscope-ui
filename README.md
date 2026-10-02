@@ -1,3 +1,4 @@
+| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once and never taking focus; see [Toast](#toast) |
 # solscope-ui
 
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
@@ -300,6 +301,27 @@ With no items it renders nothing; with one page it shows only the range.
 At the first and last page, and while `disabled`, the buttons are `aria-disabled` rather than disabled, so the pressed button keeps focus.
 The visible "Page 3 of 14" is a polite status region, so it is announced once, when the new rows land.
 The range wraps under the buttons on narrow screens.
+
+### Toast
+
+```svelte
+{#if updateReady}
+  <Toast
+    message="New version available."
+    actionLabel="Reload"
+    onaction={reload}
+    actionBusy={reloading}
+    ondismiss={() => (updateReady = false)}
+  />
+{/if}
+```
+
+A small card fixed over the page, so it never moves the layout: at the bottom right, or centred above the TabBar under the [phone query](#phone-query).
+`message` is one line of text or a snippet; `actionLabel` adds a small primary button that calls `onaction`, and `ondismiss` adds an x button named by `dismissLabel` (default "Dismiss").
+Set `actionBusy` while the action runs: the button is `aria-busy` and ignores presses, but is never disabled, so it keeps focus.
+It is a `status` live region, so the message is announced once when the toast appears without taking focus; `live="off"` keeps it quiet.
+The buttons sit in the normal tab order, and Escape while focus is inside calls `ondismiss`.
+It fades and slides in, with no motion under reduced motion, and sits above the TabBar and under the drawer and any Dialog.
 
 ### Home-screen app
 
