@@ -12,6 +12,7 @@
 		icons,
 		ModeSwitch,
 		PageHead,
+		Pagination,
 		Pill,
 		SegmentedControl,
 		Select,
@@ -36,6 +37,17 @@
 		{ value: 'all', label: 'All', disabled: true }
 	];
 	let range = $state<Range>('1w');
+
+	// Pagination with a made-up load, so the disabled state shows between pages.
+	let ordersPage = $state(1);
+	let ordersLoading = $state(false);
+	function loadOrdersPage(nextPage: number) {
+		ordersLoading = true;
+		setTimeout(() => {
+			ordersPage = nextPage;
+			ordersLoading = false;
+		}, 400);
+	}
 
 	// Made-up but steady account values, so the charts look the same on every load.
 	const hour = 60 * 60 * 1000;
@@ -232,6 +244,17 @@
 					<tr><td>Also not clickable</td><td class="num">$2.00</td></tr>
 				</tbody>
 			</Table>
+			<div class="pagination-demo">
+				<Pagination
+					page={ordersPage}
+					totalItems={340}
+					perPage={25}
+					onpage={loadOrdersPage}
+					label="Orders pages"
+					disabled={ordersLoading}
+				/>
+				<Pagination page={1} totalItems={12} perPage={25} label="One page" />
+			</div>
 			<EmptyState icon="bots" title="An empty state" text="With a line of explanation and an action.">
 				<Button size="sm" variant="primary" icon="plus">Do the thing</Button>
 			</EmptyState>
@@ -260,6 +283,14 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 		gap: 1rem;
+	}
+
+	.pagination-demo {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		border-top: 1px solid var(--border);
 	}
 
 	.skeletons {
