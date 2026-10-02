@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.8.1"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.8.2"
 ```
 
 ## Usage
@@ -57,6 +57,7 @@ Then use components:
 | `Label` | Form label |
 | `ModeSwitch` | Paper/Live trading mode toggle; `onliveunavailable` keeps Live clickable when `liveEnabled` is false |
 | `PageHead` | Page title with optional actions row |
+| `Pagination` | Previous and Next buttons, "Page 2 of 14" and the row range for a long table; see [Pagination](#pagination) |
 | `Pill` | Status pill (default, live, ok) |
 | `Select` | Styled select dropdown |
 | `SegmentedControl` | Tab-style button group: `options` with `bind:value` and `onchange`, or your own `<button>` children with `class:active` |
@@ -153,6 +154,19 @@ It does nothing when the theme is Auto or storage is blocked.
   <button class:active={side === 'sell'} aria-pressed={side === 'sell'} onclick={() => (side = 'sell')}>Sell</button>
 </SegmentedControl>
 ```
+
+### Pagination
+
+```svelte
+<Pagination page={page} totalItems={340} perPage={25} onpage={(next) => load(next)} label="Bot runs pages" disabled={loading} />
+```
+
+The app owns `page`: `onpage` gets the requested page, and the app loads it and passes the new `page` back.
+It renders a `<nav>` named by `label` (default "Pagination") with the buttons, "Page 2 of 14" and the range "26-50 of 340".
+With no items it renders nothing; with one page it shows only the range.
+At the first and last page, and while `disabled`, the buttons are `aria-disabled` rather than disabled, so the pressed button keeps focus.
+Page changes are announced politely, like "Page 3 of 14".
+The range wraps under the buttons on narrow screens.
 
 ### Charts
 
