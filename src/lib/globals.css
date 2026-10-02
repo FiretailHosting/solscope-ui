@@ -59,3 +59,73 @@ h1, h2, h3, h4 {
 	--color-surface-300: var(--border);
 	--color-surface-content: var(--fg);
 }
+
+/* Touch screens. Nothing here changes a desktop with a mouse. */
+
+/* No grey flash on tap: the pressed states below show the press instead. */
+button,
+a,
+[role='button'] {
+	-webkit-tap-highlight-color: transparent;
+}
+
+@media (pointer: coarse) {
+	/* Controls are not text: no selection handles or long-press menu on them.
+	   Inputs and running text are left alone. */
+	button,
+	[role='button'],
+	.sui-nav-item,
+	.sui-tab-bar a,
+	.sui-segmented,
+	.sui-switch {
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
+	}
+
+	/* 16px or more in every form control, so iOS does not zoom in on focus.
+	   An app that sizes bare inputs itself must do the same. */
+	input,
+	select,
+	textarea {
+		font-size: max(16px, 1em);
+	}
+}
+
+/* Pressed states for screens with no hover, so a tap gives feedback. The
+   library's own controls set theirs; these cover bare buttons and links
+   styled as buttons. */
+@media (hover: none) {
+	button:active:not(:disabled):not([aria-disabled='true']),
+	[role='button']:active:not([aria-disabled='true']) {
+		opacity: 0.7;
+	}
+}
+
+/* Page scroll is locked while the drawer or a modal Dialog is open on a
+   narrow screen, so the page behind does not scroll under a touch. The body
+   is pinned at the scroll position lockScroll saved, so nothing jumps, and
+   the position is restored when the lock lifts. Nothing applies on a wide
+   screen, where a scrollbar would make the page shift. */
+@media (max-width: 860px) {
+	html.sui-scroll-locked {
+		overflow: hidden;
+	}
+
+	html.sui-scroll-locked body {
+		position: fixed;
+		top: var(--sui-scroll-lock-top, 0);
+		left: 0;
+		right: 0;
+		overflow: hidden;
+	}
+}
+
+/* Installed on a home screen there is no browser chrome to pull on, so the
+   rubber band at the ends of the page only moves the fixed bars. */
+@media (display-mode: standalone) {
+	html,
+	body {
+		overscroll-behavior-y: none;
+	}
+}
