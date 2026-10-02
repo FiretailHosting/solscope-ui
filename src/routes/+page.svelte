@@ -443,6 +443,7 @@
 			busyLabel="Reloading..."
 			onaction={reload}
 			actionBusy={reloading}
+			dismissText="Later"
 			ondismiss={() => (updateToast = false)}
 		/>
 	{/if}

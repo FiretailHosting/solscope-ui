@@ -324,6 +324,7 @@ The range wraps under the buttons on narrow screens.
     busyLabel="Reloading..."
     onaction={reload}
     actionBusy={reloading}
+    dismissText="Later"
     ondismiss={() => (updateReady = false)}
   />
 {/if}
@@ -331,6 +332,7 @@ The range wraps under the buttons on narrow screens.
 
 A small card fixed over the page, so it never moves the layout: at the bottom right, or centred above the TabBar under the [phone query](#phone-query).
 `message` is one line of text or a snippet; `actionLabel` adds a small primary button that calls `onaction`, and `ondismiss` adds an x button named by `dismissLabel` (default "Dismiss").
+`dismissText` shows a word such as "Later" on the dismiss button instead of the x; it is then the button's name too, so a voice control user says what they see.
 Set `actionBusy` while the action runs: the button is `aria-busy`, shows `busyLabel` and ignores presses, but is never disabled, so it keeps focus.
 It is a `status` live region, so the message is announced once when the toast appears without taking focus; `live="off"` keeps it quiet.
 The buttons sit in the normal tab order, and Escape while focus is inside calls `ondismiss`.

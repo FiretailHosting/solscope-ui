@@ -19,8 +19,14 @@
 		actionBusy?: boolean;
 		/** The action button's label while `actionBusy`; the action label otherwise. */
 		busyLabel?: string;
-		/** Accessible name of the dismiss button. */
+		/** Accessible name of the dismiss button while it shows the x icon. */
 		dismissLabel?: string;
+		/**
+		 * A word shown on the dismiss button in place of the x icon, such as
+		 * "Later". It is then the button's accessible name too, so what a voice
+		 * control user says is what they see.
+		 */
+		dismissText?: string;
 		/**
 		 * Called by the dismiss button and by Escape; without it there is no
 		 * dismiss button. Focus then goes back to the element that had it before
@@ -38,6 +44,7 @@
 		actionBusy = false,
 		busyLabel,
 		dismissLabel = 'Dismiss',
+		dismissText,
 		ondismiss,
 		live = 'polite',
 		class: extraClass = '',
@@ -129,8 +136,16 @@
 			</Button>
 		{/if}
 		{#if ondismiss}
-			<button type="button" class="sui-toast-dismiss" aria-label={dismissLabel} onclick={dismiss}>
-				<Icon name="close" size={16} />
+			<!-- With dismissText the visible word is the accessible name, so there
+			     is no aria-label to say something else. -->
+			<button
+				type="button"
+				class="sui-toast-dismiss"
+				class:sui-toast-dismiss-text={!!dismissText}
+				aria-label={dismissText ? undefined : dismissLabel}
+				onclick={dismiss}
+			>
+				{#if dismissText}{dismissText}{:else}<Icon name="close" size={16} />{/if}
 			</button>
 		{/if}
 	{/if}
@@ -206,6 +221,17 @@
 		flex-shrink: 0;
 	}
 
+	/* The dismiss word instead of the x: as wide as it needs, in the small
+	   button's type, muted like the icon until hovered. */
+	.sui-toast-dismiss-text {
+		width: auto;
+		padding: 0 0.6rem;
+		font: inherit;
+		font-size: 0.78rem;
+		font-weight: 500;
+		white-space: nowrap;
+	}
+
 	.sui-toast-dismiss:hover {
 		color: var(--fg);
 		border-color: var(--border);
@@ -221,6 +247,11 @@
 		.sui-toast-dismiss {
 			width: 44px;
 			height: 44px;
+		}
+
+		.sui-toast-dismiss-text {
+			width: auto;
+			min-width: 44px;
 		}
 	}
 
