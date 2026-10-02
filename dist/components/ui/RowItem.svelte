@@ -67,10 +67,11 @@
 </li>
 
 <style>
+	/* No gap of its own: the body's side padding is the space between the
+	   content and the actions, the same 1rem as the actions keep from the edge. */
 	.sui-row-item {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
 	}
 
 	/* The sibling is another RowItem instance, outside this component's
@@ -147,13 +148,16 @@
 		color: var(--muted);
 	}
 
-	/* Keeps its place at the end of the row, outside the link. */
+	/* Keeps its place at the end of the row, outside the link, inset from the
+	   edge by the body's side padding. The vertical inset keeps a button clear
+	   of the row's separators and the list's border: on phones a 44px button
+	   would otherwise fill a one-line row, which is 44px tall, and touch both. */
 	.sui-row-actions {
 		flex: none;
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
-		padding-right: 0.75rem;
+		padding: 0.4rem 1rem 0.4rem 0;
 	}
 
 	.sr-only {

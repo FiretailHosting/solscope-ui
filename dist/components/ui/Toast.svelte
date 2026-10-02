@@ -4,6 +4,7 @@
 	import type { HTMLAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
 	import Icon from './Icon.svelte';
+	import { stackToast } from '../../toast-stack.js';
 
 	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
 		/** One line of text, or a snippet. */
@@ -18,8 +19,14 @@
 		actionBusy?: boolean;
 		/** The action button's label while `actionBusy`; the action label otherwise. */
 		busyLabel?: string;
-		/** Accessible name of the dismiss button. */
+		/** Accessible name of the dismiss button while it shows the x icon. */
 		dismissLabel?: string;
+		/**
+		 * A word shown on the dismiss button in place of the x icon, such as
+		 * "Later". It is then the button's accessible name too, so what a voice
+		 * control user says is what they see.
+		 */
+		dismissText?: string;
 		/**
 		 * Called by the dismiss button and by Escape; without it there is no
 		 * dismiss button. Focus then goes back to the element that had it before
@@ -37,6 +44,7 @@
 		actionBusy = false,
 		busyLabel,
 		dismissLabel = 'Dismiss',
+		dismissText,
 		ondismiss,
 		live = 'polite',
 		class: extraClass = '',
@@ -56,6 +64,10 @@
 	// The element focus came from when it entered the toast, so a dismiss can
 	// put it back there; nothing when it came from the page body.
 	let focusedBefore: HTMLElement | null = null;
+
+	// Every mounted toast joins one stack, so two never paint over each other:
+	// this one sits at the anchor and pushes the older ones up.
+	onMount(() => stackToast(root!));
 
 	function act() {
 		if (actionBusy) return;
@@ -124,8 +136,16 @@
 			</Button>
 		{/if}
 		{#if ondismiss}
-			<button type="button" class="sui-toast-dismiss" aria-label={dismissLabel} onclick={dismiss}>
-				<Icon name="close" size={16} />
+			<!-- With dismissText the visible word is the accessible name, so there
+			     is no aria-label to say something else. -->
+			<button
+				type="button"
+				class="sui-toast-dismiss"
+				class:sui-toast-dismiss-text={!!dismissText}
+				aria-label={dismissText ? undefined : dismissLabel}
+				onclick={dismiss}
+			>
+				{#if dismissText}{dismissText}{:else}<Icon name="close" size={16} />{/if}
 			</button>
 		{/if}
 	{/if}
@@ -134,11 +154,13 @@
 <style>
 	/* A small card floating over the page: fixed, so it never moves the
 	   layout. Above the page and the TabBar (30), under the drawer and its
-	   overlay (40, 50); a Dialog is in the top layer, above everything. */
+	   overlay (40, 50); a Dialog is in the top layer, above everything.
+	   --sui-toast-stack-offset is set by the toast stack: how far above the
+	   anchor this toast sits when newer ones are mounted under it. */
 	.sui-toast {
 		position: fixed;
 		right: 1rem;
-		bottom: 1rem;
+		bottom: calc(1rem + var(--sui-toast-stack-offset, 0px));
 		z-index: 35;
 		display: flex;
 		align-items: center;
@@ -152,7 +174,8 @@
 		border: 1px solid var(--border-strong);
 		border-radius: var(--radius-lg);
 		box-shadow: 0 2px 10px rgb(0 0 0 / 0.14);
-		transition: opacity 200ms ease-out, transform 200ms ease-out;
+		/* bottom: an older toast glides up when a new one lands under it. */
+		transition: opacity 200ms ease-out, transform 200ms ease-out, bottom 200ms ease-out;
 	}
 
 	/* Fades and slides up as it appears. */
@@ -198,6 +221,17 @@
 		flex-shrink: 0;
 	}
 
+	/* The dismiss word instead of the x: as wide as it needs, in the small
+	   button's type, muted like the icon until hovered. */
+	.sui-toast-dismiss-text {
+		width: auto;
+		padding: 0 0.6rem;
+		font: inherit;
+		font-size: 0.78rem;
+		font-weight: 500;
+		white-space: nowrap;
+	}
+
 	.sui-toast-dismiss:hover {
 		color: var(--fg);
 		border-color: var(--border);
@@ -214,6 +248,11 @@
 			width: 44px;
 			height: 44px;
 		}
+
+		.sui-toast-dismiss-text {
+			width: auto;
+			min-width: 44px;
+		}
 	}
 
 	/* Phones, PHONE_QUERY: centred above the TabBar and the home indicator,
@@ -222,7 +261,9 @@
 		.sui-toast {
 			left: 1rem;
 			right: 1rem;
-			bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 0.75rem);
+			bottom: calc(
+				var(--tab-bar-height) + env(safe-area-inset-bottom) + 0.75rem + var(--sui-toast-stack-offset, 0px)
+			);
 			width: fit-content;
 			max-width: calc(100vw - 2rem);
 			margin: 0 auto;

@@ -214,10 +214,15 @@
 		border-color: var(--accent-hover);
 	}
 
+	/* The fill goes, so the dimmed state is told apart by shape, not by a
+	   greyer fill alone: a dashed outline in the muted text colour, which the
+	   other variants' dimmed states do not have, so it still reads as the
+	   primary action. */
 	.sui-btn.primary[aria-disabled='true'],
 	.sui-btn.primary[aria-disabled='true']:hover:not(:disabled) {
-		color: var(--accent-fg);
-		background: var(--muted);
+		color: var(--muted);
+		background: var(--card);
+		border-style: dashed;
 		border-color: var(--muted);
 	}
 
