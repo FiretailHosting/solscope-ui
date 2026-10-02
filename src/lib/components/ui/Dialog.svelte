@@ -6,7 +6,7 @@
 
 	type Size = 'default' | 'lg';
 
-	interface Props extends Omit<HTMLDialogAttributes, 'open' | 'title'> {
+	interface Props extends Omit<HTMLDialogAttributes, 'open' | 'title' | 'onclose'> {
 		/**
 		 * Shown while true. It opens as a modal when mounted, so a dialog the
 		 * app renders inside an `{#if}` needs nothing more; bind it to keep

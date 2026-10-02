@@ -23,10 +23,11 @@ export function lockScroll(): () => void {
 		released = true;
 		lockCount -= 1;
 		if (lockCount > 0) return;
+		// Only a pinned body lost its scroll position. On a wide screen the
+		// page could scroll under a modal, and must stay where the user left it.
+		const wasPinned = getComputedStyle(document.body).position === 'fixed';
 		document.documentElement.classList.remove(scrollLockClass);
 		document.documentElement.style.removeProperty('--sui-scroll-lock-top');
-		// A pinned body loses its scroll position; put it back where it was.
-		// On a wide screen nothing moved, so this is a no-op there.
-		window.scrollTo({ top: lockedScrollY, left: window.scrollX, behavior: 'instant' });
+		if (wasPinned) window.scrollTo({ top: lockedScrollY, left: window.scrollX, behavior: 'instant' });
 	};
 }
