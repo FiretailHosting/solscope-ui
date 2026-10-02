@@ -10,14 +10,32 @@
 		 * app's top bar has a Back button of its own.
 		 */
 		hideInStandalone?: boolean;
+		/**
+		 * muted is the small grey link; link keeps the browser's default link
+		 * look, underlined in the text colour and size, as a page's own back
+		 * link had on desktop.
+		 */
+		variant?: 'muted' | 'link';
 		/** Where the link goes, such as "Markets". */
 		children?: Snippet;
 	}
 
-	let { href, hideInStandalone = false, class: extraClass = '', children, ...rest }: Props = $props();
+	let {
+		href,
+		hideInStandalone = false,
+		variant = 'muted',
+		class: extraClass = '',
+		children,
+		...rest
+	}: Props = $props();
 </script>
 
-<a {href} class="sui-back-link {extraClass}" class:hide-in-standalone={hideInStandalone} {...rest}>
+<a
+	{href}
+	class="sui-back-link {variant} {extraClass}"
+	class:hide-in-standalone={hideInStandalone}
+	{...rest}
+>
 	<Icon name="arrowLeft" size={16} />
 	<span>{@render children?.()}</span>
 </a>
@@ -33,8 +51,16 @@
 		text-decoration: none;
 	}
 
-	.sui-back-link:hover {
+	.sui-back-link.muted:hover {
 		color: var(--fg);
+	}
+
+	/* The browser's default link: the text colour and size, underlined. */
+	.sui-back-link.link {
+		margin-bottom: 1rem;
+		color: inherit;
+		font-size: inherit;
+		text-decoration: underline;
 	}
 
 	.sui-back-link:focus-visible {

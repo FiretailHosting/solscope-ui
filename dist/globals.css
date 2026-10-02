@@ -101,10 +101,11 @@ a,
 }
 
 /* Pressed states for screens with no hover, so a tap gives feedback. The
-   library's own controls set theirs; these cover bare buttons and links
-   styled as buttons. */
+   library's own controls set theirs; these cover bare buttons, plain links,
+   whose tap highlight is off above, and links styled as buttons. */
 @media (hover: none) {
 	button:active:not(:disabled):not([aria-disabled='true']),
+	a:active:not([aria-disabled='true']),
 	[role='button']:active:not([aria-disabled='true']) {
 		opacity: 0.7;
 	}

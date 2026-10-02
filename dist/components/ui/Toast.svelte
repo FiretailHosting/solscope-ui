@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
@@ -16,9 +16,15 @@
 		 * so a second tap does nothing. It is never disabled, so it keeps focus.
 		 */
 		actionBusy?: boolean;
+		/** The action button's label while `actionBusy`; the action label otherwise. */
+		busyLabel?: string;
 		/** Accessible name of the dismiss button. */
 		dismissLabel?: string;
-		/** Called by the dismiss button and by Escape; without it there is no dismiss button. */
+		/**
+		 * Called by the dismiss button and by Escape; without it there is no
+		 * dismiss button. Focus then goes back to the element that had it before
+		 * focus entered the toast, or to `main` when there was none.
+		 */
 		ondismiss?: () => void;
 		/** How the message is announced: polite waits its turn, off says nothing. */
 		live?: 'polite' | 'off';
@@ -29,6 +35,7 @@
 		actionLabel,
 		onaction,
 		actionBusy = false,
+		busyLabel,
 		dismissLabel = 'Dismiss',
 		ondismiss,
 		live = 'polite',
@@ -45,9 +52,40 @@
 		return () => cancelAnimationFrame(frame);
 	});
 
+	let root = $state<HTMLElement>();
+	// The element focus came from when it entered the toast, so a dismiss can
+	// put it back there; nothing when it came from the page body.
+	let focusedBefore: HTMLElement | null = null;
+
 	function act() {
 		if (actionBusy) return;
 		onaction?.();
+	}
+
+	function onfocusin(event: FocusEvent) {
+		const from = event.relatedTarget;
+		if (from instanceof Node && root?.contains(from)) return;
+		focusedBefore = from instanceof HTMLElement ? from : null;
+	}
+
+	// A dismissed toast unmounts under the focus it holds, which would drop
+	// focus to the body: it goes back where it came from instead, or to the
+	// main landmark, made focusable if it is not.
+	async function dismiss() {
+		if (!ondismiss) return;
+		const hadFocus = !!root && root.contains(document.activeElement);
+		ondismiss();
+		if (!hadFocus) return;
+		await tick();
+		if (root?.contains(document.activeElement)) return;
+		if (focusedBefore?.isConnected) {
+			focusedBefore.focus();
+			return;
+		}
+		const main = document.querySelector('main');
+		if (!main) return;
+		if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+		main.focus();
 	}
 
 	// Escape dismisses while focus is inside the toast, and goes no further.
@@ -55,12 +93,20 @@
 		if (event.key !== 'Escape' || !ondismiss) return;
 		event.preventDefault();
 		event.stopPropagation();
-		ondismiss();
+		dismiss();
 	}
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="sui-toast {extraClass}" role="status" aria-live={live} {...rest} {onkeydown}>
+<div
+	bind:this={root}
+	class="sui-toast {extraClass}"
+	role="status"
+	aria-live={live}
+	{...rest}
+	{onkeydown}
+	{onfocusin}
+>
 	{#if ready}
 		<span class="sui-toast-message">
 			{#if typeof message === 'string'}{message}{:else}{@render message()}{/if}
@@ -74,11 +120,11 @@
 				aria-busy={actionBusy || undefined}
 				onclick={act}
 			>
-				{actionLabel}
+				{actionBusy ? (busyLabel ?? actionLabel) : actionLabel}
 			</Button>
 		{/if}
 		{#if ondismiss}
-			<button type="button" class="sui-toast-dismiss" aria-label={dismissLabel} onclick={ondismiss}>
+			<button type="button" class="sui-toast-dismiss" aria-label={dismissLabel} onclick={dismiss}>
 				<Icon name="close" size={16} />
 			</button>
 		{/if}
