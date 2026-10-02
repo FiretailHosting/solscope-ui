@@ -5,6 +5,7 @@
 
 	let {
 		open = $bindable(false),
+		id,
 		closeLabel = 'Close menu',
 		class: extraClass = '',
 		header,
@@ -13,6 +14,8 @@
 	}: {
 		/** Whether the sidebar is shown on narrow screens. It is always shown on wide ones. */
 		open?: boolean;
+		/** The aside's id, for the menu button's aria-controls. */
+		id?: string;
 		/** Accessible name of the close button shown in the drawer on narrow screens. */
 		closeLabel?: string;
 		class?: string;
@@ -23,6 +26,27 @@
 
 	let closeButton = $state<HTMLButtonElement>();
 	let sidebar = $state<HTMLElement>();
+	let overlay = $state<HTMLElement>();
+
+	// The width under which the sidebar is a drawer; the same number as the
+	// media queries below.
+	const drawerQuery = '(max-width: 860px)';
+
+	// Everything outside the drawer and its overlay is inert while the drawer
+	// covers the page, from the drawer's siblings up to the body's children,
+	// so a swipe or a screen reader cannot reach the page behind it. Returns
+	// the function that lifts it.
+	function inertOutside(kept: Element[]): () => void {
+		const changed: Element[] = [];
+		for (let node: Element | null = kept[0]; node && node !== document.body; node = node.parentElement) {
+			for (const sibling of node.parentElement?.children ?? []) {
+				if (sibling === node || kept.includes(sibling) || sibling.hasAttribute('inert')) continue;
+				sibling.setAttribute('inert', '');
+				changed.push(sibling);
+			}
+		}
+		return () => changed.forEach((element) => element.removeAttribute('inert'));
+	}
 
 	// Escape inside a modal dialog closes that dialog, not the drawer under it.
 	function closeOnEscape(event: KeyboardEvent) {
@@ -33,13 +57,26 @@
 
 	// Open as a drawer, the page behind must not scroll under a touch, and
 	// focus moves in to the close button and back out to whatever opened it.
-	// The drawer only opens on narrow screens, where it covers the page.
+	// The drawer only opens on narrow screens, where it covers the page; the
+	// page is inert only while the screen is narrow, so an `open` left true
+	// on a widened window does not block it.
 	$effect(() => {
-		if (!open) return;
+		if (!open || !sidebar) return;
+		const drawer = sidebar;
 		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		const unlock = lockScroll();
 		closeButton?.focus();
+		const narrow = window.matchMedia(drawerQuery);
+		let liftInert = () => {};
+		const follow = () => {
+			liftInert();
+			liftInert = narrow.matches ? inertOutside([drawer, overlay].filter((element) => !!element)) : () => {};
+		};
+		follow();
+		narrow.addEventListener('change', follow);
 		return () => {
+			narrow.removeEventListener('change', follow);
+			liftInert();
 			unlock();
 			// Focus still inside the drawer, or lost to the page, goes back to the opener.
 			const focused = document.activeElement;
@@ -53,10 +90,10 @@
 <svelte:window onkeydown={closeOnEscape} />
 
 {#if open}
-	<div class="sui-overlay" role="none" onclick={() => (open = false)}></div>
+	<div bind:this={overlay} class="sui-overlay" role="none" onclick={() => (open = false)}></div>
 {/if}
 
-<aside bind:this={sidebar} class="sui-sidebar {extraClass}" class:open aria-label="Navigation">
+<aside bind:this={sidebar} {id} class="sui-sidebar {extraClass}" class:open aria-label="Navigation">
 	<div class="sui-sidebar-header" class:has-content={!!header}>
 		{#if header}
 			<div class="sui-sidebar-header-content">
