@@ -336,7 +336,7 @@ Set `viewport-fit=cover` in the app's viewport meta so `env(safe-area-inset-*)` 
 Under 860px the page scroll is locked while the drawer or a Dialog is open: on a phone the body is pinned at its scroll position, which comes back when the lock lifts or the screen widens, and in a mouse window the scrollbar's width stays as padding so nothing shifts.
 `lockScroll()` is exported for an app's own overlays and returns the function that releases the lock.
 Under `(pointer: coarse)` every control is at least 44px tall and form controls are 16px, so iOS does not zoom in on focus; an app that sizes bare inputs itself must set 16px there too.
-Tap highlights are off, controls cannot be selected, buttons have no long-press menu while links keep theirs, and buttons and nav items show a pressed state where there is no hover.
+Tap highlights are off, controls cannot be selected, buttons have no long-press menu while links keep theirs, and buttons, links and nav items show a pressed state where there is no hover.
 Installed as a standalone app, the page no longer rubber-bands at its ends, so the fixed bars stay put.
 
 ### Fonts
