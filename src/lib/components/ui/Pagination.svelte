@@ -1,0 +1,123 @@
+<script lang="ts">
+	import Button from './Button.svelte';
+
+	let {
+		page,
+		totalItems,
+		perPage,
+		onpage,
+		label = 'Pagination',
+		disabled = false,
+		class: extraClass = ''
+	}: {
+		/** The current page, starting at 1. */
+		page: number;
+		totalItems: number;
+		perPage: number;
+		/** Called with the page the user asked for; the app updates `page`. */
+		onpage?: (page: number) => void;
+		/** Accessible name for the navigation landmark. */
+		label?: string;
+		/** Blocks both buttons, for example while the next page loads. */
+		disabled?: boolean;
+		class?: string;
+	} = $props();
+
+	const safePerPage = $derived(Math.max(1, Math.floor(perPage) || 1));
+	const totalPages = $derived(Math.max(1, Math.ceil(totalItems / safePerPage)));
+	const currentPage = $derived(Math.min(Math.max(1, Math.floor(page) || 1), totalPages));
+	const firstItem = $derived((currentPage - 1) * safePerPage + 1);
+	const lastItem = $derived(Math.min(currentPage * safePerPage, totalItems));
+	const atFirstPage = $derived(currentPage <= 1);
+	const atLastPage = $derived(currentPage >= totalPages);
+
+	const formatCount = (count: number) => count.toLocaleString('en-US');
+
+	// The buttons use aria-disabled rather than the disabled attribute, so the
+	// button just pressed keeps keyboard focus when it reaches the first or last
+	// page, or when `disabled` turns on while the next page loads.
+	function requestPage(requestedPage: number, blocked: boolean) {
+		if (blocked) return;
+		onpage?.(requestedPage);
+	}
+</script>
+
+{#if totalItems > 0}
+	<nav class="sui-pagination {extraClass}" aria-label={label}>
+		{#if totalPages > 1}
+			<div class="controls">
+				<Button
+					type="button"
+					size="sm"
+					aria-disabled={disabled || atFirstPage}
+					onclick={() => requestPage(currentPage - 1, disabled || atFirstPage)}
+				>
+					Previous
+				</Button>
+				<span class="page-of">Page {currentPage} of {totalPages}</span>
+				<Button
+					type="button"
+					size="sm"
+					aria-disabled={disabled || atLastPage}
+					onclick={() => requestPage(currentPage + 1, disabled || atLastPage)}
+				>
+					Next
+				</Button>
+			</div>
+		{/if}
+		<span class="range">{formatCount(firstItem)}-{formatCount(lastItem)} of {formatCount(totalItems)}</span>
+		<!-- Always mounted, so a page change is announced politely. -->
+		<span class="visually-hidden" role="status">
+			{totalPages > 1 ? `Page ${currentPage} of ${totalPages}` : ''}
+		</span>
+	</nav>
+{/if}
+
+<style>
+	.sui-pagination {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem 1rem;
+		font-size: 0.82rem;
+		color: var(--muted);
+	}
+
+	.controls {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.page-of {
+		color: var(--fg);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.range {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	/* Matches Button's disabled look for buttons that keep focus. */
+	.sui-pagination :global(.sui-btn[aria-disabled='true']) {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.sui-pagination :global(.sui-btn[aria-disabled='true']:hover) {
+		background: var(--card);
+		border-color: var(--border-strong);
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+</style>

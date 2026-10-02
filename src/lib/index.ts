@@ -18,6 +18,7 @@ export { default as Input } from './components/ui/Input.svelte';
 export { default as Label } from './components/ui/Label.svelte';
 export { default as ModeSwitch } from './components/ui/ModeSwitch.svelte';
 export { default as PageHead } from './components/ui/PageHead.svelte';
+export { default as Pagination } from './components/ui/Pagination.svelte';
 export { default as Pill } from './components/ui/Pill.svelte';
 export { default as Select } from './components/ui/Select.svelte';
 export {
