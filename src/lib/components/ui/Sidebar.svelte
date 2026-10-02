@@ -24,8 +24,11 @@
 	let closeButton = $state<HTMLButtonElement>();
 	let sidebar = $state<HTMLElement>();
 
+	// Escape inside a modal dialog closes that dialog, not the drawer under it.
 	function closeOnEscape(event: KeyboardEvent) {
-		if (open && event.key === 'Escape') open = false;
+		if (!open || event.key !== 'Escape') return;
+		if (event.target instanceof Element && event.target.closest('dialog[open]')) return;
+		open = false;
 	}
 
 	// Open as a drawer, the page behind must not scroll under a touch, and
