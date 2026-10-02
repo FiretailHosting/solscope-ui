@@ -99,6 +99,9 @@ export const icons = {
     arrowRight: {
         d: ['M4 12h15', 'M13 6l6 6-6 6']
     },
+    arrowLeft: {
+        d: ['M20 12H5', 'M11 6l-6 6 6 6']
+    },
     copy: {
         d: ['M9 9h11v11H9Z', 'M5 15H4V4h11v1']
     },

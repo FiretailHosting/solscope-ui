@@ -70,8 +70,8 @@ a,
 }
 
 @media (pointer: coarse) {
-	/* Controls are not text: no selection handles or long-press menu on them.
-	   Inputs and running text are left alone. */
+	/* Controls are not text: no selection handles on them. Inputs and running
+	   text are left alone. */
 	button,
 	[role='button'],
 	.sui-nav-item,
@@ -80,6 +80,14 @@ a,
 	.sui-switch {
 		user-select: none;
 		-webkit-user-select: none;
+	}
+
+	/* No long-press menu on buttons. Links keep theirs: a long press on a
+	   nav item or a tab offers to open it in a new tab, as any link does. */
+	button,
+	[role='button'],
+	.sui-segmented,
+	.sui-switch {
 		-webkit-touch-callout: none;
 	}
 
@@ -103,11 +111,25 @@ a,
 }
 
 /* Page scroll is locked while the drawer or a modal Dialog is open on a
-   narrow screen, so the page behind does not scroll under a touch. The body
-   is pinned at the scroll position lockScroll saved, so nothing jumps, and
-   the position is restored when the lock lifts. Nothing applies on a wide
-   screen, where a scrollbar would make the page shift. */
-@media (max-width: 860px) {
+   narrow screen, so the page behind does not scroll under it. Nothing
+   applies on a wide screen, where a scrollbar would make the page shift. */
+
+/* A narrow window with a mouse keeps its scrollbar's width as padding, which
+   lockScroll measures, so hiding the scrollbar moves nothing. */
+@media (max-width: 860px) and (pointer: fine) {
+	html.sui-scroll-locked {
+		overflow: hidden;
+	}
+
+	html.sui-scroll-locked body {
+		padding-right: var(--sui-scroll-lock-gutter, 0px);
+	}
+}
+
+/* A phone has no scrollbar to lose, but a touch would still scroll the page
+   under the overlay, so the body is pinned at the scroll position lockScroll
+   saved; lockScroll restores it when the lock lifts. The query is PHONE_QUERY. */
+@media (max-width: 860px) and (pointer: coarse) {
 	html.sui-scroll-locked {
 		overflow: hidden;
 	}

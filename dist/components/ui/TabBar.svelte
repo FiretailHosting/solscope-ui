@@ -56,8 +56,9 @@
 	{/if}
 {/snippet}
 
+<!-- Unkeyed: two items may share an href, such as a home and a Dashboard. -->
 <nav class="sui-tab-bar {extraClass}" aria-label={label}>
-	{#each items as item (item.href)}
+	{#each items as item}
 		<a href={item.href} class="item" class:active={item.active} aria-current={item.active ? 'page' : undefined}>
 			<span class="glyph">
 				<Icon name={item.icon} size={22} />
@@ -80,12 +81,14 @@
 </nav>
 
 <style>
-	/* Narrow screens only; on wide ones the sidebar is always in view. */
+	/* Phones only: a narrow screen with a touch pointer, PHONE_QUERY. On a
+	   wide screen the sidebar is always in view; a narrow window with a mouse
+	   keeps the desktop layout and the drawer. */
 	.sui-tab-bar {
 		display: none;
 	}
 
-	@media (max-width: 860px) {
+	@media (max-width: 860px) and (pointer: coarse) {
 		.sui-tab-bar {
 			display: flex;
 			position: fixed;
@@ -116,7 +119,8 @@
 		border: 0;
 		background: none;
 		font: inherit;
-		font-size: 0.68rem;
+		/* 12px: a label stays readable at the bottom of a phone; no smaller. */
+		font-size: 0.75rem;
 		font-weight: 500;
 		line-height: 1.2;
 		color: var(--muted);

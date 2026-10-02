@@ -98,6 +98,9 @@ export declare const icons: {
     arrowRight: {
         d: string[];
     };
+    arrowLeft: {
+        d: string[];
+    };
     copy: {
         d: string[];
     };

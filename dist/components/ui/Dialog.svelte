@@ -6,17 +6,28 @@
 
 	type Size = 'default' | 'lg';
 
-	interface Props extends Omit<HTMLDialogAttributes, 'open' | 'title' | 'onclose'> {
+	// A dialog always has a name: the title, or a label when there is no
+	// heading. The types ask for one or the other.
+	type Named =
+		| {
+				/** The heading, as text or a snippet; it names the dialog. */
+				title: string | Snippet;
+				label?: string;
+		  }
+		| {
+				title?: undefined;
+				/** Accessible name when there is no title. */
+				label: string;
+		  };
+
+	type Props = Named &
+		Omit<HTMLDialogAttributes, 'open' | 'title' | 'onclose'> & {
 		/**
 		 * Shown while true. It opens as a modal when mounted, so a dialog the
 		 * app renders inside an `{#if}` needs nothing more; bind it to keep
 		 * the dialog mounted and open it later.
 		 */
 		open?: boolean;
-		/** The heading, as text or a snippet; it names the dialog. */
-		title?: string | Snippet;
-		/** Accessible name when there is no title. */
-		label?: string;
 		/** default is a 26rem card, lg a 42rem one. Both fill the screen width on phones. */
 		size?: Size;
 		/** Accessible name of the close button. */
@@ -28,7 +39,7 @@
 		/** A row of actions under the content. */
 		footer?: Snippet;
 		children?: Snippet;
-	}
+	};
 
 	let {
 		open = $bindable(true),
@@ -110,7 +121,7 @@
 		bind:this={dialog}
 		class="sui-dialog {size} {extraClass}"
 		aria-labelledby={title ? titleId : undefined}
-		aria-label={title ? undefined : label}
+		aria-label={title ? undefined : label || 'Dialog'}
 		{...rest}
 		onclose={closed}
 		onpointerdown={pointerDown}
@@ -227,13 +238,14 @@
 		}
 	}
 
-	/* Phones: a sheet docked at the bottom, with the heading and the close
-	   button staying put while the content scrolls under them. */
-	@media (max-width: 640px) {
+	/* Phones, PHONE_QUERY: a sheet docked at the bottom, with the heading and
+	   the close button staying put while the content scrolls under them. It
+	   stops short of the status bar, which the top safe-area inset covers. */
+	@media (max-width: 860px) and (pointer: coarse) {
 		.sui-dialog,
 		.sui-dialog.lg {
 			width: 100%;
-			max-height: 90dvh;
+			max-height: calc(90dvh - env(safe-area-inset-top));
 			margin: auto 0 0;
 			border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 			border-bottom: 0;
@@ -253,9 +265,9 @@
 			border-bottom: 1px solid var(--border);
 		}
 
+		/* The 44px hit box stays inside the sheet's edge and its heading row. */
 		.sui-dialog-close {
-			margin-top: -0.35rem;
-			margin-bottom: -0.35rem;
+			margin: -0.5rem -0.5rem -0.5rem auto;
 		}
 
 		/* Slides up on open. */
@@ -270,14 +282,7 @@
 		}
 	}
 
-	@media (max-width: 640px) and (pointer: coarse) {
-		.sui-dialog-close {
-			margin-top: -0.75rem;
-			margin-bottom: -0.75rem;
-		}
-	}
-
-	@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+	@media (max-width: 860px) and (pointer: coarse) and (prefers-reduced-motion: reduce) {
 		.sui-dialog[open] {
 			transition: none;
 		}
