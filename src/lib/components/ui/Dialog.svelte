@@ -51,14 +51,20 @@
 	// showModal puts the dialog in the top layer with the page inert behind
 	// it, handles Escape, and moves focus in. Focus goes back to the opener
 	// on close, and the page scroll is locked on narrow screens meanwhile.
+	// An element still open at teardown was closed by the app setting
+	// `open` to false, or by unmounting, and gets its onclose here.
 	$effect(() => {
 		if (!open || !dialog) return;
+		const element = dialog;
 		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		const unlock = lockScroll();
-		if (!dialog.open) dialog.showModal();
+		if (!element.open) element.showModal();
 		return () => {
 			unlock();
-			if (dialog?.open) dialog.close();
+			if (element.open) {
+				element.close();
+				onclose?.();
+			}
 			opener?.focus();
 		};
 	});
@@ -67,7 +73,9 @@
 		dialog?.close();
 	}
 
+	// The native close event; after an app-side close it has been handled.
 	function closed() {
+		if (!open) return;
 		open = false;
 		onclose?.();
 	}
