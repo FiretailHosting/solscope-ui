@@ -13,8 +13,14 @@ interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
     actionBusy?: boolean;
     /** The action button's label while `actionBusy`; the action label otherwise. */
     busyLabel?: string;
-    /** Accessible name of the dismiss button. */
+    /** Accessible name of the dismiss button while it shows the x icon. */
     dismissLabel?: string;
+    /**
+     * A word shown on the dismiss button in place of the x icon, such as
+     * "Later". It is then the button's accessible name too, so what a voice
+     * control user says is what they see.
+     */
+    dismissText?: string;
     /**
      * Called by the dismiss button and by Escape; without it there is no
      * dismiss button. Focus then goes back to the element that had it before

@@ -117,7 +117,9 @@
 	}
 
 	// The update prompt the app shows: Reload pretends to run, then the toast goes.
+	// A page's own Undo toast shown with it stacks above or below it.
 	let updateToast = $state(false);
+	let undoToast = $state(false);
 	let reloading = $state(false);
 	function reload() {
 		reloading = true;
@@ -273,6 +275,7 @@
 				<div class="inline">
 					<Button onclick={() => (orderDetails = true)}>Long dialog</Button>
 					<Button onclick={() => (updateToast = true)}>Show toast</Button>
+					<Button onclick={() => (undoToast = true)}>Show undo toast</Button>
 					<Button onclick={() => (drawerOpen = !drawerOpen)} aria-pressed={drawerOpen}>
 						Tab bar More {drawerOpen ? 'open' : 'closed'}
 					</Button>
@@ -431,7 +434,8 @@
 	</Dialog>
 
 	<!-- Fixed over the page: bottom right, or centred above the TabBar on phones.
-	     Dismissing it puts focus back on the Show toast button, or on main. -->
+	     Dismissing one puts focus back on the button that showed it, or on main.
+	     Two at once stack: the newer one at the anchor, the older pushed up. -->
 	{#if updateToast}
 		<Toast
 			message="New version available."
@@ -439,8 +443,12 @@
 			busyLabel="Reloading..."
 			onaction={reload}
 			actionBusy={reloading}
+			dismissText="Later"
 			ondismiss={() => (updateToast = false)}
 		/>
+	{/if}
+	{#if undoToast}
+		<Toast message="Removed Momentum." actionLabel="Undo" onaction={() => (undoToast = false)} ondismiss={() => (undoToast = false)} />
 	{/if}
 
 	<TabBar
@@ -526,6 +534,11 @@
 		main {
 			padding-bottom: calc(2rem + var(--tab-bar-height) + env(safe-area-inset-bottom));
 		}
+	}
+
+	/* An element scrolled or focused into view stops clear of the toasts. */
+	:global(html) {
+		scroll-padding-bottom: calc(1rem + var(--toast-stack-height, 0px));
 	}
 
 	.muted {

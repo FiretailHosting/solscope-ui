@@ -94,8 +94,13 @@
 
 	/* Layout. The TabBar's height on narrow screens, without the safe-area
 	   inset it adds below; pad the page bottom by this plus
-	   env(safe-area-inset-bottom) under 860px so content clears the bar. */
-	--tab-bar-height: 3.5rem;
+	   env(safe-area-inset-bottom) under 860px so content clears the bar.
+	   --tab-bar-min-height is the floor; when wrapped labels make the bar
+	   taller, TabBar sets --tab-bar-height on <html> to the measured height.
+	   Toast sets --toast-stack-height on <html> to the height of the mounted
+	   toasts, for the page's scroll padding; see the README. */
+	--tab-bar-min-height: 3.5rem;
+	--tab-bar-height: var(--tab-bar-min-height);
 
 	/* Font */
 	--font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
