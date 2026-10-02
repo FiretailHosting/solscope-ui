@@ -1,4 +1,4 @@
-| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once and never taking focus; see [Toast](#toast) |
+| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once, never taking focus and giving it back on dismiss; see [Toast](#toast) |
 # solscope-ui
 
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
@@ -309,6 +309,7 @@ The range wraps under the buttons on narrow screens.
   <Toast
     message="New version available."
     actionLabel="Reload"
+    busyLabel="Reloading..."
     onaction={reload}
     actionBusy={reloading}
     ondismiss={() => (updateReady = false)}
@@ -318,9 +319,10 @@ The range wraps under the buttons on narrow screens.
 
 A small card fixed over the page, so it never moves the layout: at the bottom right, or centred above the TabBar under the [phone query](#phone-query).
 `message` is one line of text or a snippet; `actionLabel` adds a small primary button that calls `onaction`, and `ondismiss` adds an x button named by `dismissLabel` (default "Dismiss").
-Set `actionBusy` while the action runs: the button is `aria-busy` and ignores presses, but is never disabled, so it keeps focus.
+Set `actionBusy` while the action runs: the button is `aria-busy`, shows `busyLabel` and ignores presses, but is never disabled, so it keeps focus.
 It is a `status` live region, so the message is announced once when the toast appears without taking focus; `live="off"` keeps it quiet.
 The buttons sit in the normal tab order, and Escape while focus is inside calls `ondismiss`.
+After a dismiss from the button or Escape, focus goes back to the element that had it before focus entered the toast, or to `main`, given `tabindex="-1"` if it needs one.
 It fades and slides in, with no motion under reduced motion, and sits above the TabBar and under the drawer and any Dialog.
 
 ### Home-screen app
