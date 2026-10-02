@@ -119,7 +119,7 @@
 		border: 0;
 		background: none;
 		font: inherit;
-		/* 11px: the smallest a label stays readable at the bottom of a phone. */
+		/* 12px: a label stays readable at the bottom of a phone; no smaller. */
 		font-size: 0.75rem;
 		font-weight: 500;
 		line-height: 1.2;

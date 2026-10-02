@@ -73,7 +73,9 @@
 		gap: 0.5rem;
 	}
 
-	.sui-row-item + .sui-row-item {
+	/* The sibling is another RowItem instance, outside this component's
+	   scope, so it is matched globally; the rule stays scoped to this row. */
+	:global(.sui-row-item) + .sui-row-item {
 		border-top: 1px solid var(--border);
 	}
 
