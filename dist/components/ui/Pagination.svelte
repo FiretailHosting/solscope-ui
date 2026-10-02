@@ -10,7 +10,11 @@
 		disabled = false,
 		class: extraClass = ''
 	}: {
-		/** The current page, starting at 1. */
+		/**
+		 * The page currently shown, starting at 1. Update it when the new rows
+		 * arrive, not when the request starts, and use `disabled` to cover the
+		 * load, so "Page 3 of 14" is announced when the rows land.
+		 */
 		page: number;
 		totalItems: number;
 		perPage: number;
@@ -44,8 +48,11 @@
 
 {#if totalItems > 0}
 	<nav class="sui-pagination {extraClass}" aria-label={label}>
-		{#if totalPages > 1}
-			<div class="controls">
+		<!-- The page text is the polite status region. It stays mounted while
+		     paging, so each new `page` is announced; with one page the buttons
+		     are gone and the region is empty and visually hidden. -->
+		<div class="controls" class:visually-hidden={totalPages <= 1}>
+			{#if totalPages > 1}
 				<Button
 					type="button"
 					size="sm"
@@ -54,7 +61,11 @@
 				>
 					Previous
 				</Button>
-				<span class="page-of">Page {currentPage} of {totalPages}</span>
+			{/if}
+			<span class="page-of" role="status">
+				{totalPages > 1 ? `Page ${currentPage} of ${totalPages}` : ''}
+			</span>
+			{#if totalPages > 1}
 				<Button
 					type="button"
 					size="sm"
@@ -63,13 +74,9 @@
 				>
 					Next
 				</Button>
-			</div>
-		{/if}
+			{/if}
+		</div>
 		<span class="range">{formatCount(firstItem)}-{formatCount(lastItem)} of {formatCount(totalItems)}</span>
-		<!-- Always mounted, so a page change is announced politely. -->
-		<span class="visually-hidden" role="status">
-			{totalPages > 1 ? `Page ${currentPage} of ${totalPages}` : ''}
-		</span>
 	</nav>
 {/if}
 

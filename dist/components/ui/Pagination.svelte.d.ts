@@ -1,5 +1,9 @@
 type $$ComponentProps = {
-    /** The current page, starting at 1. */
+    /**
+     * The page currently shown, starting at 1. Update it when the new rows
+     * arrive, not when the request starts, and use `disabled` to cover the
+     * load, so "Page 3 of 14" is announced when the rows land.
+     */
     page: number;
     totalItems: number;
     perPage: number;
