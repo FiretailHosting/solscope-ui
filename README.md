@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.8.2"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.8.3"
 ```
 
 ## Usage
@@ -162,10 +162,11 @@ It does nothing when the theme is Auto or storage is blocked.
 ```
 
 The app owns `page`: `onpage` gets the requested page, and the app loads it and passes the new `page` back.
+`page` is the page currently shown: set it when the new rows arrive, not when the request starts, and set `disabled` while it loads.
 It renders a `<nav>` named by `label` (default "Pagination") with the buttons, "Page 2 of 14" and the range "26-50 of 340".
 With no items it renders nothing; with one page it shows only the range.
 At the first and last page, and while `disabled`, the buttons are `aria-disabled` rather than disabled, so the pressed button keeps focus.
-Page changes are announced politely, like "Page 3 of 14".
+The visible "Page 3 of 14" is a polite status region, so it is announced once, when the new rows land.
 The range wraps under the buttons on narrow screens.
 
 ### Charts
