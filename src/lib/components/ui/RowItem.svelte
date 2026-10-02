@@ -35,8 +35,10 @@
 	}: Props = $props();
 </script>
 
+<!-- The label and the number are two nodes with a space between, which a
+     screen reader reads as "Value $9,550" and a flex line does not show. -->
 {#snippet cell(content: string | Snippet, label: string | undefined)}
-	{#if label}<span class="sr-only">{label} </span>{/if}
+	{#if label}<span class="sr-only">{label}</span>{/if}
 	{#if typeof content === 'string'}{content}{:else}{@render content()}{/if}
 {/snippet}
 

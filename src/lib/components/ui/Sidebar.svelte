@@ -70,7 +70,7 @@
 		let liftInert = () => {};
 		const follow = () => {
 			liftInert();
-			liftInert = narrow.matches ? inertOutside([drawer, overlay].filter((element) => !!element)) : () => {};
+			liftInert = narrow.matches ? inertOutside([drawer, overlay].filter((element): element is HTMLElement => !!element)) : () => {};
 		};
 		follow();
 		narrow.addEventListener('change', follow);

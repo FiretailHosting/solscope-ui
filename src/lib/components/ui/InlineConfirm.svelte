@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import Button from './Button.svelte';
@@ -56,7 +56,7 @@
 
 	// The question reads first, and the whole panel, buttons included, is
 	// brought into view, so on a phone the answer is never below the fold.
-	$effect(() => {
+	onMount(() => {
 		opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		questionElement?.focus({ preventScroll: true });
 		root?.scrollIntoView({ block: 'nearest' });
