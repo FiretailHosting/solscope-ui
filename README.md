@@ -45,7 +45,7 @@ Then use components:
 |-----------|-------------|
 | `Alert` | Notice, warning, error and success messages; errors are announced at once, others politely; `icon` adds one so the variant does not rest on colour alone |
 | `AppShell` | Full-page layout wrapper with sidebar slot |
-| `BackLink` | Link back to the parent page with an arrow, muted; a 44px tap target on phones, `hideInStandalone` hides it under the app's own Back button; see [Back link](#back-link) |
+| `BackLink` | Link back to the parent page with an arrow, muted or a plain underlined `link`; a 44px tap target on phones, `hideInStandalone` hides it under the app's own Back button; see [Back link](#back-link) |
 | `Badge` | Inline status badge (default, up, down, accent) |
 | `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
@@ -285,9 +285,11 @@ It is the phone shape of a Table: show one or the other from the [phone query](#
 
 ```svelte
 <BackLink href="/markets" hideInStandalone>Markets</BackLink>
+<BackLink href="/markets" variant="link" hideInStandalone>Markets</BackLink>
 ```
 
 A muted link with a left arrow above the page head, as the app's own back links looked.
+`variant="link"` keeps the browser's default link look instead, underlined in the text colour and size, as a page's own back link had on desktop.
 Under the [phone query](#phone-query) it is 44px tall with the same space under it, and `hideInStandalone` hides it when the page runs from the home screen there, where the app's top bar has its own Back button.
 
 ### Pagination
