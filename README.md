@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.8.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.8.1"
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ Then use components:
 | `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
-| `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed |
+| `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
 | `FormField` | Label wrapping an input, with a `hint` or an `error` |
 | `Grid` | Responsive 2-column grid |
@@ -187,6 +187,17 @@ Series colours come from `--chart-1` to `--chart-5`; use them in that order, sin
   </BarChart>
 </ChartContainer>
 ```
+
+For a custom chart, the library re-exports the LayerChart pieces `Chart`, `Svg`, `Html`, `Area`, `Spline`, `Circle`, `RectClipPath` and the `ChartState` type.
+Import them from the library rather than `layerchart`, so the app uses the library's LayerChart version:
+
+```svelte
+<script lang="ts">
+  import { Area, Chart, ChartContainer, ChartTooltip, Spline, Svg } from '@firetailhosting/solscope-ui';
+</script>
+```
+
+The package is marked free of side effects apart from its CSS, so pages that use no chart do not download LayerChart.
 
 ## Releasing
 

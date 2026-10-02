@@ -2,6 +2,7 @@
 	// Adapted from shadcn-svelte's chart (MIT, see LICENSE.txt in this folder).
 	import { getChartContext, Tooltip as TooltipPrimitive } from 'layerchart';
 	import type { Snippet } from 'svelte';
+	import { prefersReducedMotion } from 'svelte/motion';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { getPayloadConfigFromPayload, useChart, type TooltipPayload } from './chart-utils.js';
 
@@ -22,6 +23,7 @@
 		formatter,
 		nameKey,
 		color,
+		'aria-hidden': ariaHidden,
 		...restProps
 	}: Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
 		ref?: HTMLDivElement | null;
@@ -108,57 +110,66 @@
 	{/if}
 {/snippet}
 
-<TooltipPrimitive.Root variant="none">
-	<div bind:this={ref} class="sui-chart-tooltip {extraClass}" {...restProps}>
-		{#if !nestLabel}
-			{@render tooltipLabel()}
-		{/if}
-		<div class="rows">
-			{#each visibleSeries as item, index (item.key + index)}
-				{@const key = `${nameKey || item.key || item.label || 'value'}`}
-				{@const itemConfig = getPayloadConfigFromPayload(
-					chart.config,
-					item,
-					key,
-					chartContext.tooltip.data
-				)}
-				{@const indicatorColor = color || item.config?.color || item.color}
-				<div class="row" class:dot={indicator === 'dot'}>
-					{#if formatter && item.value !== undefined && item.label}
-						{@render formatter({
-							value: item.value,
-							name: item.label,
-							item,
-							index,
-							payload: visibleSeries
-						})}
-					{:else}
-						{#if itemConfig?.icon}
-							<itemConfig.icon />
-						{:else if !hideIndicator}
-							<div
-								class="indicator {indicator}"
-								class:nested={nestLabel}
-								style:--indicator-color={indicatorColor}
-							></div>
-						{/if}
-						<div class="entry" class:nested={nestLabel}>
-							<div class="names">
-								{#if nestLabel}
-									{@render tooltipLabel()}
-								{/if}
-								<span class="name">{itemConfig?.label || item.label}</span>
-							</div>
-							{#if item.value !== undefined}
-								<span class="value">{item.value.toLocaleString()}</span>
+<!-- The tooltip's motion is fixed when it is created, so a change in the
+     reduced motion setting creates it afresh. -->
+{#key prefersReducedMotion.current}
+	<TooltipPrimitive.Root
+		variant="none"
+		motion={prefersReducedMotion.current ? 'none' : 'spring'}
+		fadeDuration={prefersReducedMotion.current ? 0 : 100}
+		props={{ root: { 'aria-hidden': ariaHidden } }}
+	>
+		<div bind:this={ref} class="sui-chart-tooltip {extraClass}" {...restProps}>
+			{#if !nestLabel}
+				{@render tooltipLabel()}
+			{/if}
+			<div class="rows">
+				{#each visibleSeries as item, index (item.key + index)}
+					{@const key = `${nameKey || item.key || item.label || 'value'}`}
+					{@const itemConfig = getPayloadConfigFromPayload(
+						chart.config,
+						item,
+						key,
+						chartContext.tooltip.data
+					)}
+					{@const indicatorColor = color || item.config?.color || item.color}
+					<div class="row" class:dot={indicator === 'dot'}>
+						{#if formatter && item.value !== undefined && item.label}
+							{@render formatter({
+								value: item.value,
+								name: item.label,
+								item,
+								index,
+								payload: visibleSeries
+							})}
+						{:else}
+							{#if itemConfig?.icon}
+								<itemConfig.icon />
+							{:else if !hideIndicator}
+								<div
+									class="indicator {indicator}"
+									class:nested={nestLabel}
+									style:--indicator-color={indicatorColor}
+								></div>
 							{/if}
-						</div>
-					{/if}
-				</div>
-			{/each}
+							<div class="entry" class:nested={nestLabel}>
+								<div class="names">
+									{#if nestLabel}
+										{@render tooltipLabel()}
+									{/if}
+									<span class="name">{itemConfig?.label || item.label}</span>
+								</div>
+								{#if item.value !== undefined}
+									<span class="value">{item.value.toLocaleString()}</span>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/each}
+			</div>
 		</div>
-	</div>
-</TooltipPrimitive.Root>
+	</TooltipPrimitive.Root>
+{/key}
 
 <style>
 	.sui-chart-tooltip {
