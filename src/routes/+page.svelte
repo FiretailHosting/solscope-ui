@@ -95,17 +95,21 @@
 	} satisfies ChartConfig;
 	let mode = $state<'paper' | 'live'>('paper');
 	let liveHelp = $state(false);
+	// Counts onclose calls: one per close, also when the footer button unmounts the open dialog.
+	let liveHelpCloses = $state(0);
 	let orderDetails = $state(false);
 	let saving = $state(false);
 
 	// The bar shows under PHONE_QUERY: a narrow window with touch emulation.
+	// More is the active item when the page shown is not one of the tabs.
 	let drawerOpen = $state(false);
-	const tabs: TabBarItem[] = [
-		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', active: true },
+	let moreActive = $state(false);
+	const tabs = $derived<TabBarItem[]>([
+		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', active: !moreActive },
 		{ href: '#markets', label: 'Markets', icon: 'markets' },
 		{ href: '#portfolio', label: 'Portfolio', icon: 'portfolio' },
 		{ href: '#bots', label: 'Bots', icon: 'bots', badge: 2 }
-	];
+	]);
 
 	function startSaving() {
 		saving = true;
@@ -151,7 +155,11 @@
 </script>
 
 <main>
-	<BackLink href="#top" hideInStandalone>Markets</BackLink>
+	<!-- The muted default, and the plain underlined link a page's own back link had. -->
+	<div class="inline">
+		<BackLink href="#top" hideInStandalone>Markets</BackLink>
+		<BackLink href="#top" variant="link">Markets</BackLink>
+	</div>
 	<PageHead title="solscope-ui" subtitle="Flat, corporate components with a technical icon set.">
 		{#snippet actions()}
 			<ThemeToggle />
@@ -260,6 +268,7 @@
 					<SegmentedControl label="Chart range" options={ranges} bind:value={range} />
 					<ModeSwitch bind:value={mode} liveEnabled />
 					<ModeSwitch onliveunavailable={() => (liveHelp = true)} />
+					<span class="muted">Dialog closed {liveHelpCloses} times</span>
 				</div>
 				<div class="inline">
 					<Button onclick={() => (orderDetails = true)}>Long dialog</Button>
@@ -267,7 +276,12 @@
 					<Button onclick={() => (drawerOpen = !drawerOpen)} aria-pressed={drawerOpen}>
 						Tab bar More {drawerOpen ? 'open' : 'closed'}
 					</Button>
+					<Button onclick={() => (moreActive = !moreActive)} aria-pressed={moreActive}>
+						Tab bar More {moreActive ? 'active' : 'inactive'}
+					</Button>
 				</div>
+				<!-- Stands in for the drawer the More item controls. -->
+				<p id="gallery-drawer" class="muted" hidden={!drawerOpen}>The drawer is open (pretend).</p>
 				{#if archiving}
 					<InlineConfirm
 						question="Archive Momentum?"
@@ -395,7 +409,13 @@
 	</div>
 
 	{#if liveHelp}
-		<Dialog title="Real money is off" onclose={() => (liveHelp = false)}>
+		<Dialog
+			title="Real money is off"
+			onclose={() => {
+				liveHelp = false;
+				liveHelpCloses += 1;
+			}}
+		>
 			<p class="dialog-text">What an app shows when Live is chosen but not enabled.</p>
 			{#snippet footer()}
 				<Button onclick={() => (liveHelp = false)}>Close</Button>
@@ -410,18 +430,27 @@
 		{/each}
 	</Dialog>
 
-	<!-- Fixed over the page: bottom right, or centred above the TabBar on phones. -->
+	<!-- Fixed over the page: bottom right, or centred above the TabBar on phones.
+	     Dismissing it puts focus back on the Show toast button, or on main. -->
 	{#if updateToast}
 		<Toast
 			message="New version available."
 			actionLabel="Reload"
+			busyLabel="Reloading..."
 			onaction={reload}
 			actionBusy={reloading}
 			ondismiss={() => (updateToast = false)}
 		/>
 	{/if}
 
-	<TabBar items={tabs} moreBadge={3} moreOpen={drawerOpen} onmore={() => (drawerOpen = !drawerOpen)} />
+	<TabBar
+		items={tabs}
+		moreBadge={3}
+		moreOpen={drawerOpen}
+		{moreActive}
+		moreControls="gallery-drawer"
+		onmore={() => (drawerOpen = !drawerOpen)}
+	/>
 </main>
 
 <style>
@@ -501,6 +530,10 @@
 
 	.muted {
 		color: var(--muted);
+	}
+
+	#gallery-drawer {
+		margin: 0;
 	}
 
 	.empty {

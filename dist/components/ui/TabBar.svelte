@@ -23,6 +23,8 @@
 		moreIcon = 'more',
 		moreBadge = 0,
 		moreOpen = false,
+		moreActive = false,
+		moreControls,
 		onmore,
 		class: extraClass = ''
 	}: {
@@ -37,6 +39,10 @@
 		moreBadge?: number;
 		/** Whether the drawer is open, for aria-expanded on the More item. */
 		moreOpen?: boolean;
+		/** Marks More for the page shown, with aria-current, when the page is not one of the items. */
+		moreActive?: boolean;
+		/** The id of the drawer More opens, for aria-controls. */
+		moreControls?: string;
 		/** Opens the drawer; the Sidebar's `open` is the app's to set. */
 		onmore?: () => void;
 		class?: string;
@@ -69,7 +75,15 @@
 		</a>
 	{/each}
 	{#if onmore}
-		<button type="button" class="item" aria-expanded={moreOpen} onclick={onmore}>
+		<button
+			type="button"
+			class="item"
+			class:active={moreActive}
+			aria-current={moreActive ? 'page' : undefined}
+			aria-expanded={moreOpen}
+			aria-controls={moreControls}
+			onclick={onmore}
+		>
 			<span class="glyph">
 				<Icon name={moreIcon} size={22} />
 				{@render badge(moreBadge)}

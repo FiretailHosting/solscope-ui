@@ -21,6 +21,10 @@ type $$ComponentProps = {
     moreBadge?: number;
     /** Whether the drawer is open, for aria-expanded on the More item. */
     moreOpen?: boolean;
+    /** Marks More for the page shown, with aria-current, when the page is not one of the items. */
+    moreActive?: boolean;
+    /** The id of the drawer More opens, for aria-controls. */
+    moreControls?: string;
     /** Opens the drawer; the Sidebar's `open` is the app's to set. */
     onmore?: () => void;
     class?: string;

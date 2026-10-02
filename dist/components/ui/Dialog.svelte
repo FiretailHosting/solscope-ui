@@ -58,23 +58,28 @@
 	const titleId = $props.id();
 	let dialog = $state<HTMLDialogElement>();
 	let pressedOnBackdrop = false;
+	// Whether onclose has been sent for the current opening, so each close
+	// reports once however it happened.
+	let closeReported = false;
 
 	// showModal puts the dialog in the top layer with the page inert behind
 	// it, handles Escape, and moves focus in. Focus goes back to the opener
 	// on close, and the page scroll is locked on narrow screens meanwhile.
 	// An element still open at teardown was closed by the app setting
-	// `open` to false, or by unmounting, and gets its onclose here.
+	// `open` to false, or by unmounting, and gets its onclose here; the
+	// native close event that follows finds it already reported.
 	$effect(() => {
 		if (!open || !dialog) return;
 		const element = dialog;
 		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		const unlock = lockScroll();
+		closeReported = false;
 		if (!element.open) element.showModal();
 		return () => {
 			unlock();
 			if (element.open) {
 				element.close();
-				onclose?.();
+				reportClose();
 			}
 			opener?.focus();
 		};
@@ -84,11 +89,17 @@
 		dialog?.close();
 	}
 
+	function reportClose() {
+		if (closeReported) return;
+		closeReported = true;
+		onclose?.();
+	}
+
 	// The native close event; after an app-side close it has been handled.
 	function closed() {
 		if (!open) return;
 		open = false;
-		onclose?.();
+		reportClose();
 	}
 
 	// The backdrop is the dialog element itself outside its box: a click on

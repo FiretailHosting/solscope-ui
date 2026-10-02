@@ -1,4 +1,4 @@
-| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once and never taking focus; see [Toast](#toast) |
+| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once, never taking focus and giving it back on dismiss; see [Toast](#toast) |
 # solscope-ui
 
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
@@ -11,7 +11,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.9.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.10.0"
 ```
 
 ## Usage
@@ -45,7 +45,7 @@ Then use components:
 |-----------|-------------|
 | `Alert` | Notice, warning, error and success messages; errors are announced at once, others politely; `icon` adds one so the variant does not rest on colour alone |
 | `AppShell` | Full-page layout wrapper with sidebar slot |
-| `BackLink` | Link back to the parent page with an arrow, muted; a 44px tap target on phones, `hideInStandalone` hides it under the app's own Back button; see [Back link](#back-link) |
+| `BackLink` | Link back to the parent page with an arrow, muted or a plain underlined `link`; a 44px tap target on phones, `hideInStandalone` hides it under the app's own Back button; see [Back link](#back-link) |
 | `Badge` | Inline status badge (default, up, down, accent) |
 | `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
@@ -73,7 +73,7 @@ Then use components:
 | `SidebarSection` | Titled group of sidebar links |
 | `Skeleton` | Pulsing grey placeholder for loading content: `width`, `height`, `radius`; hidden from screen readers |
 | `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href`; `loading` shows a placeholder value |
-| `TabBar` | Phone bottom bar with the main destinations and a More item that opens the drawer; shown only on phones; see [Tab bar](#tab-bar) |
+| `TabBar` | Phone bottom bar with the main destinations and a More item that opens the drawer and can stand for the page shown; shown only on phones; see [Tab bar](#tab-bar) |
 | `Table` | Styled data table with overflow scroll; `rowHover={false}` turns off the row highlight for rows that are not clickable |
 | `Textarea` | Styled textarea |
 | `ThemeToggle` | Cycles through auto, light and dark themes and saves the choice; see [Saved theme](#saved-theme) |
@@ -200,6 +200,7 @@ It opens as a modal when mounted, so render it inside an `{#if}` and drop it in 
 Other attributes, such as `aria-describedby`, go on the `<dialog>`.
 Under the [phone query](#phone-query) it docks at the bottom as a sheet with a sticky heading, clear of the status bar and padded for the home indicator; elsewhere it is a centred card.
 Escape, the close button, a backdrop tap and `open = false` all close it; focus goes back to the control that opened it.
+`onclose` is called exactly once per close, however it closed, also when the dialog unmounts while open.
 
 ### Tab bar
 
@@ -218,7 +219,8 @@ Escape, the close button, a backdrop tap and `open = false` all close it; focus 
 ```
 
 Each item has `href`, a one-word `label`, an `icon`, `active` for the page shown (set as `aria-current`) and an optional `badge` count, read out as unread.
-`onmore` adds a More item that opens the drawer; `moreBadge` carries a count from a link that lives in the drawer, `moreOpen` sets its `aria-expanded`, and `moreLabel` and `moreIcon` change its look.
+`onmore` adds a More item that opens the drawer; `moreBadge` carries a count from a link that lives in the drawer, `moreOpen` sets its `aria-expanded`, `moreControls` is the drawer's id for `aria-controls`, and `moreLabel` and `moreIcon` change its look.
+`moreActive` marks More as the page shown, with the active look and `aria-current="page"`, when the page is one that lives in the drawer.
 `label` names the `<nav>` (default "Main pages"), distinct from the sidebar's "Navigation".
 The bar is fixed at the bottom under the [phone query](#phone-query), `--tab-bar-height` (3.5rem) tall plus `env(safe-area-inset-bottom)`, and hidden elsewhere.
 Pad the page bottom so content clears it:
@@ -283,9 +285,11 @@ It is the phone shape of a Table: show one or the other from the [phone query](#
 
 ```svelte
 <BackLink href="/markets" hideInStandalone>Markets</BackLink>
+<BackLink href="/markets" variant="link" hideInStandalone>Markets</BackLink>
 ```
 
 A muted link with a left arrow above the page head, as the app's own back links looked.
+`variant="link"` keeps the browser's default link look instead, underlined in the text colour and size, as a page's own back link had on desktop.
 Under the [phone query](#phone-query) it is 44px tall with the same space under it, and `hideInStandalone` hides it when the page runs from the home screen there, where the app's top bar has its own Back button.
 
 ### Pagination
@@ -309,6 +313,7 @@ The range wraps under the buttons on narrow screens.
   <Toast
     message="New version available."
     actionLabel="Reload"
+    busyLabel="Reloading..."
     onaction={reload}
     actionBusy={reloading}
     ondismiss={() => (updateReady = false)}
@@ -318,9 +323,10 @@ The range wraps under the buttons on narrow screens.
 
 A small card fixed over the page, so it never moves the layout: at the bottom right, or centred above the TabBar under the [phone query](#phone-query).
 `message` is one line of text or a snippet; `actionLabel` adds a small primary button that calls `onaction`, and `ondismiss` adds an x button named by `dismissLabel` (default "Dismiss").
-Set `actionBusy` while the action runs: the button is `aria-busy` and ignores presses, but is never disabled, so it keeps focus.
+Set `actionBusy` while the action runs: the button is `aria-busy`, shows `busyLabel` and ignores presses, but is never disabled, so it keeps focus.
 It is a `status` live region, so the message is announced once when the toast appears without taking focus; `live="off"` keeps it quiet.
 The buttons sit in the normal tab order, and Escape while focus is inside calls `ondismiss`.
+After a dismiss from the button or Escape, focus goes back to the element that had it before focus entered the toast, or to `main`, given `tabindex="-1"` if it needs one.
 It fades and slides in, with no motion under reduced motion, and sits above the TabBar and under the drawer and any Dialog.
 
 ### Home-screen app
@@ -330,7 +336,7 @@ Set `viewport-fit=cover` in the app's viewport meta so `env(safe-area-inset-*)` 
 Under 860px the page scroll is locked while the drawer or a Dialog is open: on a phone the body is pinned at its scroll position, which comes back when the lock lifts or the screen widens, and in a mouse window the scrollbar's width stays as padding so nothing shifts.
 `lockScroll()` is exported for an app's own overlays and returns the function that releases the lock.
 Under `(pointer: coarse)` every control is at least 44px tall and form controls are 16px, so iOS does not zoom in on focus; an app that sizes bare inputs itself must set 16px there too.
-Tap highlights are off, controls cannot be selected, buttons have no long-press menu while links keep theirs, and buttons and nav items show a pressed state where there is no hover.
+Tap highlights are off, controls cannot be selected, buttons have no long-press menu while links keep theirs, and buttons, links and nav items show a pressed state where there is no hover.
 Installed as a standalone app, the page no longer rubber-bands at its ends, so the fixed bars stay put.
 
 ### Fonts
