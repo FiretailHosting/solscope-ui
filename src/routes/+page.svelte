@@ -5,6 +5,7 @@
 		Button,
 		Card,
 		ChartContainer,
+		Dialog,
 		ChartTooltip,
 		EmptyState,
 		FormField,
@@ -18,11 +19,13 @@
 		Select,
 		Skeleton,
 		Stat,
+		TabBar,
 		Table,
 		ThemeToggle,
 		type ChartConfig,
 		type IconName,
-		type SegmentedOption
+		type SegmentedOption,
+		type TabBarItem
 	} from '$lib';
 	import { BarChart, LineChart } from 'layerchart';
 
@@ -86,8 +89,18 @@
 		sells: { label: 'Sells', color: 'var(--chart-2)' }
 	} satisfies ChartConfig;
 	let mode = $state<'paper' | 'live'>('paper');
-	let liveHelp: HTMLDialogElement;
+	let liveHelp = $state(false);
+	let orderDetails = $state(false);
 	let saving = $state(false);
+
+	// The bar shows under 860px: narrow the window to see it.
+	let drawerOpen = $state(false);
+	const tabs: TabBarItem[] = [
+		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', active: true },
+		{ href: '#markets', label: 'Markets', icon: 'markets' },
+		{ href: '#portfolio', label: 'Portfolio', icon: 'portfolio' },
+		{ href: '#bots', label: 'Bots', icon: 'bots', badge: 2 }
+	];
 
 	function startSaving() {
 		saving = true;
@@ -195,7 +208,13 @@
 					</SegmentedControl>
 					<SegmentedControl label="Chart range" options={ranges} bind:value={range} />
 					<ModeSwitch bind:value={mode} liveEnabled />
-					<ModeSwitch onliveunavailable={() => liveHelp.showModal()} />
+					<ModeSwitch onliveunavailable={() => (liveHelp = true)} />
+				</div>
+				<div class="inline">
+					<Button onclick={() => (orderDetails = true)}>Long dialog</Button>
+					<Button onclick={() => (drawerOpen = !drawerOpen)} aria-pressed={drawerOpen}>
+						Tab bar More {drawerOpen ? 'open' : 'closed'}
+					</Button>
 				</div>
 				<Alert>A neutral notice.</Alert>
 				<Alert variant="warn">A warning.</Alert>
@@ -261,11 +280,23 @@
 		</Card>
 	</div>
 
-	<dialog bind:this={liveHelp} aria-labelledby="live-help-title">
-		<h2 id="live-help-title">Real money is off</h2>
-		<p>What an app shows when Live is chosen but not enabled.</p>
-		<Button onclick={() => liveHelp.close()}>Close</Button>
-	</dialog>
+	{#if liveHelp}
+		<Dialog title="Real money is off" onclose={() => (liveHelp = false)}>
+			<p class="dialog-text">What an app shows when Live is chosen but not enabled.</p>
+			{#snippet footer()}
+				<Button onclick={() => (liveHelp = false)}>Close</Button>
+			{/snippet}
+		</Dialog>
+	{/if}
+
+	<!-- A sheet on phones, long enough to scroll under its sticky heading. -->
+	<Dialog bind:open={orderDetails} title="Order details" size="lg">
+		{#each Array.from({ length: 12 }, (_, index) => index + 1) as line (line)}
+			<p class="dialog-text">Line {line} of a long order summary, so the sheet scrolls on a phone.</p>
+		{/each}
+	</Dialog>
+
+	<TabBar items={tabs} moreBadge={3} moreOpen={drawerOpen} onmore={() => (drawerOpen = !drawerOpen)} />
 </main>
 
 <style>
@@ -330,24 +361,17 @@
 		gap: 0.75rem;
 	}
 
-	dialog {
-		max-width: 24rem;
-		padding: 1.25rem;
-		color: var(--fg);
-		background: var(--card);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-lg);
-	}
-
-	dialog h2 {
-		margin: 0 0 0.5rem;
-		font-size: 1rem;
-	}
-
-	dialog p {
-		margin: 0 0 1rem;
+	.dialog-text {
+		margin: 0 0 0.75rem;
 		color: var(--muted);
 		font-size: 0.875rem;
+	}
+
+	/* Content clears the fixed TabBar on narrow screens. */
+	@media (max-width: 860px) {
+		main {
+			padding-bottom: calc(2rem + var(--tab-bar-height) + env(safe-area-inset-bottom));
+		}
 	}
 
 	.inline {
