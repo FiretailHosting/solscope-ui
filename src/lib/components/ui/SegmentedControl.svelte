@@ -91,6 +91,12 @@
 		outline-offset: -2px;
 	}
 
+	/* The selected segment is filled with the accent, so its ring takes the text color instead. */
+	.sui-segmented :global(button.active:focus-visible) {
+		outline-color: var(--accent-fg);
+		outline-offset: -4px;
+	}
+
 	.sui-segmented :global(button:disabled) {
 		opacity: 0.5;
 		cursor: not-allowed;
