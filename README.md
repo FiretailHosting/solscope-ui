@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.15.1"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.15.2"
 ```
 
 ## Usage
@@ -53,7 +53,7 @@ Then use components:
 | `ChartHint` | What a chart says while nothing is inspected: hover wording for a mouse, drag wording on a touch screen |
 | `SeriesChart` | A price or value over time as a line over a gradient fill or as candles, with guides, a time axis, a crosshair, trade markers and the same inspection by pointer, finger, keyboard and screen reader; see [Series chart](#series-chart) |
 | `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
-| `Dialog` | Modal over a native `<dialog>`: `title` or `label`, close button, Escape, backdrop tap, focus return; a centred card on desktop and a bottom sheet on phones; see [Dialog](#dialog) |
+| `Dialog` | Modal over a native `<dialog>`: `title` or `label`, close button, Escape, backdrop tap, swipe down on phones, focus return; a centred card on desktop and a bottom sheet on phones; see [Dialog](#dialog) |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
 | `FormField` | Label wrapping an input, with a `hint` or an `error` under it, outside the label so they are not read as the field's name; `hintId` and `errorId` name them for the input's `aria-describedby`; the error is not announced on its own |
 | `Grid` | Up to `cols` columns of at least `minWidth`, fewer when they would be narrower |
@@ -234,6 +234,7 @@ It opens as a modal when mounted, so render it inside an `{#if}` and drop it in 
 Other attributes, such as `aria-describedby`, go on the `<dialog>`.
 Under the [phone query](#phone-query) it docks at the bottom as a sheet with a sticky heading, clear of the status bar and padded for the home indicator; elsewhere it is a centred card.
 Escape, the close button, a backdrop tap and `open = false` all close it; focus goes back to the control that opened it.
+As a sheet it also closes on a swipe down that starts in its content while nothing under the finger is scrolled down, so scrolling back up and dragging a field never close it; reduced motion skips its slide.
 `onclose` is called exactly once per close, however it closed, also when the dialog unmounts while open.
 
 ### Tab bar

@@ -3,6 +3,8 @@
 	import type { HTMLDialogAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
 	import { lockScroll } from '../../scroll-lock.js';
+	import { PHONE_QUERY } from '../../phone.js';
+	import { closesSheet, isSheetSwipe } from '../../sheet-swipe.js';
 
 	type Size = 'default' | 'lg';
 
@@ -75,7 +77,9 @@
 		const unlock = lockScroll();
 		closeReported = false;
 		if (!element.open) element.showModal();
+		const stopSwipe = swipeToClose(element);
 		return () => {
+			stopSwipe();
 			unlock();
 			if (element.open) {
 				element.close();
@@ -87,6 +91,110 @@
 
 	function close() {
 		dialog?.close();
+	}
+
+	// How long the sheet takes to slide away after a swipe down, matching
+	// its slide up on open.
+	const SHEET_SLIDE_MS = 200;
+
+	// On phones, where the dialog is a bottom sheet, a swipe down closes it:
+	// the sheet follows the finger and, let go far or fast enough, slides
+	// away; otherwise it springs back. Only a gesture that starts inside the
+	// panel with nothing under the finger scrolled down counts, so scrolling
+	// the content back up never closes it, and fields such as a slider keep
+	// their own drags. Touch events, since pointer events end as soon as the
+	// browser takes the gesture for a scroll. Reduced motion skips the slide.
+	function swipeToClose(element: HTMLDialogElement): () => void {
+		let start: { x: number; y: number } | null = null;
+		let swiping = false;
+		let distance = 0;
+		let speed = 0;
+		let last = { y: 0, time: 0 };
+		const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+		// Whether the content under the finger, or the sheet itself, is
+		// scrolled down: then a drag down scrolls it back first.
+		function scrolledUnder(target: Element): boolean {
+			for (let node: Element | null = target; node; node = node.parentElement) {
+				if (node.scrollTop > 0) return true;
+				if (node === element) return false;
+			}
+			return false;
+		}
+
+		function settle(to: string) {
+			element.style.transition = '';
+			element.style.transform = to;
+		}
+
+		function touchStart(event: TouchEvent) {
+			start = null;
+			swiping = false;
+			if (event.touches.length !== 1 || !window.matchMedia(PHONE_QUERY).matches) return;
+			const target = event.target instanceof Element ? event.target : null;
+			const panel = element.querySelector('.sui-dialog-panel');
+			if (!target || !panel?.contains(target) || target.closest('input, textarea, select, [contenteditable]') || scrolledUnder(target)) return;
+			const touch = event.touches[0];
+			start = { x: touch.clientX, y: touch.clientY };
+			last = { y: touch.clientY, time: event.timeStamp };
+			distance = 0;
+			speed = 0;
+		}
+
+		function touchMove(event: TouchEvent) {
+			if (!start || event.touches.length !== 1) return;
+			const touch = event.touches[0];
+			if (!swiping) {
+				const decided = isSheetSwipe(touch.clientX - start.x, touch.clientY - start.y);
+				if (decided === null) return;
+				if (!decided) {
+					start = null;
+					return;
+				}
+				swiping = true;
+				element.style.transition = 'none';
+			}
+			event.preventDefault();
+			distance = Math.max(0, touch.clientY - start.y);
+			speed = (touch.clientY - last.y) / Math.max(1, event.timeStamp - last.time);
+			last = { y: touch.clientY, time: event.timeStamp };
+			element.style.transform = `translateY(${distance}px)`;
+		}
+
+		function touchEnd() {
+			const wasSwiping = swiping;
+			start = null;
+			swiping = false;
+			if (!wasSwiping) return;
+			if (!closesSheet(distance, speed, element.getBoundingClientRect().height)) return settle('');
+			if (reducedMotion()) {
+				settle('');
+				close();
+				return;
+			}
+			settle('translateY(100%)');
+			setTimeout(() => {
+				close();
+				element.style.transform = '';
+			}, SHEET_SLIDE_MS);
+		}
+
+		function touchCancel() {
+			if (swiping) settle('');
+			start = null;
+			swiping = false;
+		}
+
+		element.addEventListener('touchstart', touchStart, { passive: true });
+		element.addEventListener('touchmove', touchMove, { passive: false });
+		element.addEventListener('touchend', touchEnd);
+		element.addEventListener('touchcancel', touchCancel);
+		return () => {
+			element.removeEventListener('touchstart', touchStart);
+			element.removeEventListener('touchmove', touchMove);
+			element.removeEventListener('touchend', touchEnd);
+			element.removeEventListener('touchcancel', touchCancel);
+		};
 	}
 
 	function reportClose() {
@@ -251,7 +359,8 @@
 
 	/* Phones, PHONE_QUERY: a sheet docked at the bottom, with the heading and
 	   the close button staying put while the content scrolls under them. It
-	   stops short of the status bar, which the top safe-area inset covers. */
+	   stops short of the status bar, which the top safe-area inset covers.
+	   A swipe down closes it (swipeToClose). */
 	@media (max-width: 860px) and (pointer: coarse) {
 		.sui-dialog,
 		.sui-dialog.lg {
