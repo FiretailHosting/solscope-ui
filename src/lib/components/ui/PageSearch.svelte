@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { flushSync } from 'svelte';
 	import Dialog from './Dialog.svelte';
 	import Icon from './Icon.svelte';
 	import { filterPages, type PageSearchItem } from '../../page-search.js';
@@ -6,17 +7,17 @@
 	let {
 		open = $bindable(false),
 		pages,
-		title = 'Go to page',
-		fieldLabel = 'Search pages',
+		title = 'Search pages',
+		fieldLabel = 'Page name',
 		placeholder = 'Search pages',
 		emptyText = 'No pages match.',
 		onclose
 	}: {
-		/** Shown while true; bind it, and set it from the button that opens the search. */
+		/** Shown while true. Bind it; open it with `show()` from a tap, so iOS raises the keyboard. */
 		open?: boolean;
-		/** Every page that can be reached, in the order they are offered with nothing typed. */
+		/** Every page that can be reached, each with a unique href, in the order they are offered with nothing typed. */
 		pages: PageSearchItem[];
-		/** The sheet's heading, which names the dialog. */
+		/** The sheet's heading, which names the dialog; use the opening button's name. */
 		title?: string;
 		/** Accessible name of the search field. */
 		fieldLabel?: string;
@@ -37,21 +38,48 @@
 		matches.length === 0 ? emptyText : matches.length === 1 ? '1 page' : `${matches.length} pages`
 	);
 
-	// Each opening starts empty, with the field focused for typing. The
-	// Dialog's showModal would focus its close button first.
-	$effect(() => {
-		if (!open) return;
+	// Opens the sheet and focuses its field within the calling tap, which iOS
+	// needs to raise the keyboard: flushSync mounts the dialog and runs its
+	// showModal now rather than after the handler returns.
+	export function show() {
 		query = '';
-		const frame = requestAnimationFrame(() => field?.focus());
-		return () => cancelAnimationFrame(frame);
+		open = true;
+		flushSync();
+		field?.focus();
+	}
+
+	// Each opening starts empty, also when the app sets `open` itself.
+	$effect(() => {
+		if (open) return;
+		query = '';
 	});
+
+	// The count is read out once typing pauses, and only when it changed:
+	// a status region announces each new text, not each keystroke.
+	let announced = $state('');
+	$effect(() => {
+		if (!open) {
+			announced = '';
+			return;
+		}
+		const text = countText;
+		const timer = setTimeout(() => (announced = text), 500);
+		return () => clearTimeout(timer);
+	});
+
+	function currentOf(active: PageSearchItem['active']): 'page' | 'true' | undefined {
+		if (!active) return undefined;
+		return active === 'section' ? 'true' : 'page';
+	}
 
 	function links(): HTMLAnchorElement[] {
 		return list ? [...list.querySelectorAll('a')] : [];
 	}
 
-	// Return goes to the first match; Down steps into the list.
+	// Return goes to the first match; Down steps into the list. Return that
+	// confirms an input method's composition is left to it.
 	function fieldKeydown(event: KeyboardEvent) {
+		if (event.isComposing) return;
 		if (event.key === 'Enter') {
 			const first = links()[0];
 			if (!first) return;
@@ -88,6 +116,8 @@
 </script>
 
 <Dialog bind:open {title} class="sui-page-search" {onclose}>
+	<!-- autofocus: showModal focuses the field directly, not Close first. -->
+	<!-- svelte-ignore a11y_autofocus -->
 	<input
 		bind:this={field}
 		bind:value={query}
@@ -95,26 +125,34 @@
 		type="search"
 		aria-label={fieldLabel}
 		aria-controls={listId}
-		aria-describedby="{listId}-count"
 		{placeholder}
+		autofocus
 		autocomplete="off"
 		autocapitalize="off"
 		spellcheck="false"
 		enterkeyhint="go"
 		onkeydown={fieldKeydown}
 	/>
-	<!-- Read out politely as the list changes, and shown when nothing matches. -->
-	<p id="{listId}-count" class="sui-page-search-count" class:empty={matches.length === 0} role="status">
-		{countText}
-	</p>
+	<p class="sui-page-search-status" role="status">{announced}</p>
+	{#if matches.length === 0}
+		<p class="sui-page-search-empty">{emptyText}</p>
+	{/if}
+	<!-- role="list": Safari drops list semantics from a list without bullets. -->
+	<!-- svelte-ignore a11y_no_redundant_roles -->
 	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-	<ul bind:this={list} id={listId} class="sui-page-search-list" aria-label="Pages" onkeydown={listKeydown}>
-		{#each matches as page (page.href)}
+	<ul bind:this={list} id={listId} class="sui-page-search-list" role="list" aria-label="Pages" onkeydown={listKeydown}>
+		{#each matches as page, index (`${index}:${page.href}`)}
 			<li>
-				<a href={page.href} aria-current={page.active ? 'page' : undefined} onclick={picked}>
+				<a href={page.href} aria-current={currentOf(page.active)} onclick={picked}>
 					<Icon name={page.icon} size={18} />
 					<span class="name">{page.label}</span>
-					{#if page.section}<span class="section">{page.section}</span>{/if}
+					{#if page.badge}
+						<span class="badge" aria-hidden="true">{page.badge > 99 ? '99+' : page.badge}</span>
+						<span class="visually-hidden">, {page.badge} unread</span>
+					{/if}
+					{#if page.section}
+						<span class="visually-hidden">, </span><span class="section">{page.section}</span>
+					{/if}
 				</a>
 			</li>
 		{/each}
@@ -154,8 +192,8 @@
 		outline-offset: 1px;
 	}
 
-	/* The count is for screen readers, unless nothing matches. */
-	.sui-page-search-count {
+	.sui-page-search-status,
+	.visually-hidden {
 		position: absolute;
 		width: 1px;
 		height: 1px;
@@ -164,13 +202,7 @@
 		white-space: nowrap;
 	}
 
-	.sui-page-search-count.empty {
-		position: static;
-		width: auto;
-		height: auto;
-		overflow: visible;
-		clip-path: none;
-		white-space: normal;
+	.sui-page-search-empty {
 		margin: var(--space-4) 0 0;
 		color: var(--muted);
 		font-size: var(--text-sm);
@@ -184,6 +216,7 @@
 	}
 
 	.sui-page-search-list a {
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
@@ -215,19 +248,48 @@
 		outline-offset: -2px;
 	}
 
-	/* The page shown: accent and weight, with its icon in the accent too. */
-	.sui-page-search-list a[aria-current='page'] {
+	/* The page shown: a bar at the start edge as well as the accent and
+	   weight, so it is told apart by shape too. */
+	.sui-page-search-list a[aria-current] {
 		color: var(--accent);
 		font-weight: 600;
 	}
 
-	.sui-page-search-list a[aria-current='page'] :global(svg) {
+	.sui-page-search-list a[aria-current]::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: var(--space-2);
+		bottom: var(--space-2);
+		width: 3px;
+		background: var(--accent);
+		border-radius: var(--radius-full);
+	}
+
+	.sui-page-search-list a[aria-current] :global(svg) {
 		color: var(--accent);
 	}
 
 	.name {
 		min-width: 0;
 		overflow-wrap: anywhere;
+	}
+
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+		min-width: 1.25rem;
+		height: 1.25rem;
+		padding: 0 var(--space-1);
+		border-radius: var(--radius-full);
+		background: var(--down);
+		color: var(--down-fg);
+		font-size: var(--text-2xs);
+		font-weight: 700;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.section {

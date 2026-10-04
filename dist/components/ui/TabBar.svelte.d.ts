@@ -44,9 +44,18 @@ type $$ComponentProps = {
     variant?: 'bar' | 'pill';
     /** Accessible name of the search button. */
     searchLabel?: string;
-    /** Whether the search is open, for aria-expanded on the search button. */
+    /**
+     * @deprecated Ignored since v0.14.1: the button opens a dialog, which
+     * aria-haspopup announces, and is inert behind it while open.
+     */
     searchOpen?: boolean;
-    /** Adds a round search button beside the pill, such as one opening PageSearch; `pill` only. */
+    /**
+     * Adds a round search button beside the pill; `pill` only. The button
+     * is focused before this runs, since iOS does not focus a tapped
+     * button, so a dialog opened here gives focus back to it. Open the
+     * dialog synchronously, such as with PageSearch's `show()`, so iOS
+     * raises the keyboard for its field.
+     */
     onsearch?: () => void;
     class?: string;
 };

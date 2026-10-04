@@ -39,7 +39,6 @@
 		onmore,
 		variant = 'bar',
 		searchLabel = 'Search pages',
-		searchOpen = false,
 		onsearch,
 		class: extraClass = ''
 	}: {
@@ -72,9 +71,18 @@
 		variant?: 'bar' | 'pill';
 		/** Accessible name of the search button. */
 		searchLabel?: string;
-		/** Whether the search is open, for aria-expanded on the search button. */
+		/**
+		 * @deprecated Ignored since v0.14.1: the button opens a dialog, which
+		 * aria-haspopup announces, and is inert behind it while open.
+		 */
 		searchOpen?: boolean;
-		/** Adds a round search button beside the pill, such as one opening PageSearch; `pill` only. */
+		/**
+		 * Adds a round search button beside the pill; `pill` only. The button
+		 * is focused before this runs, since iOS does not focus a tapped
+		 * button, so a dialog opened here gives focus back to it. Open the
+		 * dialog synchronously, such as with PageSearch's `show()`, so iOS
+		 * raises the keyboard for its field.
+		 */
 		onsearch?: () => void;
 		class?: string;
 	} = $props();
@@ -160,8 +168,10 @@
 			class="search"
 			aria-label={searchLabel}
 			aria-haspopup="dialog"
-			aria-expanded={searchOpen}
-			onclick={onsearch}
+			onclick={(event) => {
+				event.currentTarget.focus({ preventScroll: true });
+				onsearch();
+			}}
 		>
 			<Icon name="search" size={22} />
 		</button>
@@ -200,6 +210,7 @@
 		   safe-area padding up to the gap. */
 		.sui-tab-bar.pill {
 			align-items: center;
+			justify-content: center;
 			gap: var(--space-2);
 			min-height: 0;
 			padding: 0 max(var(--space-3), env(safe-area-inset-right)) env(safe-area-inset-bottom)
@@ -218,7 +229,10 @@
 			border-radius: var(--radius-full);
 		}
 
+		/* No wider than five items need, so a landscape phone gets a pill,
+		   not a stretched bar. */
 		.pill .items {
+			max-width: 30rem;
 			box-sizing: border-box;
 			min-height: var(--tab-bar-min-height);
 			padding: var(--space-1);
@@ -282,8 +296,13 @@
 		border-radius: var(--radius-full);
 	}
 
+	/* The ring is the shape cue, at least 3:1 against the bar. The label
+	   takes the deeper accent, which keeps 4.5:1 on the capsule in both
+	   themes, where the plain accent falls short in the dark one. */
 	.pill .item.active {
+		color: var(--accent-hover);
 		background: var(--accent-subtle);
+		box-shadow: inset 0 0 0 1px var(--accent);
 	}
 
 	.pill .item.active::before {
@@ -298,15 +317,16 @@
 		color: var(--fg);
 	}
 
-	/* A round button the pill's height, beside it. */
+	/* A round button the pill's height, beside it, held at 56px so large
+	   text grows the pill rather than the button. */
 	.search {
 		flex: none;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		box-sizing: border-box;
-		width: var(--tab-bar-min-height);
-		height: var(--tab-bar-min-height);
+		width: 56px;
+		height: 56px;
 		padding: 0;
 		margin: 0;
 		color: var(--fg);
@@ -344,7 +364,8 @@
 	}
 
 	/* Up to two lines under large text or zoom, rather than an ellipsis
-	   that hides the word; the bar grows with it. */
+	   that hides the word; the bar grows with it. Lines break between
+	   words only, never inside one. */
 	.label {
 		max-width: 100%;
 		display: -webkit-box;
@@ -352,7 +373,7 @@
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
 		overflow: hidden;
-		overflow-wrap: anywhere;
+		overflow-wrap: normal;
 		text-align: center;
 	}
 

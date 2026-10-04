@@ -11,7 +11,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.14.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.14.1"
 ```
 
 ## Usage
@@ -278,19 +278,20 @@ Pad the page bottom so content clears it:
 A badge sits on the icon's top right corner, ringed in the bar's colour, so it covers only the corner.
 
 `variant="pill"` floats the items and More as one rounded group, inset from the screen edges and the safe areas, with the page between and beside it still reachable.
-The page shown is a filled capsule instead of the edge bar.
-`onsearch` adds a round search button beside the pill, such as one opening [PageSearch](#page-search); `searchOpen` sets its `aria-expanded` and `searchLabel` names it (default "Search pages").
+The page shown is a filled capsule with an accent ring instead of the edge bar; the pill is at most 30rem wide and centred, and labels break between words only.
+`onsearch` adds a 56px round search button beside the pill, such as one opening [PageSearch](#page-search); `searchLabel` names it (default "Search pages"), and it carries `aria-haspopup="dialog"`.
+The button takes focus before `onsearch` runs, since iOS does not focus a tapped button, so the dialog gives focus back to it on close; `searchOpen` is ignored since v0.14.1.
 The pill sits `--space-2` above the bottom edge, or right above the home indicator, and `--tab-bar-height` includes that gap, so the same padding clears it.
 A pill for the installed app only, keeping the bar in the browser:
 
 ```svelte
 <script lang="ts">
   const standalone = window.matchMedia('(display-mode: standalone)').matches;
-  let searchOpen = $state(false);
+  let pageSearch = $state<ReturnType<typeof PageSearch>>();
 </script>
 
-<TabBar items={tabs} variant={standalone ? 'pill' : 'bar'} {searchOpen} onsearch={() => (searchOpen = true)} />
-<PageSearch bind:open={searchOpen} pages={allPages} />
+<TabBar items={tabs} variant={standalone ? 'pill' : 'bar'} onsearch={() => pageSearch?.show()} />
+<PageSearch bind:this={pageSearch} pages={allPages} />
 ```
 
 ### Page search
@@ -303,17 +304,21 @@ A pill for the installed app only, keeping the bar in the browser:
     { href: '/orders', label: 'Orders', icon: 'orders', section: 'Trading' }
   ];
   let open = $state(false);
+  let search = $state<ReturnType<typeof PageSearch>>();
 </script>
 
-<PageSearch bind:open {pages} />
+<Button icon="search" onclick={() => search?.show()}>Search pages</Button>
+<PageSearch bind:this={search} bind:open {pages} />
 ```
 
-Each page has a unique `href`, a `label`, an `icon`, an optional `section` shown beside it and `active` for the page shown, marked with `aria-current="page"`.
+Each page has a unique `href`, a `label`, an `icon`, an optional `section` shown beside it, an optional `badge` count read out as unread, and `active` as on TabBar items: `true` or `'page'` for the page shown, `'section'` for a page under it.
+The page shown has a bar at its start edge as well as the accent colour.
 It reuses [Dialog](#dialog): a sheet on phones and a card elsewhere, a fixed height so the field stays put as the list shrinks.
-The field takes focus on open and empties each time; every word typed must start a word of the label or section, and labels starting with the first word come first.
-Return goes to the first match, Down moves into the list, Up and Down move through it, and Up from the first goes back to the field.
-The number of matches is read out as it changes, and `emptyText` shows when nothing matches.
-`title`, `fieldLabel` and `placeholder` change the wording; `filterPages(pages, query)` is the same filter for code and tests.
+Open it with `show()` from the tap: it opens and focuses the field synchronously, which iOS needs to raise the keyboard; setting `open` also works, without the keyboard on iOS.
+The field empties each time; every word typed must start a word of the label or section, and labels starting with the first word come first.
+Return goes to the first match, Down moves into the list, Up and Down move through it, Home and End jump to its ends, and Up from the first goes back to the field.
+The number of matches is read out once typing pauses, and `emptyText` shows when nothing matches.
+`title` (default "Search pages", the search button's name), `fieldLabel` and `placeholder` change the wording; `filterPages(pages, query)` is the same filter for code and tests.
 
 ### Inline confirm
 
