@@ -14,6 +14,7 @@
 		Icon,
 		icons,
 		InlineConfirm,
+		Input,
 		ModeSwitch,
 		PageHead,
 		Pagination,
@@ -274,6 +275,9 @@
 		<Card title="Profit/loss" icon="portfolio">
 			<SeriesChart points={pnlSeries} byTime baseline height={220} fixed format={signed} change={signed} noun="value" label="Profit/loss history" />
 		</Card>
+		<Card title="Short chart" icon="markets">
+			<SeriesChart points={priceSeries.slice(-30)} kind="candles" byTime height={96} fixed format={formatPrice} label="Short price history" />
+		</Card>
 	</div>
 
 	<Card title="Tokens" icon="settings">
@@ -402,6 +406,9 @@
 					<Select style="width: 100%">
 						<option>Fills its field</option>
 					</Select>
+				</FormField>
+				<FormField label="Amount" error="Enter an amount above zero." errorId="demo-amount-error">
+					<Input value="0" aria-invalid="true" aria-describedby="demo-amount-error" />
 				</FormField>
 				<div class="skeletons" aria-busy="true">
 					<Skeleton width="60%" />

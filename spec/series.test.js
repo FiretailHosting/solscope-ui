@@ -1,6 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
-import { candleWidth, guideValues, hasCandles, inGap, inspectHint, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight } from '../src/lib/chart/series.ts';
+import { candleReading, candleTrend, candleWidth, guideLabels, guideValues, SHORT_PLOT_HEIGHT, hasCandles, inGap, inspectHint, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight } from '../src/lib/chart/series.ts';
 import { axisTime, chartDay, chartTime, spansYears } from '../src/lib/chart/dates.ts';
 
 const HOUR = 3_600_000;
@@ -138,4 +138,30 @@ test('the hint leaves hovering out on a touch screen, and says how to see a trad
 	assert.equal(inspectHint('price', false, false), 'Hover or drag across the chart to see a price.');
 	assert.equal(inspectHint('price', false, true), 'Tap or drag across the chart to see a price.');
 	assert.equal(inspectHint('value', true, true), 'Tap or drag to see a value. Select a dot to see the trade.');
+});
+
+test('a rising candle is hollow and a falling one filled', () => {
+	assert.equal(candleTrend({ t: start, p: 2, o: 1 }), 'rise');
+	assert.equal(candleTrend({ t: start, p: 1, o: 1 }), 'rise');
+	assert.equal(candleTrend({ t: start, p: 1, o: 2 }), 'fall');
+});
+
+test('a candle reads open, high, low and close, each named', () => {
+	assert.equal(candleReading({ t: start, p: 1.5, o: 1, h: 2, l: 0.5 }, (n) => `$${n}`), 'open $1, high $2, low $0.5, close $1.5');
+});
+
+test('guide labels keep out of the time axis row', () => {
+	const guides = [{ value: 3, y: 40 }, { value: 2, y: 120 }, { value: 1, y: 190 }];
+	assert.deepEqual(guideLabels(guides, 200, 16), [3, 2]);
+	assert.deepEqual(guideLabels(guides, 200, 0), [3, 2, 1]);
+});
+
+test('a short chart keeps one guide label at most, the one nearest the middle', () => {
+	assert.ok(SHORT_PLOT_HEIGHT === 150);
+	const guides = [{ value: 3, y: 10 }, { value: 2, y: 45 }, { value: 1, y: 85 }];
+	assert.deepEqual(guideLabels(guides, 96, 16), [2]);
+	assert.deepEqual(guideLabels([{ value: 1, y: 90 }], 96, 16), []);
+	assert.deepEqual(guideLabels([], 96, 16), []);
+	assert.deepEqual(guideLabels(guides, 149, 0), [1]);
+	assert.deepEqual(guideLabels(guides, 150, 0), [3, 2, 1]);
 });

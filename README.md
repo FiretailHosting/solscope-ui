@@ -11,7 +11,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.13.1"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.13.2"
 ```
 
 ## Usage
@@ -56,7 +56,7 @@ Then use components:
 | `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
 | `Dialog` | Modal over a native `<dialog>`: `title` or `label`, close button, Escape, backdrop tap, focus return; a centred card on desktop and a bottom sheet on phones; see [Dialog](#dialog) |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
-| `FormField` | Label wrapping an input, with a `hint` or an `error`; `hintId` and `errorId` name them for the input's `aria-describedby` |
+| `FormField` | Label wrapping an input, with a `hint` or an `error` under it, outside the label so they are not read as the field's name; `hintId` and `errorId` name them for the input's `aria-describedby`; the error is not announced on its own |
 | `Grid` | Up to `cols` columns of at least `minWidth`, fewer when they would be narrower |
 | `Icon` | One of the library's icons by `name`; decorative unless given a `label` |
 | `InlineConfirm` | A question asked in place before an action that cannot be undone, with confirm and cancel buttons; see [Inline confirm](#inline-confirm) |
@@ -109,6 +109,7 @@ Type sizes run `--text-2xs`, `--text-xs`, `--text-sm`, `--text-md`, `--text-lg`,
 ### Globals
 
 `globals.css` styles bare `input`, `select` and `textarea` elements like the library's own, so an app's unclassed controls match, and gives them 16px text and 44px height on touch screens.
+The look sits inside `:where()`, so any rule of an app outranks it, such as an invalid field's border.
 It also provides helper classes for an app's markup: `sui-sr-only`, `sui-muted`, `sui-small`, `sui-error`, `sui-up`, `sui-down`, `sui-mono`, `sui-stack` (one gap between stacked blocks), `sui-skeleton-line` (a line of placeholder text) and `sui-page-loading` (rows kept from the last page while the next loads).
 A bare `button` or `a` with `aria-disabled="true"` is dimmed the way a Button is.
 The page's `scroll-padding-bottom` clears the mounted toasts and, on phones, the tab bar.
@@ -413,8 +414,9 @@ Medium (500) and Bold (700) are used less and can load on demand.
 
 `SeriesChart` draws `points` (`{ t, p }`, with `o`, `h`, `l` and `v` for a candle) as a line over a gradient fill, or as candles with `kind="candles"` when every point carries an open, high and low.
 It fits the data rather than zero, or keeps zero in view with `baseline`, where the line above zero reads as gain and below as loss.
-Round-value `guides` run across the plot with labels at the right edge, a `timeAxis` runs along the bottom, and `live` pulses the last point.
-A pointer shows a crosshair, a value tag and a tooltip; a finger drags and reads the readout under the chart, which stays after it lifts; the keyboard moves a hidden slider that announces each point; Escape hides the tooltip.
+Round-value `guides` run across the plot with labels at the left edge, kept out of the `timeAxis` row along the bottom and down to one on a plot under 150px tall, and `live` pulses the last point three times, and again when a new last point arrives.
+Rising candles are hollow and falling ones filled, so direction does not rest on colour alone.
+A pointer shows a crosshair, a value tag and a tooltip; a finger drags and reads the readout under the chart, which stays after it lifts; the keyboard moves a hidden slider that announces each point, a candle as open, high, low and close; Escape hides the tooltip.
 `markers` place trades on the line as buy and sell shapes that can be hovered, tapped or focused, and `change` adds each point's change since the first.
 `format`, `formatTime` and `formatDay` say how values and times read; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
 The line draws in and the fill fades up when the series changes, candles rise one after another, and nothing moves under reduced motion; `animate={false}` turns it off.
