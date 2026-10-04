@@ -63,6 +63,7 @@ export const themeTokens = {
 		'radius-lg': "6px",
 		'radius-full': "9999px",
 		'tab-bar-min-height': "3.5rem",
+		'tab-pill-min-height': "4rem",
 		'tab-bar-height': "var(--tab-bar-min-height)",
 		'font-sans': "'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
 		'font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
@@ -128,6 +129,7 @@ export const themeTokens = {
 		'radius-lg': "6px",
 		'radius-full': "9999px",
 		'tab-bar-min-height': "3.5rem",
+		'tab-pill-min-height': "4rem",
 		'tab-bar-height': "var(--tab-bar-min-height)",
 		'font-sans': "'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
 		'font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
