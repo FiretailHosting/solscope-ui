@@ -58,11 +58,11 @@
 
 	button {
 		font: inherit;
-		font-size: 0.78rem;
+		font-size: var(--text-xs);
 		font-weight: 600;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		padding: 0.3rem 0.8rem;
+		padding: var(--space-1) var(--space-3);
 		border: 0;
 		background: transparent;
 		color: var(--muted);

@@ -1,6 +1,7 @@
 export { default as Alert } from './components/ui/Alert.svelte';
 export { default as AppShell } from './components/ui/AppShell.svelte';
 export { default as BackLink } from './components/ui/BackLink.svelte';
+export { default as Balance } from './components/ui/Balance.svelte';
 export { default as Badge } from './components/ui/Badge.svelte';
 export { default as Button } from './components/ui/Button.svelte';
 export { default as Card } from './components/ui/Card.svelte';
@@ -36,6 +37,7 @@ export { default as ThemeToggle } from './components/ui/ThemeToggle.svelte';
 export { default as Toast } from './components/ui/Toast.svelte';
 export { Area, Chart, Circle, Html, RectClipPath, Spline, Svg, type ChartState } from 'layerchart';
 export { icons, type IconDef, type IconName } from './icons/icons.js';
-export { themeInitScript, themeStorageKey, themes, type Theme } from './theme.js';
+export { appHead, launchScreenStyle, themeColorMetaTags, themeColors, themeColorSyncScript, themeInitScript, themeStorageKey, themes, type Theme } from './theme.js';
+export { themeTokens, type ThemeTokenName } from './theme-tokens.js';
 export { lockScroll, scrollLockClass } from './scroll-lock.js';
 export { PHONE_QUERY } from './phone.js';

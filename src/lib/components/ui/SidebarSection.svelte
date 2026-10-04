@@ -11,7 +11,7 @@
 
 <style>
 	.section {
-		margin-top: 0.5rem;
+		margin-top: var(--space-2);
 	}
 
 	.section:first-child {
@@ -19,8 +19,8 @@
 	}
 
 	.title {
-		padding: 0.75rem 1rem 0.35rem;
-		font-size: 0.68rem;
+		padding: var(--space-3) var(--space-4) var(--space-1-5);
+		font-size: var(--text-2xs);
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.1em;

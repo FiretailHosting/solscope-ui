@@ -53,17 +53,17 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.75rem 1.1rem;
+		gap: var(--space-3);
+		padding: var(--space-3) var(--space-4);
 		border-bottom: 1px solid var(--border);
 	}
 
 	h2 {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		margin: 0;
-		font-size: 0.8rem;
+		font-size: var(--text-sm);
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -77,11 +77,11 @@
 	.actions {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2);
 	}
 
 	.body {
-		padding: 1rem 1.1rem;
+		padding: var(--space-4) var(--space-4);
 	}
 
 	.body.flush {

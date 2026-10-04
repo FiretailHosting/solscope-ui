@@ -159,15 +159,15 @@
 	   anchor this toast sits when newer ones are mounted under it. */
 	.sui-toast {
 		position: fixed;
-		right: 1rem;
-		bottom: calc(1rem + var(--sui-toast-stack-offset, 0px));
+		right: var(--space-4);
+		bottom: calc(var(--space-4) + var(--sui-toast-stack-offset, 0));
 		z-index: 35;
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		max-width: min(28rem, calc(100vw - 2rem));
-		padding: 0.5rem 0.5rem 0.5rem 0.9rem;
-		font-size: 0.875rem;
+		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3-5);
+		font-size: var(--text-sm);
 		line-height: 1.4;
 		color: var(--fg);
 		background: var(--card);
@@ -225,9 +225,9 @@
 	   button's type, muted like the icon until hovered. */
 	.sui-toast-dismiss-text {
 		width: auto;
-		padding: 0 0.6rem;
+		padding: 0 var(--space-2-5);
 		font: inherit;
-		font-size: 0.78rem;
+		font-size: var(--text-xs);
 		font-weight: 500;
 		white-space: nowrap;
 	}
@@ -259,8 +259,8 @@
 	   as wide as its content up to the screen less a 1rem gutter. */
 	@media (max-width: 860px) and (pointer: coarse) {
 		.sui-toast {
-			left: 1rem;
-			right: 1rem;
+			left: var(--space-4);
+			right: var(--space-4);
 			bottom: calc(
 				var(--tab-bar-height) + env(safe-area-inset-bottom) + 0.75rem + var(--sui-toast-stack-offset, 0px)
 			);

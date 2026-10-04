@@ -39,8 +39,8 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.75rem;
-		margin-bottom: 1.25rem;
+		gap: var(--space-3);
+		margin-bottom: var(--space-5);
 	}
 
 	.title-area {
@@ -49,21 +49,21 @@
 
 	h1 {
 		margin: 0;
-		font-size: 1.35rem;
+		font-size: var(--text-xl);
 		letter-spacing: -0.015em;
 		font-weight: 650;
 	}
 
 	.subtitle {
-		margin: 0.2rem 0 0;
-		font-size: 0.875rem;
+		margin: var(--space-1) 0 0;
+		font-size: var(--text-sm);
 		color: var(--muted);
 	}
 
 	.actions {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		flex-shrink: 0;
 	}
 </style>

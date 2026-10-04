@@ -124,8 +124,8 @@
 	.sui-confirm {
 		display: flex;
 		flex-direction: column;
-		gap: 0.6rem;
-		padding: 0.8rem 0.9rem;
+		gap: var(--space-2-5);
+		padding: var(--space-3) var(--space-3-5);
 		background: var(--card-alt);
 		border: 1px solid var(--border-strong);
 		border-radius: var(--radius);
@@ -133,7 +133,7 @@
 
 	.sui-confirm-question {
 		margin: 0;
-		font-size: 0.88rem;
+		font-size: var(--text-sm);
 	}
 
 	.sui-confirm-question:focus-visible {
@@ -145,6 +145,6 @@
 	.sui-confirm-actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 	}
 </style>

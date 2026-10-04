@@ -36,11 +36,11 @@
 	.sui-nav-item {
 		display: flex;
 		align-items: center;
-		gap: 0.7rem;
-		padding: 0.55rem 1rem;
+		gap: var(--space-3);
+		padding: var(--space-2) var(--space-4);
 		border-left: 3px solid transparent;
 		text-decoration: none;
-		font-size: 0.875rem;
+		font-size: var(--text-sm);
 		color: var(--sidebar-fg);
 		transition: background 100ms, color 100ms;
 	}
@@ -100,11 +100,11 @@
 		justify-content: center;
 		min-width: 1.25rem;
 		height: 1.1rem;
-		padding: 0 0.3rem;
+		padding: 0 var(--space-1);
 		border-radius: var(--radius-sm);
 		background: var(--down);
 		color: var(--down-fg);
-		font-size: 0.68rem;
+		font-size: var(--text-2xs);
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 	}

@@ -17,9 +17,9 @@
 <style>
 	.sui-label {
 		display: block;
-		font-size: 0.82rem;
+		font-size: var(--text-sm);
 		font-weight: 500;
 		color: var(--fg);
-		margin-bottom: 0.3rem;
+		margin-bottom: var(--space-1);
 	}
 </style>

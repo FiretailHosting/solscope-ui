@@ -31,7 +31,7 @@
 	.sui-table {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 0.88rem;
+		font-size: var(--text-sm);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -39,17 +39,17 @@
 		text-align: left;
 		font-weight: 600;
 		color: var(--muted);
-		font-size: 0.7rem;
+		font-size: var(--text-2xs);
 		text-transform: uppercase;
 		letter-spacing: 0.07em;
-		padding: 0.55rem 0.9rem;
+		padding: var(--space-2) var(--space-3-5);
 		background: var(--card-alt);
 		border-bottom: 1px solid var(--border);
 		white-space: nowrap;
 	}
 
 	.sui-table :global(td) {
-		padding: 0.6rem 0.9rem;
+		padding: var(--space-2-5) var(--space-3-5);
 		border-top: 1px solid var(--border);
 		vertical-align: middle;
 	}

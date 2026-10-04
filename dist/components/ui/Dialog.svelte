@@ -187,20 +187,20 @@
 	}
 
 	.sui-dialog-panel {
-		padding: 1.25rem;
+		padding: var(--space-5);
 	}
 
 	.sui-dialog-header {
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: 0.75rem;
-		margin-bottom: 0.75rem;
+		gap: var(--space-3);
+		margin-bottom: var(--space-3);
 	}
 
 	.sui-dialog-header h2 {
 		margin: 0;
-		font-size: 1.1rem;
+		font-size: var(--text-lg);
 		line-height: 1.3;
 		min-width: 0;
 		overflow-wrap: anywhere;
@@ -212,7 +212,7 @@
 		justify-content: center;
 		width: 2rem;
 		height: 2rem;
-		margin: -0.35rem -0.5rem -0.35rem auto;
+		margin: calc(-1 * var(--space-1-5)) calc(-1 * var(--space-2)) calc(-1 * var(--space-1-5)) auto;
 		padding: 0;
 		border: 1px solid transparent;
 		border-radius: var(--radius);
@@ -236,8 +236,8 @@
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: flex-end;
-		gap: 0.5rem;
-		margin-top: 1.25rem;
+		gap: var(--space-2);
+		margin-top: var(--space-5);
 	}
 
 	/* Easier to tap on touch screens; desktop sizes stay as they are. */
@@ -245,7 +245,7 @@
 		.sui-dialog-close {
 			width: 44px;
 			height: 44px;
-			margin: -0.75rem -0.9rem -0.75rem auto;
+			margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3-5)) calc(-1 * var(--space-3)) auto;
 		}
 	}
 
@@ -263,22 +263,22 @@
 		}
 
 		.sui-dialog-panel {
-			padding: 0 1rem calc(1rem + env(safe-area-inset-bottom));
+			padding: 0 var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
 		}
 
 		.sui-dialog-header {
 			position: sticky;
 			top: 0;
 			z-index: 1;
-			margin: 0 -1rem 0.75rem;
-			padding: 1rem 1rem 0.6rem;
+			margin: 0 calc(-1 * var(--space-4)) var(--space-3);
+			padding: var(--space-4) var(--space-4) var(--space-2-5);
 			background: var(--card);
 			border-bottom: 1px solid var(--border);
 		}
 
 		/* The 44px hit box stays inside the sheet's edge and its heading row. */
 		.sui-dialog-close {
-			margin: -0.5rem -0.5rem -0.5rem auto;
+			margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) auto;
 		}
 
 		/* Slides up on open. */

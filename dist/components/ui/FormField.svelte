@@ -5,6 +5,7 @@
 		label = '',
 		hint = '',
 		error = '',
+		errorId,
 		class: extraClass = '',
 		children
 	}: {
@@ -12,6 +13,8 @@
 		hint?: string;
 		/** Shown in place of the hint. Also set aria-invalid on the input. */
 		error?: string;
+		/** An id for the error, for the input's aria-describedby. */
+		errorId?: string;
 		class?: string;
 		children?: Snippet;
 	} = $props();
@@ -24,7 +27,7 @@
 	{/if}
 	{@render children?.()}
 	{#if error}
-		<small class="error" role="alert">{error}</small>
+		<small class="error" id={errorId} role="alert">{error}</small>
 	{:else if hint}
 		<small class="hint">{hint}</small>
 	{/if}
@@ -34,19 +37,19 @@
 	.sui-field {
 		display: flex;
 		flex-direction: column;
-		gap: 0.3rem;
-		margin-bottom: 0.85rem;
+		gap: var(--space-1);
+		margin-bottom: var(--space-3-5);
 	}
 
 	.field-label {
-		font-size: 0.82rem;
+		font-size: var(--text-sm);
 		font-weight: 500;
 		color: var(--muted);
 	}
 
 	.hint,
 	.error {
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 		color: var(--muted);
 	}
 

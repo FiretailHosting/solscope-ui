@@ -13,8 +13,8 @@
 <style>
 	.sui-textarea {
 		font: inherit;
-		font-size: 0.9rem;
-		padding: 0.5rem 0.7rem;
+		font-size: var(--text-md);
+		padding: var(--space-2) var(--space-3);
 		border-radius: var(--radius);
 		border: 1px solid var(--border-strong);
 		background: var(--card);

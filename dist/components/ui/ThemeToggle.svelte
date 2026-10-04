@@ -58,11 +58,11 @@
 	.sui-toggle {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: var(--space-1-5);
 		font: inherit;
-		font-size: 0.78rem;
+		font-size: var(--text-xs);
 		white-space: nowrap;
-		padding: 0.3rem 0.6rem;
+		padding: var(--space-1) var(--space-2-5);
 		border-radius: var(--radius);
 		border: 1px solid currentColor;
 		background: transparent;

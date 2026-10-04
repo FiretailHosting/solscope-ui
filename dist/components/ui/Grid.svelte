@@ -22,7 +22,7 @@
 	.sui-grid {
 		display: grid;
 		grid-template-columns: repeat(var(--cols, 2), minmax(var(--min-w, 15rem), 1fr));
-		gap: 1rem;
+		gap: var(--space-4);
 	}
 
 	@media (max-width: 640px) {

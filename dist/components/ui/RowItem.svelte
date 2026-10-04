@@ -86,9 +86,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.2rem 0.75rem;
+		gap: var(--space-1) var(--space-3);
 		min-width: 0;
-		padding: 0.6rem 1rem;
+		padding: var(--space-2-5) var(--space-4);
 		color: inherit;
 		text-decoration: none;
 	}
@@ -117,7 +117,7 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
+		gap: var(--space-1);
 	}
 
 	.sui-row-end {
@@ -125,7 +125,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
-		gap: 0.2rem;
+		gap: var(--space-1);
 		text-align: right;
 		white-space: nowrap;
 	}
@@ -134,7 +134,7 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 0.2rem 0.4rem;
+		gap: var(--space-1) var(--space-1-5);
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}
@@ -144,7 +144,7 @@
 	}
 
 	.sui-row-muted {
-		font-size: 0.8rem;
+		font-size: var(--text-sm);
 		color: var(--muted);
 	}
 
@@ -156,8 +156,8 @@
 		flex: none;
 		display: flex;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0.4rem 1rem 0.4rem 0;
+		gap: var(--space-1-5);
+		padding: var(--space-1-5) var(--space-4) var(--space-1-5) 0;
 	}
 
 	.sr-only {

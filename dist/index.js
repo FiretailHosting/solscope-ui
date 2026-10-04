@@ -2,6 +2,7 @@
 export { default as Alert } from './components/ui/Alert.svelte';
 export { default as AppShell } from './components/ui/AppShell.svelte';
 export { default as BackLink } from './components/ui/BackLink.svelte';
+export { default as Balance } from './components/ui/Balance.svelte';
 export { default as Badge } from './components/ui/Badge.svelte';
 export { default as Button } from './components/ui/Button.svelte';
 export { default as Card } from './components/ui/Card.svelte';
@@ -41,7 +42,8 @@ export { Area, Chart, Circle, Html, RectClipPath, Spline, Svg } from 'layerchart
 // Icons
 export { icons } from './icons/icons.js';
 // Theme
-export { themeInitScript, themeStorageKey, themes } from './theme.js';
+export { appHead, launchScreenStyle, themeColorMetaTags, themeColors, themeColorSyncScript, themeInitScript, themeStorageKey, themes } from './theme.js';
+export { themeTokens } from './theme-tokens.js';
 // Page scroll lock, for an app's own overlays; Sidebar and Dialog use it.
 export { lockScroll, scrollLockClass } from './scroll-lock.js';
 // The phone media query: TabBar, the Dialog sheet and the scroll pin follow it.

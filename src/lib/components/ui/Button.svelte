@@ -4,7 +4,7 @@
 	import Icon from './Icon.svelte';
 	import type { IconName } from '../../icons/icons.js';
 
-	type Variant = 'default' | 'primary' | 'danger' | 'ghost';
+	type Variant = 'default' | 'primary' | 'danger' | 'ghost' | 'link';
 	type Size = 'default' | 'sm' | 'lg';
 
 	interface Props extends HTMLButtonAttributes {
@@ -100,7 +100,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.45rem;
+		gap: var(--space-2);
 		font: inherit;
 		font-weight: 500;
 		cursor: pointer;
@@ -181,18 +181,18 @@
 
 	/* Sizes */
 	.default {
-		font-size: 0.875rem;
-		padding: 0.45rem 0.9rem;
+		font-size: var(--text-sm);
+		padding: var(--space-2) var(--space-3-5);
 	}
 
 	.sm {
-		font-size: 0.78rem;
-		padding: 0.25rem 0.6rem;
+		font-size: var(--text-xs);
+		padding: var(--space-1) var(--space-2-5);
 	}
 
 	.lg {
-		font-size: 0.95rem;
-		padding: 0.6rem 1.2rem;
+		font-size: var(--text-md);
+		padding: var(--space-2-5) var(--space-5);
 	}
 
 	/* Easier to tap on touch screens; desktop sizes stay as they are. */
@@ -257,5 +257,39 @@
 		color: var(--muted);
 		background: transparent;
 		border-color: transparent;
+	}
+
+	/* Text alone, in the accent colour: Max beside a balance, Try again in
+	   an error. It sits in running text, so it takes no padding or border
+	   and keeps its line's height. */
+	.sui-btn.link {
+		padding: 0;
+		border: 0;
+		border-radius: var(--radius-sm);
+		background: none;
+		color: var(--accent);
+		font-weight: 600;
+		white-space: normal;
+	}
+
+	.sui-btn.link:hover:not(:disabled) {
+		background: none;
+		border: 0;
+		text-decoration: underline;
+	}
+
+	.sui-btn.link[aria-disabled='true'],
+	.sui-btn.link[aria-disabled='true']:hover:not(:disabled) {
+		color: var(--muted);
+		background: none;
+		border: 0;
+		text-decoration: none;
+	}
+
+	/* Tall enough to tap, grown into the margins so the line stays its height. */
+	@media (pointer: coarse) {
+		.sui-btn.link {
+			margin-block: calc((1lh - 44px) / 2);
+		}
 	}
 </style>
