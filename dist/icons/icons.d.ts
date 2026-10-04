@@ -101,6 +101,9 @@ export declare const icons: {
     arrowLeft: {
         d: string[];
     };
+    chevronDown: {
+        d: string[];
+    };
     copy: {
         d: string[];
     };

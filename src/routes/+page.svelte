@@ -34,6 +34,8 @@
 		type ChartConfig,
 		type IconName,
 		type PageSearchItem,
+		type PageSearchResult,
+		type PageSearchSection,
 		type SegmentedOption,
 		type TabBarItem
 	} from '$lib';
@@ -147,6 +149,40 @@
 		{ href: '#friends', label: 'Friends', icon: 'friends', section: 'Social' },
 		{ href: '#inbox', label: 'Inbox', icon: 'inbox', section: 'Social', badge: 3 }
 	];
+	// With coins, PageSearch gets a second section the page fills itself, as
+	// an app would from its API: skeletons for a moment, "fail" shows an error.
+	let searchCoins = $state(false);
+	let pageSearchQuery = $state('');
+	let coinsLoading = $state(false);
+	const galleryCoins: PageSearchResult[] = [
+		{ href: '#bonk', label: 'Bonk', detail: 'BONK', value: '$0.00002', valueLabel: 'Price' },
+		{ href: '#book', label: 'Book of Meme', detail: 'BOME', value: '$0.0061', valueLabel: 'Price' },
+		{ href: '#sol', label: 'Solana', detail: 'SOL', value: '$148.20', valueLabel: 'Price' }
+	];
+	const typedCoins = $derived(pageSearchQuery.trim().toLowerCase());
+	$effect(() => {
+		if ([...typedCoins].length < 2) return;
+		coinsLoading = true;
+		const timer = setTimeout(() => (coinsLoading = false), 800);
+		return () => clearTimeout(timer);
+	});
+	const coinSections = $derived<PageSearchSection[]>(
+		[...typedCoins].length < 2
+			? []
+			: [
+					{
+						id: 'coins',
+						title: 'Coins',
+						noun: ['coin', 'coins'],
+						loading: coinsLoading,
+						error: typedCoins === 'fail' ? 'Could not search coins.' : undefined,
+						results: galleryCoins.filter(
+							(coin) =>
+								coin.label.toLowerCase().includes(typedCoins) || coin.detail?.toLowerCase().includes(typedCoins)
+						)
+					}
+				]
+	);
 	const tabs = $derived<TabBarItem[]>([
 		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', active: !moreActive },
 		{ href: '#markets', label: 'Markets', icon: 'markets' },
@@ -381,6 +417,9 @@
 						Tab bar {pillBar ? 'pill' : 'bar'}
 					</Button>
 					<Button icon="search" onclick={() => pageSearch?.show()}>Page search</Button>
+					<Button onclick={() => (searchCoins = !searchCoins)} aria-pressed={searchCoins}>
+						Search {searchCoins ? 'pages and coins' : 'pages'}
+					</Button>
 				</div>
 				<!-- Stands in for the drawer the More item controls. -->
 				<p id="gallery-drawer" class="muted" hidden={!drawerOpen}>The drawer is open (pretend).</p>
@@ -563,7 +602,14 @@
 		variant={pillBar ? 'pill' : 'bar'}
 		onsearch={() => pageSearch?.show()}
 	/>
-	<PageSearch bind:this={pageSearch} bind:open={pageSearchOpen} pages={searchPages} />
+	<PageSearch
+		bind:this={pageSearch}
+		bind:open={pageSearchOpen}
+		bind:query={pageSearchQuery}
+		pages={searchPages}
+		sections={searchCoins ? coinSections : undefined}
+		pageLimit={searchCoins ? 3 : undefined}
+	/>
 </main>
 
 <style>

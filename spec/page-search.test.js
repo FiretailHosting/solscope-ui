@@ -1,6 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
-import { filterPages } from '../src/lib/page-search.ts';
+import { countPhrase, filterPages, searchSummary } from '../src/lib/page-search.ts';
 
 const pages = [
 	{ href: '/', label: 'Dashboard', icon: 'dashboard', section: 'Overview' },
@@ -38,4 +38,22 @@ test('pages whose label starts with the first word come first', () => {
 
 test('no match gives an empty list', () => {
 	assert.deepEqual(filterPages(pages, 'zzz'), []);
+});
+
+test('a count reads as none, one or many', () => {
+	assert.equal(countPhrase(0, ['coin', 'coins']), 'no coins');
+	assert.equal(countPhrase(1, ['coin', 'coins']), '1 coin');
+	assert.equal(countPhrase(5, ['coin', 'coins']), '5 coins');
+});
+
+test('the summary covers every section, waits while one loads and says errors', () => {
+	const pagesPart = { count: 3, noun: ['page', 'pages'] };
+	assert.equal(searchSummary([pagesPart, { count: 5, noun: ['coin', 'coins'] }]), '3 pages, 5 coins');
+	assert.equal(searchSummary([{ ...pagesPart, count: 0 }, { count: 0, noun: ['coin', 'coins'] }]), 'no pages, no coins');
+	assert.equal(searchSummary([pagesPart, { count: 0, noun: ['coin', 'coins'], loading: true }]), '');
+	assert.equal(
+		searchSummary([pagesPart, { count: 0, noun: ['coin', 'coins'], error: 'Could not search coins.' }]),
+		'3 pages, Could not search coins.'
+	);
+	assert.equal(searchSummary([pagesPart]), '3 pages');
 });
