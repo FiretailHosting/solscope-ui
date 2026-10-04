@@ -135,6 +135,7 @@
 	// The floating pill, with the search button beside it opening PageSearch.
 	let pillBar = $state(false);
 	let pageSearchOpen = $state(false);
+	let pageSearch = $state<ReturnType<typeof PageSearch>>();
 	const searchPages: PageSearchItem[] = [
 		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', section: 'Overview', active: true },
 		{ href: '#markets', label: 'Markets', icon: 'markets', section: 'Overview' },
@@ -144,7 +145,7 @@
 		{ href: '#bots', label: 'Bots', icon: 'bots', section: 'Automation' },
 		{ href: '#scores', label: 'Scores', icon: 'scores', section: 'Automation' },
 		{ href: '#friends', label: 'Friends', icon: 'friends', section: 'Social' },
-		{ href: '#inbox', label: 'Inbox', icon: 'inbox', section: 'Social' }
+		{ href: '#inbox', label: 'Inbox', icon: 'inbox', section: 'Social', badge: 3 }
 	];
 	const tabs = $derived<TabBarItem[]>([
 		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', active: !moreActive },
@@ -379,7 +380,7 @@
 					<Button onclick={() => (pillBar = !pillBar)} aria-pressed={pillBar}>
 						Tab bar {pillBar ? 'pill' : 'bar'}
 					</Button>
-					<Button icon="search" onclick={() => (pageSearchOpen = true)}>Page search</Button>
+					<Button icon="search" onclick={() => pageSearch?.show()}>Page search</Button>
 				</div>
 				<!-- Stands in for the drawer the More item controls. -->
 				<p id="gallery-drawer" class="muted" hidden={!drawerOpen}>The drawer is open (pretend).</p>
@@ -560,10 +561,9 @@
 		moreControls="gallery-drawer"
 		onmore={() => (drawerOpen = !drawerOpen)}
 		variant={pillBar ? 'pill' : 'bar'}
-		searchOpen={pageSearchOpen}
-		onsearch={() => (pageSearchOpen = true)}
+		onsearch={() => pageSearch?.show()}
 	/>
-	<PageSearch bind:open={pageSearchOpen} pages={searchPages} />
+	<PageSearch bind:this={pageSearch} bind:open={pageSearchOpen} pages={searchPages} />
 </main>
 
 <style>

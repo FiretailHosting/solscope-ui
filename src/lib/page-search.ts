@@ -6,8 +6,14 @@ export type PageSearchItem = {
 	icon: IconName;
 	/** The group the page sits in, such as a sidebar section; shown beside it and searched too. */
 	section?: string;
-	/** The page shown, marked with aria-current. */
-	active?: boolean;
+	/**
+	 * Marks the page shown, as TabBar items do: `true` or `'page'` for that
+	 * exact page, `'section'` when the page shown lives under it, such as one
+	 * market under Markets.
+	 */
+	active?: boolean | 'page' | 'section';
+	/** An unread count, shown beside the page and read out. */
+	badge?: number;
 };
 
 function words(text: string): string[] {
