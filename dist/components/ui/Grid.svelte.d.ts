@@ -1,5 +1,6 @@
 import type { Snippet } from 'svelte';
 type $$ComponentProps = {
+    /** The most columns; fewer when they would be narrower than minWidth. */
     cols?: number;
     minWidth?: string;
     class?: string;

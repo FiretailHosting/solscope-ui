@@ -6,6 +6,8 @@ type $$ComponentProps = {
     error?: string;
     /** An id for the error, for the input's aria-describedby. */
     errorId?: string;
+    /** An id for the hint, for the input's aria-describedby. */
+    hintId?: string;
     class?: string;
     children?: Snippet;
 };

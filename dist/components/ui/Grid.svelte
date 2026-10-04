@@ -7,6 +7,7 @@
 		class: extraClass = '',
 		children
 	}: {
+		/** The most columns; fewer when they would be narrower than minWidth. */
 		cols?: number;
 		minWidth?: string;
 		class?: string;
@@ -21,7 +22,12 @@
 <style>
 	.sui-grid {
 		display: grid;
-		grid-template-columns: repeat(var(--cols, 2), minmax(var(--min-w, 15rem), 1fr));
+		/* At most --cols columns, each at least --min-w wide: narrower than
+		   that, a column drops out, so a form in a narrow card never spills. */
+		grid-template-columns: repeat(
+			auto-fit,
+			minmax(max(var(--min-w, 15rem), calc((100% - var(--space-4) * (var(--cols, 2) - 1)) / var(--cols, 2))), 1fr)
+		);
 		gap: var(--space-4);
 	}
 

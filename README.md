@@ -11,7 +11,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.12.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.13.0"
 ```
 
 ## Usage
@@ -51,11 +51,13 @@ Then use components:
 | `Button` | Button or link (`href`), variants default, primary, danger, ghost and link, which is text alone in the accent colour for Max or Try again inside a line; optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why; a dimmed primary loses its fill for a dashed outline, so the state does not rest on colour alone |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
+| `ChartHint` | What a chart says while nothing is inspected: hover wording for a mouse, drag wording on a touch screen |
+| `SeriesChart` | A price or value over time as a line over a gradient fill or as candles, with guides, a time axis, a crosshair, trade markers and the same inspection by pointer, finger, keyboard and screen reader; see [Series chart](#series-chart) |
 | `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
 | `Dialog` | Modal over a native `<dialog>`: `title` or `label`, close button, Escape, backdrop tap, focus return; a centred card on desktop and a bottom sheet on phones; see [Dialog](#dialog) |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
-| `FormField` | Label wrapping an input, with a `hint` or an `error`; `errorId` names the error for the input's `aria-describedby` |
-| `Grid` | Responsive 2-column grid |
+| `FormField` | Label wrapping an input, with a `hint` or an `error`; `hintId` and `errorId` name them for the input's `aria-describedby` |
+| `Grid` | Up to `cols` columns of at least `minWidth`, fewer when they would be narrower |
 | `Icon` | One of the library's icons by `name`; decorative unless given a `label` |
 | `InlineConfirm` | A question asked in place before an action that cannot be undone, with confirm and cancel buttons; see [Inline confirm](#inline-confirm) |
 | `Input` | Styled text input |
@@ -407,6 +409,21 @@ Preload the two that most text uses, Regular (400) and SemiBold (600), from the 
 
 Medium (500) and Bold (700) are used less and can load on demand.
 
+### Series chart
+
+`SeriesChart` draws `points` (`{ t, p }`, with `o`, `h`, `l` and `v` for a candle) as a line over a gradient fill, or as candles with `kind="candles"` when every point carries an open, high and low.
+It fits the data rather than zero, or keeps zero in view with `baseline`, where the line above zero reads as gain and below as loss.
+Round-value `guides` run across the plot with labels at the right edge, a `timeAxis` runs along the bottom, and `live` pulses the last point.
+A pointer shows a crosshair, a value tag and a tooltip; a finger drags and reads the readout under the chart, which stays after it lifts; the keyboard moves a hidden slider that announces each point; Escape hides the tooltip.
+`markers` place trades on the line as buy and sell shapes that can be hovered, tapped or focused, and `change` adds each point's change since the first.
+`format`, `formatTime` and `formatDay` say how values and times read; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
+The line draws in and the fill fades up when the series changes, candles rise one after another, and nothing moves under reduced motion; `animate={false}` turns it off.
+The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`.
+
+```svelte
+<SeriesChart points={history} kind={candles ? 'candles' : 'line'} markers={trades} byTime live format={usd} change={signedUsd} />
+```
+
 ### Charts
 
 Adapted from [shadcn-svelte's charts](https://shadcn-svelte.com/docs/components/chart).
@@ -454,7 +471,7 @@ The package is marked free of side effects apart from its CSS, so pages that use
 
 ## Releasing
 
-Run `bun run package`, which regenerates `src/lib/theme-tokens.ts` and `dist/`, commit both, then tag the release:
+Run `bun test`, `bun run check` and `bun run package`, which regenerates `src/lib/theme-tokens.ts` and `dist/`, commit both, then tag the release:
 
 ```
 git tag v0.2.0

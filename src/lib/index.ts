@@ -9,6 +9,28 @@ export { default as Card } from './components/ui/Card.svelte';
 export { default as Dialog } from './components/ui/Dialog.svelte';
 export { default as ChartContainer } from './components/ui/chart/ChartContainer.svelte';
 export { default as ChartTooltip } from './components/ui/chart/ChartTooltip.svelte';
+export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
+export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
+export {
+	candleWidth,
+	guideValues,
+	hasCandles,
+	inGap,
+	inspectHint,
+	isCandle,
+	lonePoints,
+	markerKey,
+	markersInTime,
+	nearestIndex,
+	plotPoints,
+	timeTicks,
+	valueBounds,
+	withinPlotHeight,
+	type PlottedPoint,
+	type SeriesMarker,
+	type SeriesPoint
+} from './chart/series.js';
+export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
 export {
 	getPayloadConfigFromPayload,
 	type ChartConfig
