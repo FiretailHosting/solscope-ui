@@ -11,7 +11,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.13.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.13.1"
 ```
 
 ## Usage
@@ -418,7 +418,7 @@ A pointer shows a crosshair, a value tag and a tooltip; a finger drags and reads
 `markers` place trades on the line as buy and sell shapes that can be hovered, tapped or focused, and `change` adds each point's change since the first.
 `format`, `formatTime` and `formatDay` say how values and times read; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
 The line draws in and the fill fades up when the series changes, candles rise one after another, and nothing moves under reduced motion; `animate={false}` turns it off.
-The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`.
+The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
 
 ```svelte
 <SeriesChart points={history} kind={candles ? 'candles' : 'line'} markers={trades} byTime live format={usd} change={signedUsd} />
