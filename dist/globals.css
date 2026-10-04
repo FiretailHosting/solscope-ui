@@ -42,10 +42,11 @@ textarea {
 
 /* Bare form controls look like the library's Input, Select and Textarea, so
    an app's own <input> matches without a class. The components add their
-   own details on top: a full width, the select arrow. */
-input:not([type='checkbox']):not([type='radio']):not([type='range']),
-select,
-textarea {
+   own details on top: a full width, the select arrow. :where() gives these
+   no specificity, so any rule of an app or a component wins: an invalid
+   field's red border, an input with no border inside a wrapper that draws
+   one. */
+:where(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea) {
 	font-size: var(--text-md);
 	padding: var(--space-2) var(--space-2-5);
 	border-radius: var(--radius);
@@ -55,9 +56,7 @@ textarea {
 	min-width: 0;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+:where(input:focus, select:focus, textarea:focus) {
 	outline: 2px solid var(--accent);
 	outline-offset: -1px;
 }
@@ -105,7 +104,7 @@ a[aria-disabled='true']:not(.sui-btn) {
 
 .sui-error {
 	color: var(--down);
-	font-size: var(--text-md);
+	font-size: var(--text-sm);
 }
 
 .sui-up {

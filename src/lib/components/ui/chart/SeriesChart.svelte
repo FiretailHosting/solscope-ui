@@ -3,7 +3,10 @@
 	import { untrack } from 'svelte';
 	import { axisTime, chartDay, chartTime, spansYears } from '../../../chart/dates.js';
 	import {
+		candleReading,
+		candleTrend,
 		candleWidth,
+		guideLabels,
 		guideValues,
 		hasCandles,
 		inGap,
@@ -97,6 +100,8 @@
 
 	// Space above and below the line, so its peaks and troughs are not cut off.
 	const PAD = 8;
+	// The height of the row of times along the bottom, which guide labels keep out of.
+	const TICK_ROW = 16;
 
 	let context = $state<ChartState<PlottedPoint>>();
 
@@ -273,16 +278,17 @@
 	}
 	const changeText = $derived(changeSince(inspected));
 
-	/** candleText reads a candle's open, high and low, for the readout and the slider. */
+	/** candleText reads a candle's open, high and low, for the readout. */
 	function candleText(point: SeriesPoint) {
 		return isCandle(point) ? `open ${format(point.o)}, high ${format(point.h)}, low ${format(point.l)}` : '';
 	}
 
+	// A candle reads open, high, low and close, each named; a line point reads its value.
 	const sliderText = $derived.by(() => {
 		if (!sliderPoint) return undefined;
 		const since = changeSince(sliderPoint);
-		const candle = candles ? `, ${candleText(sliderPoint)}` : '';
-		return `${format(sliderPoint.p)}${candle}, ${formatTime(sliderPoint.t, withYear)}${since ? `, ${since.text}` : ''}`;
+		const value = candles && isCandle(sliderPoint) ? candleReading(sliderPoint, format) : format(sliderPoint.p);
+		return `${value}, ${formatTime(sliderPoint.t, withYear)}${since ? `, ${since.text}` : ''}`;
 	});
 
 	/** A marker's name to screen readers: the trade, when, and any note, as the readout shows them. */
@@ -305,6 +311,12 @@
 			.filter((tick, index, all) => index === 0 || tick.label !== all[index - 1].label)
 	);
 	const last = $derived(plotted[plotted.length - 1]);
+
+	/** The guides that get a label: none in the time axis's row, and one at most on a short chart. */
+	function labelledGuides(chart: ChartState<PlottedPoint>) {
+		const placed = guideLines.map((value) => ({ value, y: chart.yScale(value) }));
+		return guideLabels(placed, chart.height, tickLabels.length > 0 ? TICK_ROW : 0);
+	}
 </script>
 
 <svelte:window onkeydown={onWindowKey} />
@@ -325,16 +337,13 @@
 		{#if isCandle(point)}
 			{@const x = chart.xScale(point.x)}
 			{@const top = chart.yScale(Math.max(point.o, point.p))}
-			{@const bottom = chart.yScale(Math.min(point.o, point.p))}
-			<g
-				class="candle"
-				class:rise={point.p >= point.o}
-				class:fall={point.p < point.o}
-				class:inspected={inspected === point && !pointerInGap}
-				style="--i: {Math.min(index, 80)}"
-			>
-				<line x1={x} y1={chart.yScale(point.h)} x2={x} y2={chart.yScale(point.l)} class="wick" />
-				<rect x={x - width / 2} y={top} {width} height={Math.max(1, bottom - top)} class="body" />
+			{@const bottom = top + Math.max(1, chart.yScale(Math.min(point.o, point.p)) - top)}
+			<!-- Shape as well as colour: a rising candle is hollow, a falling one
+			     filled. The wick stops at the body, so a hollow body stays empty. -->
+			<g class="candle {candleTrend(point)}" class:inspected={inspected === point && !pointerInGap} style="--i: {Math.min(index, 80)}">
+				<line x1={x} y1={chart.yScale(point.h)} x2={x} y2={top} class="wick" />
+				<line x1={x} y1={bottom} x2={x} y2={chart.yScale(point.l)} class="wick" />
+				<rect x={x - width / 2} y={top} {width} height={bottom - top} class="body" />
 			</g>
 		{/if}
 	{/each}
@@ -430,15 +439,20 @@
 						{/if}
 					</Svg>
 					<Html>
-						{#each guideLines as value (value)}
-							<span class="guide-label" style="top: {chart.yScale(value)}px">{format(value)}</span>
+						<!-- The labels repeat what the slider and the readout say, so
+						     screen readers skip them. -->
+						{#each labelledGuides(chart) as value (value)}
+							<span class="guide-label" style="top: {chart.yScale(value)}px" aria-hidden="true">{format(value)}</span>
 						{/each}
 						{#each tickLabels as tick, index (tick.t)}
-							<span class="tick" class:first={index === 0} class:last={index === tickLabels.length - 1} style="left: {chart.xScale(tick.x)}px">{tick.label}</span>
+							<span class="tick" class:first={index === 0} class:last={index === tickLabels.length - 1} style="left: {chart.xScale(tick.x)}px" aria-hidden="true">{tick.label}</span>
 						{/each}
 						{#if !candles && last && !active}
-							<!-- The latest point, pulsing when it is live. -->
-							<span class="dot end" class:live style="left: {chart.xScale(last.x)}px; top: {chart.yScale(last.p)}px{baseline ? `; --stroke: ${last.p >= 0 ? 'var(--up)' : 'var(--down)'}` : ''}"></span>
+							<!-- The latest point, pulsing a few times when it is live, and
+							     again when a new one arrives. -->
+							{#key last.t}
+								<span class="dot end" class:live style="left: {chart.xScale(last.x)}px; top: {chart.yScale(last.p)}px{baseline ? `; --stroke: ${last.p >= 0 ? 'var(--up)' : 'var(--down)'}` : ''}"></span>
+							{/key}
 						{/if}
 						{#if active}
 							<!-- With a baseline the inspected point is a gain or a loss by its side of zero. -->
@@ -449,10 +463,10 @@
 									? `; --stroke: ${active.p >= 0 ? 'var(--up)' : 'var(--down)'}`
 									: ''}"
 							></span>
-							<span class="level-label" style="top: {chart.yScale(active.p)}px">{format(active.p)}</span>
+							<span class="level-label" style="top: {chart.yScale(active.p)}px" aria-hidden="true">{format(active.p)}</span>
 						{/if}
 						{#if baseline}
-							<span class="zero-label" style="top: {chart.yScale(0)}px">{format(0)}</span>
+							<span class="zero-label" style="top: {chart.yScale(0)}px" aria-hidden="true">{format(0)}</span>
 						{/if}
 						{#each placeMarkers(chart) as marker (markerKey(marker))}
 							<button
@@ -515,7 +529,7 @@
 		{:else if inspected && pointerInGap}
 			<span class="hint">No snapshots in this gap</span>
 		{:else if inspected}
-			<strong>{format(inspected.p)}</strong>
+			<strong>{#if candles}<span class="visually-hidden">close </span>{/if}{format(inspected.p)}</strong>
 			<span>{formatTime(inspected.t, withYear)}</span>
 			{#if candles && isCandle(inspected)}
 				<span class="candle-text">{candleText(inspected)}</span>
@@ -618,7 +632,8 @@
 			animation: sui-series-fade 300ms ease-out 900ms both;
 		}
 		.dot.end.live::after {
-			animation: sui-series-pulse 2s ease-out infinite;
+			/* A few pulses, not forever (WCAG 2.2.2); a new last point starts them again. */
+			animation: sui-series-pulse 2s ease-out 3;
 		}
 	}
 	@keyframes sui-series-draw {
@@ -655,6 +670,11 @@
 	}
 	.candle .body {
 		fill: var(--candle);
+		stroke: var(--candle);
+		stroke-width: 1;
+	}
+	.candle.rise .body {
+		fill: transparent;
 	}
 	.candle.rise {
 		--candle: var(--up);
@@ -874,6 +894,15 @@
 		.sui-series-readout {
 			min-height: 2.6rem;
 		}
+	}
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
 	}
 	.sui-series-empty {
 		display: grid;

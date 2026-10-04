@@ -38,6 +38,16 @@ export function isCandle(point: SeriesPoint): point is SeriesPoint & { o: number
 	return point.o != null && point.h != null && point.l != null;
 }
 
+/** candleTrend says a candle closed at or above its open, drawn hollow, or below it, drawn filled. */
+export function candleTrend(point: SeriesPoint & { o: number }): 'rise' | 'fall' {
+	return point.p >= point.o ? 'rise' : 'fall';
+}
+
+/** candleReading names a candle's values in order for a screen reader: "open 1, high 2, low 0.5, close 1.5". */
+export function candleReading(point: SeriesPoint & { o: number; h: number; l: number }, format: (n: number) => string): string {
+	return `open ${format(point.o)}, high ${format(point.h)}, low ${format(point.l)}, close ${format(point.p)}`;
+}
+
 /** hasCandles says every point can be drawn as a candle. */
 export function hasCandles(points: SeriesPoint[]): boolean {
 	return points.length > 0 && points.every(isCandle);
@@ -75,6 +85,25 @@ export function guideValues(min: number, span: number, count = 3): number[] {
 		values.push(Number(value.toPrecision(12)));
 	}
 	return values;
+}
+
+/** Below this plot height, in pixels, the guides keep one label at most. */
+export const SHORT_PLOT_HEIGHT = 150;
+
+/**
+ * guideLabels picks the guides that get a label, given each guide's value and
+ * its y in pixels on a plot this tall. A label sits just above its guide, so
+ * one whose guide falls in the bottom `reserved` pixels, where the time axis
+ * runs, is left out. A plot shorter than SHORT_PLOT_HEIGHT has no room for
+ * more than one, so it keeps the label nearest the middle of the space left.
+ */
+export function guideLabels(guides: { value: number; y: number }[], plotHeight: number, reserved = 0): number[] {
+	const room = plotHeight - reserved;
+	const fitting = guides.filter((guide) => guide.y <= room);
+	if (plotHeight >= SHORT_PLOT_HEIGHT || fitting.length <= 1) return fitting.map((guide) => guide.value);
+	const middle = room / 2;
+	const nearest = fitting.reduce((best, guide) => (Math.abs(guide.y - middle) < Math.abs(best.y - middle) ? guide : best));
+	return [nearest.value];
 }
 
 /**

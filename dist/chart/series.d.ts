@@ -38,6 +38,16 @@ export declare function isCandle(point: SeriesPoint): point is SeriesPoint & {
     h: number;
     l: number;
 };
+/** candleTrend says a candle closed at or above its open, drawn hollow, or below it, drawn filled. */
+export declare function candleTrend(point: SeriesPoint & {
+    o: number;
+}): 'rise' | 'fall';
+/** candleReading names a candle's values in order for a screen reader: "open 1, high 2, low 0.5, close 1.5". */
+export declare function candleReading(point: SeriesPoint & {
+    o: number;
+    h: number;
+    l: number;
+}, format: (n: number) => string): string;
 /** hasCandles says every point can be drawn as a candle. */
 export declare function hasCandles(points: SeriesPoint[]): boolean;
 /**
@@ -57,6 +67,19 @@ export declare function valueBounds(points: SeriesPoint[], baseline: boolean, ca
  * power of ten, and all inside the range.
  */
 export declare function guideValues(min: number, span: number, count?: number): number[];
+/** Below this plot height, in pixels, the guides keep one label at most. */
+export declare const SHORT_PLOT_HEIGHT = 150;
+/**
+ * guideLabels picks the guides that get a label, given each guide's value and
+ * its y in pixels on a plot this tall. A label sits just above its guide, so
+ * one whose guide falls in the bottom `reserved` pixels, where the time axis
+ * runs, is left out. A plot shorter than SHORT_PLOT_HEIGHT has no room for
+ * more than one, so it keeps the label nearest the middle of the space left.
+ */
+export declare function guideLabels(guides: {
+    value: number;
+    y: number;
+}[], plotHeight: number, reserved?: number): number[];
 /**
  * timeTicks picks evenly spread points for the time axis: the first, the
  * last and up to `count` between, so the labels say where the range runs.
