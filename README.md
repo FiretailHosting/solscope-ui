@@ -1,4 +1,3 @@
-| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once, never taking focus and giving it back on dismiss; mounted toasts stack and publish `--toast-stack-height`; see [Toast](#toast) |
 # solscope-ui
 
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
@@ -11,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.14.1"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.15.0"
 ```
 
 ## Usage
@@ -64,7 +63,7 @@ Then use components:
 | `Label` | Form label |
 | `ModeSwitch` | Paper/Live trading mode toggle; `onliveunavailable` keeps Live clickable when `liveEnabled` is false |
 | `PageHead` | Page title with optional actions row |
-| `PageSearch` | A sheet with one field and the app's pages with their icons, filtered as you type; Return or a tap goes to the page and closes it; see [Page search](#page-search) |
+| `PageSearch` | A sheet with one field and the app's pages with their icons, filtered as you type; Return or a tap goes to the page and closes it; `sections` adds result sections the app searches, such as coins; see [Page search](#page-search) |
 | `Pagination` | Previous and Next buttons, "Page 2 of 14" and the row range for a long table; see [Pagination](#pagination) |
 | `Pill` | Status pill (default, live, ok) |
 | `RowList` | A list of `RowItem`s for a phone, where a table would scroll sideways; `label` names it, `busy` says rows are loading; see [Row list](#row-list) |
@@ -81,6 +80,7 @@ Then use components:
 | `Table` | Styled data table with overflow scroll; `rowHover={false}` turns off the row highlight for rows that are not clickable |
 | `Textarea` | Styled textarea |
 | `ThemeToggle` | Cycles through auto, light and dark themes and saves the choice; see [Saved theme](#saved-theme) |
+| `Toast` | A one-line notice fixed over the page with an action and a dismiss button, announced once, never taking focus and giving it back on dismiss; mounted toasts stack and publish `--toast-stack-height`; see [Toast](#toast) |
 
 ## Icons
 
@@ -319,6 +319,28 @@ The field empties each time; every word typed must start a word of the label or 
 Return goes to the first match, Down moves into the list, Up and Down move through it, Home and End jump to its ends, and Up from the first goes back to the field.
 The number of matches is read out once typing pauses, and `emptyText` shows when nothing matches.
 `title` (default "Search pages", the search button's name), `fieldLabel` and `placeholder` change the wording; `filterPages(pages, query)` is the same filter for code and tests.
+
+#### Sections
+
+`sections` adds result sections under the pages, which the app fills from its own search as the bound `query` changes:
+
+```svelte
+<script lang="ts">
+  import { PageSearch, type PageSearchSection } from '@firetailhosting/solscope-ui';
+  let query = $state('');
+  let coins = $state<PageSearchSection>({ id: 'coins', title: 'Coins', noun: ['coin', 'coins'], results: [] });
+  // Set coins.loading while searching, then its results (href, label, detail, value, valueLabel, image) or a fixed error.
+</script>
+
+<PageSearch bind:this={search} bind:query {pages} sections={query.trim() ? [coins] : []} pageLimit={3} />
+```
+
+Given, even empty, the pages become a section too, titled `pagesTitle` (default "Pages"), with at most `pageLimit` pages once something is typed.
+Each section heading is a button with `aria-expanded` and `aria-controls` that opens and closes it; the chevron points down when open and turns when closed, and the count beside it shows "--" while loading.
+All open on first use; `closedSections` holds the ids closed (`'pages'` for the pages), so bind it to keep them closed for the session.
+`loading` shows three skeleton rows the size of results, `error` shows its fixed text, and an empty section shows its `emptyText` or `noMatchesText` (default "No matches").
+Return goes to the first result of the open sections, and Down, Up, Home and End move across sections, skipping closed ones.
+One status reads out every count, such as "3 pages, 5 coins", once typing pauses and no section is loading; `countPhrase` and `searchSummary` build it for tests.
 
 ### Inline confirm
 

@@ -45,7 +45,15 @@ export { default as Label } from './components/ui/Label.svelte';
 export { default as ModeSwitch } from './components/ui/ModeSwitch.svelte';
 export { default as PageHead } from './components/ui/PageHead.svelte';
 export { default as PageSearch } from './components/ui/PageSearch.svelte';
-export { filterPages, type PageSearchItem } from './page-search.js';
+export {
+	countPhrase,
+	filterPages,
+	searchSummary,
+	type PageSearchItem,
+	type PageSearchResult,
+	type PageSearchSection,
+	type PageSearchSummaryPart
+} from './page-search.js';
 export { default as Pagination } from './components/ui/Pagination.svelte';
 export { default as Pill } from './components/ui/Pill.svelte';
 export { default as RowItem } from './components/ui/RowItem.svelte';

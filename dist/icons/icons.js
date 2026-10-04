@@ -102,6 +102,9 @@ export const icons = {
     arrowLeft: {
         d: ['M20 12H5', 'M11 6l-6 6 6 6']
     },
+    chevronDown: {
+        d: ['M6 9l6 6 6-6']
+    },
     copy: {
         d: ['M9 9h11v11H9Z', 'M5 15H4V4h11v1']
     },

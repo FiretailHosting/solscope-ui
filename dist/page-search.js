@@ -20,3 +20,18 @@ export function filterPages(pages, query) {
     }
     return [...starts, ...others];
 }
+/** "1 page", "3 pages" or "no pages". */
+export function countPhrase(count, [one, other]) {
+    if (count === 0)
+        return `no ${other}`;
+    return `${count} ${count === 1 ? one : other}`;
+}
+// The count read out for every section together, such as "3 pages, 5 coins".
+// It waits, as an empty string, while any section loads, so the read-out
+// comes once with every count rather than once per section. A failed
+// section says its error instead of a count.
+export function searchSummary(parts) {
+    if (parts.some((part) => part.loading))
+        return '';
+    return parts.map((part) => part.error || countPhrase(part.count, part.noun)).join(', ');
+}
