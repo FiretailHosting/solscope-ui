@@ -42,6 +42,8 @@ export type PageSearchSection = {
     emptyText?: string;
     /** Singular and plural for the count read out, such as ['coin', 'coins']. */
     noun?: [string, string];
+    /** false when the app has not searched it, such as while it is closed: no count shows or is read out. */
+    searched?: boolean;
 };
 /** What the count read-out needs to know about a section. */
 export type PageSearchSummaryPart = {
@@ -49,6 +51,8 @@ export type PageSearchSummaryPart = {
     noun: [string, string];
     loading?: boolean;
     error?: string;
+    /** Closed or not searched: left out of the read-out. */
+    closed?: boolean;
 };
 /** "1 page", "3 pages" or "no pages". */
 export declare function countPhrase(count: number, [one, other]: [string, string]): string;

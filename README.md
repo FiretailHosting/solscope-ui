@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.15.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.15.1"
 ```
 
 ## Usage
@@ -338,9 +338,11 @@ The number of matches is read out once typing pauses, and `emptyText` shows when
 Given, even empty, the pages become a section too, titled `pagesTitle` (default "Pages"), with at most `pageLimit` pages once something is typed.
 Each section heading is a button with `aria-expanded` and `aria-controls` that opens and closes it; the chevron points down when open and turns when closed, and the count beside it shows "--" while loading.
 All open on first use; `closedSections` holds the ids closed (`'pages'` for the pages), so bind it to keep them closed for the session.
-`loading` shows three skeleton rows the size of results, `error` shows its fixed text, and an empty section shows its `emptyText` or `noMatchesText` (default "No matches").
+`loading` shows three skeleton rows the size of results, hidden from screen readers, and the heading reads "Coins, loading"; `error` shows its fixed text, and an empty section shows its `emptyText` or `noMatchesText` (default "No matches").
+`searched: false` marks a section the app has not searched, such as one it skips while closed: its count shows "--".
 Return goes to the first result of the open sections, and Down, Up, Home and End move across sections, skipping closed ones.
-One status reads out every count, such as "3 pages, 5 coins", once typing pauses and no section is loading; `countPhrase` and `searchSummary` build it for tests.
+One status reads out the count of every open section, such as "3 pages, 5 coins", once typing pauses and no open section is loading, also when a new query gives the same count; `countPhrase` and `searchSummary` build it for tests.
+`maxlength` limits the field; there is no limit by default.
 
 ### Inline confirm
 
