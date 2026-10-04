@@ -66,6 +66,8 @@ export type PageSearchSection = {
 	emptyText?: string;
 	/** Singular and plural for the count read out, such as ['coin', 'coins']. */
 	noun?: [string, string];
+	/** false when the app has not searched it, such as while it is closed: no count shows or is read out. */
+	searched?: boolean;
 };
 
 /** What the count read-out needs to know about a section. */
@@ -74,6 +76,8 @@ export type PageSearchSummaryPart = {
 	noun: [string, string];
 	loading?: boolean;
 	error?: string;
+	/** Closed or not searched: left out of the read-out. */
+	closed?: boolean;
 };
 
 /** "1 page", "3 pages" or "no pages". */
@@ -83,10 +87,20 @@ export function countPhrase(count: number, [one, other]: [string, string]): stri
 }
 
 // The count read out for every section together, such as "3 pages, 5 coins".
-// It waits, as an empty string, while any section loads, so the read-out
-// comes once with every count rather than once per section. A failed
-// section says its error instead of a count.
+// Closed sections are left out. It waits, as an empty string, while any
+// open section loads, so the read-out comes once with every count rather
+// than once per section. A failed section says its error instead of a
+// count, lowercased to read as part of the sentence: "3 pages, could not
+// search coins".
 export function searchSummary(parts: readonly PageSearchSummaryPart[]): string {
-	if (parts.some((part) => part.loading)) return '';
-	return parts.map((part) => part.error || countPhrase(part.count, part.noun)).join(', ');
+	const open = parts.filter((part) => !part.closed);
+	if (open.some((part) => part.loading)) return '';
+	return open
+		.map((part) => (part.error ? inSentence(part.error) : countPhrase(part.count, part.noun)))
+		.join(', ');
+}
+
+function inSentence(text: string): string {
+	const trimmed = text.trim().replace(/\.$/, '');
+	return trimmed.charAt(0).toLocaleLowerCase() + trimmed.slice(1);
 }

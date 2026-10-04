@@ -25,6 +25,8 @@ type $$ComponentProps = {
     /** Accessible name of the search field. */
     fieldLabel?: string;
     placeholder?: string;
+    /** The most characters the field takes; no limit by default. */
+    maxlength?: number;
     /** Without `sections`: shown, and read out, when nothing matches. */
     emptyText?: string;
     /** Called once the sheet has closed, however it closed. */

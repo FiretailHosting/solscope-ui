@@ -27,11 +27,20 @@ export function countPhrase(count, [one, other]) {
     return `${count} ${count === 1 ? one : other}`;
 }
 // The count read out for every section together, such as "3 pages, 5 coins".
-// It waits, as an empty string, while any section loads, so the read-out
-// comes once with every count rather than once per section. A failed
-// section says its error instead of a count.
+// Closed sections are left out. It waits, as an empty string, while any
+// open section loads, so the read-out comes once with every count rather
+// than once per section. A failed section says its error instead of a
+// count, lowercased to read as part of the sentence: "3 pages, could not
+// search coins".
 export function searchSummary(parts) {
-    if (parts.some((part) => part.loading))
+    const open = parts.filter((part) => !part.closed);
+    if (open.some((part) => part.loading))
         return '';
-    return parts.map((part) => part.error || countPhrase(part.count, part.noun)).join(', ');
+    return open
+        .map((part) => (part.error ? inSentence(part.error) : countPhrase(part.count, part.noun)))
+        .join(', ');
+}
+function inSentence(text) {
+    const trimmed = text.trim().replace(/\.$/, '');
+    return trimmed.charAt(0).toLocaleLowerCase() + trimmed.slice(1);
 }

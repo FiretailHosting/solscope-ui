@@ -53,7 +53,14 @@ test('the summary covers every section, waits while one loads and says errors', 
 	assert.equal(searchSummary([pagesPart, { count: 0, noun: ['coin', 'coins'], loading: true }]), '');
 	assert.equal(
 		searchSummary([pagesPart, { count: 0, noun: ['coin', 'coins'], error: 'Could not search coins.' }]),
-		'3 pages, Could not search coins.'
+		'3 pages, could not search coins'
 	);
 	assert.equal(searchSummary([pagesPart]), '3 pages');
+});
+
+test('closed sections are left out of the summary, also while they load', () => {
+	const coins = { count: 5, noun: ['coin', 'coins'] };
+	assert.equal(searchSummary([{ count: 3, noun: ['page', 'pages'], closed: true }, coins]), '5 coins');
+	assert.equal(searchSummary([{ count: 3, noun: ['page', 'pages'] }, { ...coins, loading: true, closed: true }]), '3 pages');
+	assert.equal(searchSummary([{ count: 3, noun: ['page', 'pages'], closed: true }]), '');
 });

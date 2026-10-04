@@ -22,6 +22,7 @@
 		title = 'Search pages',
 		fieldLabel = 'Page name',
 		placeholder = 'Search pages',
+		maxlength,
 		emptyText = 'No pages match.',
 		onclose
 	}: {
@@ -50,6 +51,8 @@
 		/** Accessible name of the search field. */
 		fieldLabel?: string;
 		placeholder?: string;
+		/** The most characters the field takes; no limit by default. */
+		maxlength?: number;
 		/** Without `sections`: shown, and read out, when nothing matches. */
 		emptyText?: string;
 		/** Called once the sheet has closed, however it closed. */
@@ -65,14 +68,16 @@
 		pageLimit !== undefined && query.trim() ? matches.slice(0, pageLimit) : matches
 	);
 	const countText = $derived.by(() => {
+		// Closed sections are left out: what cannot be seen is not counted.
 		if (sections) {
 			return searchSummary([
-				{ count: shownPages.length, noun: ['page', 'pages'] },
+				{ count: shownPages.length, noun: ['page', 'pages'], closed: closedSections.includes('pages') },
 				...sections.map((section) => ({
 					count: section.results.length,
 					noun: section.noun ?? (['result', 'results'] as [string, string]),
 					loading: section.loading,
-					error: section.error
+					error: section.error,
+					closed: closedSections.includes(section.id) || section.searched === false
 				}))
 			]);
 		}
@@ -101,19 +106,35 @@
 		query = '';
 	});
 
-	// The count is read out once typing pauses, and only when it changed:
-	// a status region announces each new text, not each keystroke. With
+	// The count is read out once typing pauses, not at each keystroke. With
 	// sections it waits until none is loading, so every count comes at once.
+	// A status region reads only new text, so when a new query gives the
+	// same count, it is cleared and set again a moment later to be heard.
 	let announced = $state('');
+	let announcedQuery = '';
 	$effect(() => {
 		if (!open) {
 			announced = '';
+			announcedQuery = '';
 			return;
 		}
 		const text = countText;
+		const typed = query;
 		if (!text) return;
-		const timer = setTimeout(() => (announced = text), 500);
-		return () => clearTimeout(timer);
+		let repeat: ReturnType<typeof setTimeout> | undefined;
+		const timer = setTimeout(() => {
+			if (text === announced && typed !== announcedQuery) {
+				announced = '';
+				repeat = setTimeout(() => (announced = text), 100);
+			} else {
+				announced = text;
+			}
+			announcedQuery = typed;
+		}, 500);
+		return () => {
+			clearTimeout(timer);
+			clearTimeout(repeat);
+		};
 	});
 
 	function currentOf(active: PageSearchItem['active']): 'page' | 'true' | undefined {
@@ -129,7 +150,8 @@
 	// Return goes to the first match in an open section; Down steps into the
 	// results. Return that confirms an input method's composition is left to it.
 	function fieldKeydown(event: KeyboardEvent) {
-		if (event.isComposing) return;
+		// keyCode 229: Safari sends Return that ends a composition without isComposing.
+		if (event.isComposing || event.keyCode === 229) return;
 		if (event.key === 'Enter') {
 			const first = links()[0];
 			if (!first) return;
@@ -177,6 +199,7 @@
 		aria-label={fieldLabel}
 		aria-controls={listId}
 		{placeholder}
+		{maxlength}
 		autofocus
 		autocomplete="off"
 		autocapitalize="off"
@@ -193,20 +216,20 @@
 					<p class="sui-page-search-none">{noMatchesText}</p>
 				{:else}
 					<!-- svelte-ignore a11y_no_redundant_roles -->
-					<ul class="sui-page-search-list" role="list" aria-label={pagesTitle}>
+					<ul class="sui-page-search-list" role="list">
 						{#each shownPages as page, index (`${index}:${page.href}`)}
 							<li>{@render pageLink(page)}</li>
 						{/each}
 					</ul>
 				{/if}
 			{/snippet}
-			{@render disclosure(0, 'pages', pagesTitle, shownPages.length, pageRows)}
+			{@render disclosure(0, 'pages', pagesTitle, shownPages.length, false, pageRows)}
 			{#each sections as section, sectionIndex (section.id)}
 				{#snippet sectionRows()}
 					{#if section.loading}
-						<!-- Skeleton rows the size of results, which replace them. -->
-						<!-- svelte-ignore a11y_no_redundant_roles -->
-						<ul class="sui-page-search-list" role="list" aria-label={section.title} aria-busy="true">
+						<!-- Skeleton rows the size of results, which replace them; the
+						     heading says "loading" to screen readers instead. -->
+						<ul class="sui-page-search-list" aria-hidden="true">
 							{#each { length: 3 }, index (index)}
 								<li class="placeholder">
 									<Skeleton width="22px" height="22px" radius="var(--radius-full)" />
@@ -220,8 +243,9 @@
 					{:else if section.results.length === 0}
 						<p class="sui-page-search-none">{section.emptyText ?? noMatchesText}</p>
 					{:else}
+						<!-- No label: the heading just above names it, and a label is read twice. -->
 						<!-- svelte-ignore a11y_no_redundant_roles -->
-						<ul class="sui-page-search-list" role="list" aria-label={section.title}>
+						<ul class="sui-page-search-list" role="list">
 							{#each section.results as result, index (`${index}:${result.href}`)}
 								<li>
 									<a href={result.href} onclick={picked}>
@@ -249,7 +273,8 @@
 					sectionIndex + 1,
 					section.id,
 					section.title,
-					section.loading || section.error ? null : section.results.length,
+					section.loading || section.error || section.searched === false ? null : section.results.length,
+					!!section.loading,
 					sectionRows
 				)}
 			{/each}
@@ -285,15 +310,19 @@
 
 <!-- A section's heading is a button that opens and closes it: aria-expanded
      says which, and the chevron turns, pointing down when open. The count
-     shows "--" while the results load. -->
-{#snippet disclosure(index: number, id: string, heading: string, count: number | null, body: Snippet)}
+     shows "--" while the results load or are unknown. -->
+{#snippet disclosure(index: number, id: string, heading: string, count: number | null, loading: boolean, body: Snippet)}
 	{@const closed = closedSections.includes(id)}
 	{@const bodyId = `${listId}-section-${index}`}
 	<h3 class="sui-page-search-heading">
 		<button type="button" aria-expanded={!closed} aria-controls={bodyId} onclick={() => toggleSection(id)}>
 			<span class="chevron"><Icon name="chevronDown" size={16} /></span>
-			<!-- Read out as "Pages, 3". -->
-			<span class="heading">{heading}{#if count !== null}<span class="visually-hidden">,</span>{/if}</span>
+			<!-- Read out as "Pages, 3", or "Coins, loading". -->
+			<span class="heading"
+				>{heading}{#if count !== null}<span class="visually-hidden">,</span>{:else if loading}<span
+						class="visually-hidden">, loading</span
+					>{/if}</span
+			>
 			{#if count === null}
 				<span class="count" aria-hidden="true">--</span>
 			{:else}
@@ -548,9 +577,10 @@
 		object-fit: cover;
 	}
 
+	/* border-strong: the plain border all but vanishes on the dark card. */
 	span.image {
 		box-sizing: border-box;
-		border: 1px solid var(--border);
+		border: 1px solid var(--border-strong);
 	}
 
 	.detail {
