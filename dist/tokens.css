@@ -127,9 +127,12 @@
 	   env(safe-area-inset-bottom) under 860px so content clears the bar.
 	   --tab-bar-min-height is the floor; when wrapped labels make the bar
 	   taller, TabBar sets --tab-bar-height on <html> to the measured height.
-	   Toast sets --toast-stack-height on <html> to the height of the mounted
-	   toasts, for the page's scroll padding; see the README. */
+	   The floating pill variant has its own, taller floor,
+	   --tab-pill-min-height, which also sizes the round search button beside
+	   it. Toast sets --toast-stack-height on <html> to the height of the
+	   mounted toasts, for the page's scroll padding; see the README. */
 	--tab-bar-min-height: 3.5rem;
+	--tab-pill-min-height: 4rem;
 	--tab-bar-height: var(--tab-bar-min-height);
 
 	/* Font */

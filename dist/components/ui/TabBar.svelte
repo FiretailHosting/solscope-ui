@@ -89,6 +89,10 @@
 
 	let bar = $state<HTMLElement>();
 
+	// The pill is taller than the bar, so its icons grow with it; the labels
+	// follow in CSS.
+	const iconSize = $derived(variant === 'pill' ? 24 : 22);
+
 	// Labels wrap to two lines under large text or zoom, which makes the bar
 	// taller than the --tab-bar-height token, and the pill floats above the
 	// edge by a gap the page must clear as well. The measured height goes on
@@ -137,7 +141,7 @@
 		{#each items as item}
 			<a href={item.href} class="item" class:active={!!item.active} aria-current={currentOf(item.active)}>
 				<span class="glyph">
-					<Icon name={item.icon} size={22} />
+					<Icon name={item.icon} size={iconSize} />
 					{@render badge(item.badge ?? 0)}
 				</span>
 				<span class="label">{item.label}</span>
@@ -154,7 +158,7 @@
 				onclick={onmore}
 			>
 				<span class="glyph">
-					<Icon name={moreIcon} size={22} />
+					<Icon name={moreIcon} size={iconSize} />
 					{@render badge(moreBadge)}
 				</span>
 				<span class="label">{moreLabel}</span>
@@ -173,7 +177,7 @@
 				onsearch();
 			}}
 		>
-			<Icon name="search" size={22} />
+			<Icon name="search" size={iconSize} />
 		</button>
 	{/if}
 </nav>
@@ -230,11 +234,11 @@
 		}
 
 		/* No wider than five items need, so a landscape phone gets a pill,
-		   not a stretched bar. */
+		   not a stretched bar. Taller than the bar, with its own floor. */
 		.pill .items {
 			max-width: 30rem;
 			box-sizing: border-box;
-			min-height: var(--tab-bar-min-height);
+			min-height: var(--tab-pill-min-height);
 			padding: var(--space-1);
 		}
 	}
@@ -290,10 +294,12 @@
 	}
 
 	/* In the pill the page shown is a filled capsule rather than an edge
-	   bar, still told apart by shape as well as by colour and weight. */
+	   bar, still told apart by shape as well as by colour and weight. The
+	   taller pill carries a larger label along with its larger icons. */
 	.pill .item {
 		padding: var(--space-1) var(--space-0-5);
 		border-radius: var(--radius-full);
+		font-size: var(--text-sm);
 	}
 
 	/* The ring is the shape cue, at least 3:1 against the bar. The label
@@ -317,16 +323,16 @@
 		color: var(--fg);
 	}
 
-	/* A round button the pill's height, beside it, held at 56px so large
-	   text grows the pill rather than the button. */
+	/* A round button the pill's floor height, beside it, so labels that
+	   wrap under large text grow the pill rather than the button. */
 	.search {
 		flex: none;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		box-sizing: border-box;
-		width: 56px;
-		height: 56px;
+		width: var(--tab-pill-min-height);
+		height: var(--tab-pill-min-height);
 		padding: 0;
 		margin: 0;
 		color: var(--fg);

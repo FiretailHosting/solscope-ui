@@ -61,6 +61,7 @@ export declare const themeTokens: {
         readonly 'radius-lg': "6px";
         readonly 'radius-full': "9999px";
         readonly 'tab-bar-min-height': "3.5rem";
+        readonly 'tab-pill-min-height': "4rem";
         readonly 'tab-bar-height': "var(--tab-bar-min-height)";
         readonly 'font-sans': "'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
         readonly 'font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
@@ -126,6 +127,7 @@ export declare const themeTokens: {
         readonly 'radius-lg': "6px";
         readonly 'radius-full': "9999px";
         readonly 'tab-bar-min-height': "3.5rem";
+        readonly 'tab-pill-min-height': "4rem";
         readonly 'tab-bar-height': "var(--tab-bar-min-height)";
         readonly 'font-sans': "'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
         readonly 'font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
