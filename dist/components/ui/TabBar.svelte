@@ -37,6 +37,10 @@
 		moreActive = false,
 		moreControls,
 		onmore,
+		variant = 'bar',
+		searchLabel = 'Search pages',
+		searchOpen = false,
+		onsearch,
 		class: extraClass = ''
 	}: {
 		/** The main destinations: four or five fit; the drawer holds the rest. */
@@ -60,13 +64,26 @@
 		moreControls?: string;
 		/** Opens the drawer; the Sidebar's `open` is the app's to set. */
 		onmore?: () => void;
+		/**
+		 * `bar` spans the bottom edge; `pill` floats inset from the edges and
+		 * the safe area as a rounded group, with room for a search button
+		 * beside it. Both show only under the phone query.
+		 */
+		variant?: 'bar' | 'pill';
+		/** Accessible name of the search button. */
+		searchLabel?: string;
+		/** Whether the search is open, for aria-expanded on the search button. */
+		searchOpen?: boolean;
+		/** Adds a round search button beside the pill, such as one opening PageSearch; `pill` only. */
+		onsearch?: () => void;
 		class?: string;
 	} = $props();
 
 	let bar = $state<HTMLElement>();
 
 	// Labels wrap to two lines under large text or zoom, which makes the bar
-	// taller than the --tab-bar-height token. The measured height goes on
+	// taller than the --tab-bar-height token, and the pill floats above the
+	// edge by a gap the page must clear as well. The measured height goes on
 	// <html> as --tab-bar-height, so the page padding and the Toast anchor
 	// that read it follow; the bar's own min-height reads the token's floor,
 	// --tab-bar-min-height, so it can shrink again. Off the phone query the
@@ -79,7 +96,9 @@
 				root.style.removeProperty('--tab-bar-height');
 				return;
 			}
-			// The bar pads itself for the home indicator; consumers add that themselves.
+			// The bar pads itself for the home indicator; consumers add that
+			// themselves. The pill's gap is a margin inside the padding, so it
+			// counts towards the height.
 			const inset = parseFloat(getComputedStyle(bar).paddingBottom) || 0;
 			root.style.setProperty('--tab-bar-height', `${bar.offsetHeight - inset}px`);
 		});
@@ -105,32 +124,46 @@
 {/snippet}
 
 <!-- Unkeyed: two items may share an href, such as a home and a Dashboard. -->
-<nav bind:this={bar} class="sui-tab-bar {extraClass}" aria-label={label}>
-	{#each items as item}
-		<a href={item.href} class="item" class:active={!!item.active} aria-current={currentOf(item.active)}>
-			<span class="glyph">
-				<Icon name={item.icon} size={22} />
-				{@render badge(item.badge ?? 0)}
-			</span>
-			<span class="label">{item.label}</span>
-			{@render unread(item.badge ?? 0)}
-		</a>
-	{/each}
-	{#if onmore}
+<nav bind:this={bar} class="sui-tab-bar {variant} {extraClass}" aria-label={label}>
+	<div class="items">
+		{#each items as item}
+			<a href={item.href} class="item" class:active={!!item.active} aria-current={currentOf(item.active)}>
+				<span class="glyph">
+					<Icon name={item.icon} size={22} />
+					{@render badge(item.badge ?? 0)}
+				</span>
+				<span class="label">{item.label}</span>
+				{@render unread(item.badge ?? 0)}
+			</a>
+		{/each}
+		{#if onmore}
+			<button
+				type="button"
+				class="item"
+				class:active={moreActive}
+				aria-expanded={moreOpen}
+				aria-controls={moreControls}
+				onclick={onmore}
+			>
+				<span class="glyph">
+					<Icon name={moreIcon} size={22} />
+					{@render badge(moreBadge)}
+				</span>
+				<span class="label">{moreLabel}</span>
+				{@render unread(moreBadge)}
+			</button>
+		{/if}
+	</div>
+	{#if variant === 'pill' && onsearch}
 		<button
 			type="button"
-			class="item"
-			class:active={moreActive}
-			aria-expanded={moreOpen}
-			aria-controls={moreControls}
-			onclick={onmore}
+			class="search"
+			aria-label={searchLabel}
+			aria-haspopup="dialog"
+			aria-expanded={searchOpen}
+			onclick={onsearch}
 		>
-			<span class="glyph">
-				<Icon name={moreIcon} size={22} />
-				{@render badge(moreBadge)}
-			</span>
-			<span class="label">{moreLabel}</span>
-			{@render unread(moreBadge)}
+			<Icon name="search" size={22} />
 		</button>
 	{/if}
 </nav>
@@ -159,6 +192,43 @@
 			border-top: 1px solid var(--border);
 			overscroll-behavior: contain;
 		}
+
+		/* Floating: transparent around the pill and the search button, which
+		   alone take taps, so the page between and beside them stays
+		   reachable. The pill sits a gap above the bottom edge, or right above
+		   the home indicator where there is one: the margin tops the
+		   safe-area padding up to the gap. */
+		.sui-tab-bar.pill {
+			align-items: center;
+			gap: var(--space-2);
+			min-height: 0;
+			padding: 0 max(var(--space-3), env(safe-area-inset-right)) env(safe-area-inset-bottom)
+				max(var(--space-3), env(safe-area-inset-left));
+			background: none;
+			border-top: 0;
+			pointer-events: none;
+		}
+
+		.pill .items,
+		.pill .search {
+			margin-bottom: max(0px, var(--space-2) - env(safe-area-inset-bottom));
+			pointer-events: auto;
+			background: var(--card);
+			border: 1px solid var(--border);
+			border-radius: var(--radius-full);
+		}
+
+		.pill .items {
+			box-sizing: border-box;
+			min-height: var(--tab-bar-min-height);
+			padding: var(--space-1);
+		}
+	}
+
+	.items {
+		flex: 1 1 auto;
+		min-width: 0;
+		display: flex;
 	}
 
 	.item {
@@ -205,8 +275,55 @@
 		border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 	}
 
+	/* In the pill the page shown is a filled capsule rather than an edge
+	   bar, still told apart by shape as well as by colour and weight. */
+	.pill .item {
+		padding: var(--space-1) var(--space-0-5);
+		border-radius: var(--radius-full);
+	}
+
+	.pill .item.active {
+		background: var(--accent-subtle);
+	}
+
+	.pill .item.active::before {
+		content: none;
+	}
+
+	.pill .item.active .badge {
+		box-shadow: 0 0 0 2px var(--accent-subtle);
+	}
+
 	.item:hover {
 		color: var(--fg);
+	}
+
+	/* A round button the pill's height, beside it. */
+	.search {
+		flex: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+		width: var(--tab-bar-min-height);
+		height: var(--tab-bar-min-height);
+		padding: 0;
+		margin: 0;
+		color: var(--fg);
+		font: inherit;
+		cursor: pointer;
+		transition: background 100ms;
+	}
+
+	@media (hover: none) {
+		.search:active {
+			background: var(--card-alt);
+		}
+	}
+
+	.search:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 
 	/* A pressed state where there is no hover, so a tap gives feedback. */
@@ -239,17 +356,21 @@
 		text-align: center;
 	}
 
+	/* On the icon's top right corner, overlapping only the corner, with a
+	   ring in the bar's colour that keeps it apart from the icon's lines. */
 	.badge {
 		position: absolute;
 		top: calc(-1 * var(--space-1));
-		left: calc(100% - var(--space-2));
+		left: calc(100% - var(--space-1-5));
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 1.1rem;
-		height: 1.1rem;
+		box-sizing: border-box;
+		min-width: 1rem;
+		height: 1rem;
 		padding: 0 var(--space-1);
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-full);
+		box-shadow: 0 0 0 2px var(--card);
 		background: var(--down);
 		color: var(--down-fg);
 		font-size: var(--text-2xs);

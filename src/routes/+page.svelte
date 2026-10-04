@@ -17,6 +17,7 @@
 		Input,
 		ModeSwitch,
 		PageHead,
+		PageSearch,
 		Pagination,
 		Pill,
 		RowItem,
@@ -32,6 +33,7 @@
 		Toast,
 		type ChartConfig,
 		type IconName,
+		type PageSearchItem,
 		type SegmentedOption,
 		type TabBarItem
 	} from '$lib';
@@ -130,6 +132,20 @@
 	// More is the active item when the page shown is not one of the tabs.
 	let drawerOpen = $state(false);
 	let moreActive = $state(false);
+	// The floating pill, with the search button beside it opening PageSearch.
+	let pillBar = $state(false);
+	let pageSearchOpen = $state(false);
+	const searchPages: PageSearchItem[] = [
+		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', section: 'Overview', active: true },
+		{ href: '#markets', label: 'Markets', icon: 'markets', section: 'Overview' },
+		{ href: '#watchlist', label: 'Watchlist', icon: 'watchlist', section: 'Overview' },
+		{ href: '#portfolio', label: 'Portfolio', icon: 'portfolio', section: 'Trading' },
+		{ href: '#orders', label: 'Orders', icon: 'orders', section: 'Trading' },
+		{ href: '#bots', label: 'Bots', icon: 'bots', section: 'Automation' },
+		{ href: '#scores', label: 'Scores', icon: 'scores', section: 'Automation' },
+		{ href: '#friends', label: 'Friends', icon: 'friends', section: 'Social' },
+		{ href: '#inbox', label: 'Inbox', icon: 'inbox', section: 'Social' }
+	];
 	const tabs = $derived<TabBarItem[]>([
 		{ href: '#dashboard', label: 'Dashboard', icon: 'dashboard', active: !moreActive },
 		{ href: '#markets', label: 'Markets', icon: 'markets' },
@@ -360,6 +376,10 @@
 					<Button onclick={() => (moreActive = !moreActive)} aria-pressed={moreActive}>
 						Tab bar More {moreActive ? 'active' : 'inactive'}
 					</Button>
+					<Button onclick={() => (pillBar = !pillBar)} aria-pressed={pillBar}>
+						Tab bar {pillBar ? 'pill' : 'bar'}
+					</Button>
+					<Button icon="search" onclick={() => (pageSearchOpen = true)}>Page search</Button>
 				</div>
 				<!-- Stands in for the drawer the More item controls. -->
 				<p id="gallery-drawer" class="muted" hidden={!drawerOpen}>The drawer is open (pretend).</p>
@@ -539,7 +559,11 @@
 		{moreActive}
 		moreControls="gallery-drawer"
 		onmore={() => (drawerOpen = !drawerOpen)}
+		variant={pillBar ? 'pill' : 'bar'}
+		searchOpen={pageSearchOpen}
+		onsearch={() => (pageSearchOpen = true)}
 	/>
+	<PageSearch bind:open={pageSearchOpen} pages={searchPages} />
 </main>
 
 <style>

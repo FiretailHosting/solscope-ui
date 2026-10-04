@@ -36,6 +36,18 @@ type $$ComponentProps = {
     moreControls?: string;
     /** Opens the drawer; the Sidebar's `open` is the app's to set. */
     onmore?: () => void;
+    /**
+     * `bar` spans the bottom edge; `pill` floats inset from the edges and
+     * the safe area as a rounded group, with room for a search button
+     * beside it. Both show only under the phone query.
+     */
+    variant?: 'bar' | 'pill';
+    /** Accessible name of the search button. */
+    searchLabel?: string;
+    /** Whether the search is open, for aria-expanded on the search button. */
+    searchOpen?: boolean;
+    /** Adds a round search button beside the pill, such as one opening PageSearch; `pill` only. */
+    onsearch?: () => void;
     class?: string;
 };
 declare const TabBar: import("svelte").Component<$$ComponentProps, {}, "">;
