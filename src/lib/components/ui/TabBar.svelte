@@ -295,11 +295,16 @@
 
 	/* In the pill the page shown is a filled capsule rather than an edge
 	   bar, still told apart by shape as well as by colour and weight. The
-	   taller pill carries a larger label along with its larger icons. */
+	   taller pill carries a larger label along with its larger icons, but
+	   only where the word fits: four items beside the search button leave a
+	   label about 50px at 320px wide and 63px at 375px, and a nine-letter
+	   word such as "Portfolio" needs about 60px at --text-sm, so the size
+	   follows the viewport down to the bar's --text-xs on the narrowest
+	   phones. Under large text the rem bounds win, as on the bar. */
 	.pill .item {
 		padding: var(--space-1) var(--space-0-5);
 		border-radius: var(--radius-full);
-		font-size: var(--text-sm);
+		font-size: clamp(var(--text-xs), 3.6vw, var(--text-sm));
 	}
 
 	/* The ring is the shape cue, at least 3:1 against the bar. The label

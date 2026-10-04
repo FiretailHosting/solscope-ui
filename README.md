@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.16.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.16.1"
 ```
 
 ## Usage
@@ -280,7 +280,7 @@ A badge sits on the icon's top right corner, ringed in the bar's colour, so it c
 
 `variant="pill"` floats the items and More as one rounded group, inset from the screen edges and the safe areas, with the page between and beside it still reachable.
 The page shown is a filled capsule with an accent ring instead of the edge bar; the pill is at most 30rem wide and centred, and labels break between words only.
-The pill is taller than the bar, at least `--tab-pill-min-height` (4rem) with 24px icons and `--text-sm` labels, and `--tab-bar-height` follows its measured height as for the bar.
+The pill is taller than the bar, at least `--tab-pill-min-height` (4rem) with 24px icons and labels from `--text-xs` on the narrowest phones up to `--text-sm` from about 380px wide, and `--tab-bar-height` follows its measured height as for the bar.
 `onsearch` adds a round search button the pill's floor height beside it, such as one opening [PageSearch](#page-search); `searchLabel` names it (default "Search pages"), and it carries `aria-haspopup="dialog"`.
 The button takes focus before `onsearch` runs, since iOS does not focus a tapped button, so the dialog gives focus back to it on close; `searchOpen` is ignored since v0.14.1.
 The pill sits `--space-2` above the bottom edge, or right above the home indicator, and `--tab-bar-height` includes that gap, so the same padding clears it.
