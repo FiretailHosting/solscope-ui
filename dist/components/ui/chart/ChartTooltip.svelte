@@ -175,14 +175,14 @@
 	.sui-chart-tooltip {
 		display: grid;
 		align-items: start;
-		gap: 0.375rem;
+		gap: var(--space-1-5);
 		min-width: 8rem;
-		padding: 0.375rem 0.625rem;
+		padding: var(--space-1-5) var(--space-2-5);
 		background: var(--card);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
 		color: var(--fg);
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 	}
 
 	.label {
@@ -192,14 +192,14 @@
 	.rows,
 	.names {
 		display: grid;
-		gap: 0.375rem;
+		gap: var(--space-1-5);
 	}
 
 	.row {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: stretch;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		width: 100%;
 	}
 
@@ -237,7 +237,7 @@
 	}
 
 	.indicator.dashed.nested {
-		margin: 0.125rem 0;
+		margin: var(--space-0-5) 0;
 	}
 
 	.entry {
@@ -246,7 +246,7 @@
 		flex-shrink: 0;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.75rem;
+		gap: var(--space-3);
 		line-height: 1;
 	}
 

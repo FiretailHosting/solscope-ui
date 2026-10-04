@@ -3,6 +3,7 @@
 		Alert,
 		BackLink,
 		Badge,
+		Balance,
 		Button,
 		Card,
 		ChartContainer,
@@ -230,6 +231,21 @@
 		</Card>
 	</div>
 
+	<Card title="Tokens" icon="settings">
+		<div class="tokens">
+			<ul class="scale" aria-label="Spacing scale">
+				{#each ['0-5', '1', '1-5', '2', '2-5', '3', '3-5', '4', '5', '6', '7', '8', '10', '12'] as step (step)}
+					<li><span class="space" style="width: var(--space-{step})"></span><code>--space-{step}</code></li>
+				{/each}
+			</ul>
+			<ul class="scale" aria-label="Type scale">
+				{#each ['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'] as size (size)}
+					<li><span style="font-size: var(--text-{size})">The quick brown fox</span><code>--text-{size}</code></li>
+				{/each}
+			</ul>
+		</div>
+	</Card>
+
 	<Card title="Icons" icon="spark">
 		<ul class="icons">
 			{#each names as name (name)}
@@ -248,6 +264,19 @@
 					<Button variant="danger" icon="close">Danger</Button>
 					<Button variant="ghost">Ghost</Button>
 				</div>
+				<div class="inline">
+					<Button variant="link">Link button</Button>
+					<Button variant="link" aria-disabled="true">Dimmed link</Button>
+					<span class="muted">in a line of text, <Button variant="link">Try again</Button> included.</span>
+				</div>
+				<Balance label="Cash available" title="1234.5678">
+					$1,234.57
+					{#snippet action()}<Button variant="link">Max</Button>{/snippet}
+				</Balance>
+				<Balance label="You hold" busy><Skeleton width="4.5rem" /></Balance>
+				<Balance label="Balance unavailable">
+					{#snippet action()}<Button variant="link">Retry</Button>{/snippet}
+				</Balance>
 				<div class="inline">
 					<Button variant="primary" icon="plus" loading>Placing order</Button>
 					<Button loading>Save</Button>
@@ -465,31 +494,66 @@
 	main {
 		max-width: 64rem;
 		margin: 0 auto;
-		padding: 2rem 1.25rem;
+		padding: var(--space-8) var(--space-5);
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: var(--space-4);
 	}
 
 	.stats,
 	.row {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-		gap: 1rem;
+		gap: var(--space-4);
 	}
 
 	.pagination-demo {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
+		gap: var(--space-3);
+		padding: var(--space-3) var(--space-4);
 		border-top: 1px solid var(--border);
 	}
 
 	.skeletons {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--space-2);
+	}
+
+	.tokens {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+		gap: var(--space-4);
+	}
+
+	.scale {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.scale li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		min-height: 1.5rem;
+	}
+
+	.scale code {
+		margin-left: auto;
+		font-size: var(--text-xs);
+		color: var(--muted);
+	}
+
+	.space {
+		display: inline-block;
+		height: var(--space-4);
+		background: var(--accent);
+		border-radius: var(--radius-sm);
 	}
 
 	.icons {
@@ -498,18 +562,18 @@
 		padding: 0;
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
-		gap: 0.5rem;
+		gap: var(--space-2);
 	}
 
 	.icons li {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0.75rem 0.25rem;
+		gap: var(--space-1-5);
+		padding: var(--space-3) var(--space-1);
 		border: 1px solid var(--border);
 		border-radius: var(--radius);
-		font-size: 0.72rem;
+		font-size: var(--text-2xs);
 		color: var(--muted);
 	}
 
@@ -520,25 +584,25 @@
 	.stack {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: var(--space-3);
 	}
 
 	.dialog-text {
-		margin: 0 0 0.75rem;
+		margin: 0 0 var(--space-3);
 		color: var(--muted);
-		font-size: 0.875rem;
+		font-size: var(--text-sm);
 	}
 
 	/* Content clears the fixed TabBar on phones, PHONE_QUERY. */
 	@media (max-width: 860px) and (pointer: coarse) {
 		main {
-			padding-bottom: calc(2rem + var(--tab-bar-height) + env(safe-area-inset-bottom));
+			padding-bottom: calc(var(--space-8) + var(--tab-bar-height) + env(safe-area-inset-bottom));
 		}
 	}
 
 	/* An element scrolled or focused into view stops clear of the toasts. */
 	:global(html) {
-		scroll-padding-bottom: calc(1rem + var(--toast-stack-height, 0px));
+		scroll-padding-bottom: calc(var(--space-4) + var(--toast-stack-height, 0));
 	}
 
 	.muted {
@@ -550,7 +614,7 @@
 	}
 
 	.empty {
-		padding: 0.6rem 1rem;
+		padding: var(--space-2-5) var(--space-4);
 	}
 
 	.up {
@@ -564,7 +628,7 @@
 	.inline {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
 	}
 </style>

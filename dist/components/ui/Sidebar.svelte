@@ -142,8 +142,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.5rem;
-		padding: 1rem 1rem 0.75rem;
+		gap: var(--space-2);
+		padding: var(--space-4) var(--space-4) var(--space-3);
 		border-bottom: 1px solid var(--sidebar-border);
 		flex-shrink: 0;
 	}
@@ -165,7 +165,7 @@
 		justify-content: center;
 		width: 2.25rem;
 		height: 2.25rem;
-		margin: -0.3rem -0.5rem -0.3rem 0;
+		margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2)) calc(-1 * var(--space-1)) 0;
 		padding: 0;
 		border: 1px solid transparent;
 		border-radius: var(--radius);
@@ -187,13 +187,13 @@
 
 	.sui-sidebar-nav {
 		flex: 1;
-		padding: 0.5rem 0;
+		padding: var(--space-2) 0;
 		display: flex;
 		flex-direction: column;
 	}
 
 	.sui-sidebar-footer {
-		padding: 0.75rem;
+		padding: var(--space-3);
 		border-top: 1px solid var(--sidebar-border);
 		flex-shrink: 0;
 	}
@@ -236,8 +236,8 @@
 
 		/* Clear of the status bar, the home indicator and a notch in landscape. */
 		.sui-sidebar-header {
-			padding-top: calc(1rem + env(safe-area-inset-top));
-			padding-left: calc(1rem + env(safe-area-inset-left));
+			padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+			padding-left: calc(var(--space-4) + env(safe-area-inset-left));
 		}
 
 		.sui-sidebar-nav {
@@ -245,8 +245,8 @@
 		}
 
 		.sui-sidebar-footer {
-			padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
-			padding-left: calc(0.75rem + env(safe-area-inset-left));
+			padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+			padding-left: calc(var(--space-3) + env(safe-area-inset-left));
 		}
 
 		.sui-overlay {
@@ -263,7 +263,7 @@
 		.sui-sidebar-close {
 			width: 44px;
 			height: 44px;
-			margin: -0.6rem -0.75rem -0.6rem 0;
+			margin: calc(-1 * var(--space-2-5)) calc(-1 * var(--space-3)) calc(-1 * var(--space-2-5)) 0;
 		}
 	}
 

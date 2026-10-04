@@ -11,7 +11,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.11.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.12.0"
 ```
 
 ## Usage
@@ -47,13 +47,14 @@ Then use components:
 | `AppShell` | Full-page layout wrapper with sidebar slot |
 | `BackLink` | Link back to the parent page with an arrow, muted or a plain underlined `link`; a 44px tap target on phones, `hideInStandalone` hides it under the app's own Back button; see [Back link](#back-link) |
 | `Badge` | Inline status badge (default, up, down, accent) |
-| `Button` | Button or link (`href`), variants default, primary, danger, ghost, optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why; a dimmed primary loses its fill for a dashed outline, so the state does not rest on colour alone |
+| `Balance` | A balance above an amount field: `label`, the value as children with an optional `title`, `busy` while it loads and an `action` snippet at the end, such as a link Button for Max |
+| `Button` | Button or link (`href`), variants default, primary, danger, ghost and link, which is text alone in the accent colour for Max or Try again inside a line; optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why; a dimmed primary loses its fill for a dashed outline, so the state does not rest on colour alone |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
 | `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
 | `Dialog` | Modal over a native `<dialog>`: `title` or `label`, close button, Escape, backdrop tap, focus return; a centred card on desktop and a bottom sheet on phones; see [Dialog](#dialog) |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
-| `FormField` | Label wrapping an input, with a `hint` or an `error` |
+| `FormField` | Label wrapping an input, with a `hint` or an `error`; `errorId` names the error for the input's `aria-describedby` |
 | `Grid` | Responsive 2-column grid |
 | `Icon` | One of the library's icons by `name`; decorative unless given a `label` |
 | `InlineConfirm` | A question asked in place before an action that cannot be undone, with confirm and cancel buttons; see [Inline confirm](#inline-confirm) |
@@ -86,23 +87,52 @@ Add an icon by adding its paths to `src/lib/icons/icons.ts`.
 
 ## Theming
 
-Colors are defined as CSS variables in `tokens.css`.
+Colors, spacing, type sizes, radii and fonts are CSS variables in `tokens.css`, and every component is drawn from them, so changing the tokens restyles an app that uses only library components and tokens.
 Text uses IBM Plex Sans 1.1 (weights 400 to 700), self-hosted from `fonts/` under the SIL Open Font License, with the system font stack as a fallback.
 The sidebar is dark slate in both themes, with its own `--sidebar-*` tokens.
 Override any token in your app's CSS to customize.
 Component classes are prefixed `sui-` so they cannot collide with an app's own class names.
 
-### Saved theme
+Token names and component props are the library's public contract: renaming or removing one is a major version.
+
+### Spacing and type
+
+Spacing is a 4px scale from `--space-unit` (0.25rem): `--space-1` to `--space-12` in the steps 1, 2, 3, 4, 5, 6, 7, 8, 10 and 12, with the half steps `--space-0-5`, `--space-1-5`, `--space-2-5` and `--space-3-5`.
+Each step is a multiple of the unit, so changing the unit alone makes the whole library tighter or looser; any step can also be set on its own.
+Use them for every padding, margin and gap in an app, so a restyle reaches the app's own layout too.
+
+Type sizes run `--text-2xs`, `--text-xs`, `--text-sm`, `--text-md`, `--text-lg`, `--text-xl`, `--text-2xl` and `--text-3xl`.
+`--text-md` is the body size; 2xs and xs are for small uppercase labels and hints, sm for controls and secondary text, lg and up for headings and figures.
+
+### Globals
+
+`globals.css` styles bare `input`, `select` and `textarea` elements like the library's own, so an app's unclassed controls match, and gives them 16px text and 44px height on touch screens.
+It also provides helper classes for an app's markup: `sui-sr-only`, `sui-muted`, `sui-small`, `sui-error`, `sui-up`, `sui-down`, `sui-mono`, `sui-stack` (one gap between stacked blocks), `sui-skeleton-line` (a line of placeholder text) and `sui-page-loading` (rows kept from the last page while the next loads).
+A bare `button` or `a` with `aria-disabled="true"` is dimmed the way a Button is.
+The page's `scroll-padding-bottom` clears the mounted toasts and, on phones, the tab bar.
+
+### Tokens in code
+
+`themeTokens` holds every token of `tokens.css` as a string, per theme (`themeTokens.dark.bg`), generated from the stylesheet by `bun run tokens` and checked by `bun run check`.
+`themeColors` picks the page background and the top bar colour per theme, for a manifest's `background_color` and `theme_color` or an offline page.
+
+### Saved theme and app head
 
 `ThemeToggle` saves the chosen theme in `localStorage`, but it only runs once the app's JavaScript starts.
-To stop a saved Dark theme flashing light on every page load, add this script to the `<head>` of `src/app.html`, before `%sveltekit.head%`:
+`appHead` is everything the `<head>` of `app.html` needs from the library: the theme-color metas, a launch screen in the page background so a Home Screen launch never flashes the other theme, `themeInitScript`, which applies the saved theme before first paint, and a script that keeps the metas on the chosen theme.
+Inject it before `%sveltekit.head%` from a server hook, so it never goes stale when the tokens change:
 
-```html
-<script>(function () { try { var theme = localStorage.getItem("theme"); if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme); } catch (error) {} })();</script>
+```ts
+// src/hooks.server.ts
+import { appHead } from '@firetailhosting/solscope-ui';
+import type { Handle } from '@sveltejs/kit';
+
+export const handle: Handle = ({ event, resolve }) =>
+  resolve(event, { transformPageChunk: ({ html }) => html.replace('%app.head%', appHead) });
 ```
 
-It is the library's `themeInitScript` export, so check it still matches after upgrading.
-It does nothing when the theme is Auto or storage is blocked.
+The pieces are also exported on their own: `themeColorMetaTags`, `launchScreenStyle`, `themeInitScript` and `themeColorSyncScript`.
+The saved theme script does nothing when the theme is Auto or storage is blocked.
 
 ### Phone query
 
@@ -424,7 +454,7 @@ The package is marked free of side effects apart from its CSS, so pages that use
 
 ## Releasing
 
-Run `bun run package` so `dist/` is current, commit it, then tag the release:
+Run `bun run package`, which regenerates `src/lib/theme-tokens.ts` and `dist/`, commit both, then tag the release:
 
 ```
 git tag v0.2.0

@@ -86,15 +86,15 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.5rem 1rem;
-		font-size: 0.82rem;
+		gap: var(--space-2) var(--space-4);
+		font-size: var(--text-sm);
 		color: var(--muted);
 	}
 
 	.controls {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
+		gap: var(--space-2-5);
 	}
 
 	.page-of {

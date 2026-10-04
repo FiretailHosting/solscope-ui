@@ -17,8 +17,8 @@
 <style>
 	.sui-select {
 		font: inherit;
-		font-size: 0.9rem;
-		padding: 0.45rem 2rem 0.45rem 0.7rem;
+		font-size: var(--text-md);
+		padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
 		border-radius: var(--radius);
 		border: 1px solid var(--border-strong);
 		background: var(--card);

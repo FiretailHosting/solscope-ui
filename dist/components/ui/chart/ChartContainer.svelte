@@ -42,7 +42,7 @@
 		justify-content: center;
 		aspect-ratio: 16 / 9;
 		overflow: visible;
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 	}
 
 	.sui-chart :global(.lc-root-container) {
@@ -82,7 +82,7 @@
 	}
 
 	.sui-chart :global(.lc-text) {
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 	}
 
 	.sui-chart :global(.lc-text-svg) {
@@ -113,13 +113,13 @@
 
 	.sui-chart :global(.lc-legend-swatch-group) {
 		align-items: center;
-		gap: 1rem;
+		gap: var(--space-4);
 	}
 
 	/* Legend items are buttons: drop the browser's button look. */
 	.sui-chart :global(.lc-legend-swatch-button) {
 		align-items: center;
-		gap: 0.375rem;
+		gap: var(--space-1-5);
 		padding: 0;
 		background: none;
 		border: 0;

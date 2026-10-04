@@ -24,7 +24,7 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		font-size: 0.88rem;
+		font-size: var(--text-sm);
 		font-variant-numeric: tabular-nums;
 	}
 </style>

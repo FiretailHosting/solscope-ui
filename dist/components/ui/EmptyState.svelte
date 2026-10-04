@@ -32,8 +32,8 @@
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
-		gap: 0.4rem;
-		padding: 1.75rem 1rem;
+		gap: var(--space-1-5);
+		padding: var(--space-7) var(--space-4);
 	}
 
 	.mark {
@@ -46,24 +46,24 @@
 		border-radius: var(--radius);
 		color: var(--accent);
 		background: var(--accent-subtle);
-		margin-bottom: 0.3rem;
+		margin-bottom: var(--space-1);
 	}
 
 	strong {
-		font-size: 0.95rem;
+		font-size: var(--text-md);
 	}
 
 	p {
 		margin: 0;
 		max-width: 26rem;
-		font-size: 0.85rem;
+		font-size: var(--text-sm);
 		color: var(--muted);
 	}
 
 	.actions {
-		margin-top: 0.6rem;
+		margin-top: var(--space-2-5);
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		flex-wrap: wrap;
 		justify-content: center;
 	}

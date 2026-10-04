@@ -49,8 +49,8 @@
 
 <style>
 	.sui-alert {
-		font-size: 0.88rem;
-		padding: 0.65rem 0.9rem;
+		font-size: var(--text-sm);
+		padding: var(--space-2-5) var(--space-3-5);
 		border-radius: var(--radius);
 		border: 1px solid var(--border);
 		background: var(--card);
@@ -60,12 +60,12 @@
 	.sui-alert.with-icon {
 		display: flex;
 		align-items: flex-start;
-		gap: 0.55rem;
+		gap: var(--space-2);
 	}
 
 	/* Centred on the first line of text, however many lines follow. */
 	.sui-alert :global(.sui-alert-icon) {
-		margin-top: 0.125rem;
+		margin-top: var(--space-0-5);
 		margin-top: calc((1lh - 16px) / 2);
 	}
 

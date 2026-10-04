@@ -63,8 +63,8 @@
 	/* Buttons rendered from options, or plain <button> children with class:active */
 	.sui-segmented :global(button) {
 		font: inherit;
-		font-size: 0.82rem;
-		padding: 0.3rem 0.8rem;
+		font-size: var(--text-sm);
+		padding: var(--space-1) var(--space-3);
 		border: 0;
 		background: transparent;
 		color: var(--muted);

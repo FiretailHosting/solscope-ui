@@ -56,7 +56,7 @@
 		background: var(--card);
 		border: 1px solid var(--border);
 		border-radius: var(--radius-lg);
-		padding: 0.85rem 1rem;
+		padding: var(--space-3-5) var(--space-4);
 		text-decoration: none;
 		color: inherit;
 		min-width: 0;
@@ -70,7 +70,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		color: var(--muted);
 	}
 
@@ -79,16 +79,16 @@
 	}
 
 	.label {
-		font-size: 0.72rem;
+		font-size: var(--text-2xs);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		font-weight: 600;
 	}
 
 	.value {
-		margin-top: 0.35rem;
+		margin-top: var(--space-1-5);
 		font-variant-numeric: tabular-nums;
-		font-size: 1.4rem;
+		font-size: var(--text-xl);
 		font-weight: 600;
 		letter-spacing: -0.02em;
 		white-space: nowrap;
@@ -97,8 +97,8 @@
 	}
 
 	.hint {
-		margin-top: 0.15rem;
-		font-size: 0.8rem;
+		margin-top: var(--space-0-5);
+		font-size: var(--text-sm);
 		color: var(--muted);
 		font-variant-numeric: tabular-nums;
 	}

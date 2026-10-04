@@ -4,6 +4,8 @@ type $$ComponentProps = {
     hint?: string;
     /** Shown in place of the hint. Also set aria-invalid on the input. */
     error?: string;
+    /** An id for the error, for the input's aria-describedby. */
+    errorId?: string;
     class?: string;
     children?: Snippet;
 };

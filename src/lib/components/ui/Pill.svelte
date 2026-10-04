@@ -21,10 +21,10 @@
 <style>
 	.sui-pill {
 		display: inline-block;
-		font-size: 0.72rem;
+		font-size: var(--text-2xs);
 		font-weight: 600;
 		letter-spacing: 0.02em;
-		padding: 0.1rem 0.55rem;
+		padding: var(--space-0-5) var(--space-2);
 		border-radius: var(--radius-sm);
 		border: 1px solid var(--border);
 		color: var(--muted);

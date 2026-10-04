@@ -44,10 +44,10 @@
 	.sui-back-link {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
-		margin-bottom: 0.9rem;
+		gap: var(--space-1-5);
+		margin-bottom: var(--space-3-5);
 		color: var(--muted);
-		font-size: 0.85rem;
+		font-size: var(--text-sm);
 		text-decoration: none;
 	}
 
@@ -57,7 +57,7 @@
 
 	/* The browser's default link: the text colour and size, underlined. */
 	.sui-back-link.link {
-		margin-bottom: 1rem;
+		margin-bottom: var(--space-4);
 		color: inherit;
 		font-size: inherit;
 		text-decoration: underline;
@@ -73,7 +73,7 @@
 	@media (max-width: 860px) and (pointer: coarse) {
 		.sui-back-link {
 			min-height: 44px;
-			margin-bottom: 0.2rem;
+			margin-bottom: var(--space-1);
 		}
 	}
 

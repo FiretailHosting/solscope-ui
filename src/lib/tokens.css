@@ -86,6 +86,36 @@
 	--sidebar-active-bar: #6d9fd8;
 	--sidebar-hover-bg: #25303e;
 
+	/* Spacing: a 4px scale from one unit. A tighter or looser restyle can
+	   change the unit alone; any step can also be set on its own. */
+	--space-unit: 0.25rem;
+	--space-0-5: calc(var(--space-unit) * 0.5);
+	--space-1: var(--space-unit);
+	--space-1-5: calc(var(--space-unit) * 1.5);
+	--space-2: calc(var(--space-unit) * 2);
+	--space-2-5: calc(var(--space-unit) * 2.5);
+	--space-3: calc(var(--space-unit) * 3);
+	--space-3-5: calc(var(--space-unit) * 3.5);
+	--space-4: calc(var(--space-unit) * 4);
+	--space-5: calc(var(--space-unit) * 5);
+	--space-6: calc(var(--space-unit) * 6);
+	--space-7: calc(var(--space-unit) * 7);
+	--space-8: calc(var(--space-unit) * 8);
+	--space-10: calc(var(--space-unit) * 10);
+	--space-12: calc(var(--space-unit) * 12);
+
+	/* Type sizes. md is the body size; 2xs and xs are for small uppercase
+	   labels and hints, sm for controls and secondary text, lg and up for
+	   headings and figures. */
+	--text-2xs: 0.7rem;
+	--text-xs: 0.75rem;
+	--text-sm: 0.85rem;
+	--text-md: 0.9375rem;
+	--text-lg: 1.1rem;
+	--text-xl: 1.35rem;
+	--text-2xl: 1.75rem;
+	--text-3xl: 2.2rem;
+
 	/* Radius - small and square-leaning */
 	--radius: 4px;
 	--radius-sm: 3px;

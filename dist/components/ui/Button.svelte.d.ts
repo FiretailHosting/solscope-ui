@@ -1,7 +1,7 @@
 import type { Snippet } from 'svelte';
 import type { HTMLButtonAttributes } from 'svelte/elements';
 import type { IconName } from '../../icons/icons.js';
-type Variant = 'default' | 'primary' | 'danger' | 'ghost';
+type Variant = 'default' | 'primary' | 'danger' | 'ghost' | 'link';
 type Size = 'default' | 'sm' | 'lg';
 interface Props extends HTMLButtonAttributes {
     variant?: Variant;

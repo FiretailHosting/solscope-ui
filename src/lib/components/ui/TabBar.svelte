@@ -170,14 +170,14 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.15rem;
-		padding: 0.25rem 0.2rem;
+		gap: var(--space-0-5);
+		padding: var(--space-1) var(--space-1);
 		margin: 0;
 		border: 0;
 		background: none;
 		font: inherit;
 		/* 12px: a label stays readable at the bottom of a phone; no smaller. */
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 		font-weight: 500;
 		line-height: 1.2;
 		color: var(--muted);
@@ -241,18 +241,18 @@
 
 	.badge {
 		position: absolute;
-		top: -0.3rem;
-		left: calc(100% - 0.5rem);
+		top: calc(-1 * var(--space-1));
+		left: calc(100% - var(--space-2));
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		min-width: 1.1rem;
 		height: 1.1rem;
-		padding: 0 0.25rem;
+		padding: 0 var(--space-1);
 		border-radius: var(--radius-sm);
 		background: var(--down);
 		color: var(--down-fg);
-		font-size: 0.62rem;
+		font-size: var(--text-2xs);
 		font-weight: 700;
 		line-height: 1;
 		font-variant-numeric: tabular-nums;
