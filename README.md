@@ -11,7 +11,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.13.2"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.14.0"
 ```
 
 ## Usage
@@ -64,6 +64,7 @@ Then use components:
 | `Label` | Form label |
 | `ModeSwitch` | Paper/Live trading mode toggle; `onliveunavailable` keeps Live clickable when `liveEnabled` is false |
 | `PageHead` | Page title with optional actions row |
+| `PageSearch` | A sheet with one field and the app's pages with their icons, filtered as you type; Return or a tap goes to the page and closes it; see [Page search](#page-search) |
 | `Pagination` | Previous and Next buttons, "Page 2 of 14" and the row range for a long table; see [Pagination](#pagination) |
 | `Pill` | Status pill (default, live, ok) |
 | `RowList` | A list of `RowItem`s for a phone, where a table would scroll sideways; `label` names it, `busy` says rows are loading; see [Row list](#row-list) |
@@ -76,7 +77,7 @@ Then use components:
 | `SidebarSection` | Titled group of sidebar links |
 | `Skeleton` | Pulsing grey placeholder for loading content: `width`, `height`, `radius`; hidden from screen readers |
 | `Stat` | Stat tile with label, value, `hint` (toned up or down), `icon`, optional `href`; `loading` shows a placeholder value |
-| `TabBar` | Phone bottom bar with the main destinations, the page shown marked by a bar at the top edge and `aria-current`, and a More item that opens the drawer; labels wrap to two lines; shown only on phones; see [Tab bar](#tab-bar) |
+| `TabBar` | Phone bottom bar with the main destinations, the page shown marked by a bar at the top edge and `aria-current`, and a More item that opens the drawer; labels wrap to two lines; `variant="pill"` floats it as a rounded group with a round search button beside it; shown only on phones; see [Tab bar](#tab-bar) |
 | `Table` | Styled data table with overflow scroll; `rowHover={false}` turns off the row highlight for rows that are not clickable |
 | `Textarea` | Styled textarea |
 | `ThemeToggle` | Cycles through auto, light and dark themes and saves the choice; see [Saved theme](#saved-theme) |
@@ -273,6 +274,46 @@ Pad the page bottom so content clears it:
   }
 }
 ```
+
+A badge sits on the icon's top right corner, ringed in the bar's colour, so it covers only the corner.
+
+`variant="pill"` floats the items and More as one rounded group, inset from the screen edges and the safe areas, with the page between and beside it still reachable.
+The page shown is a filled capsule instead of the edge bar.
+`onsearch` adds a round search button beside the pill, such as one opening [PageSearch](#page-search); `searchOpen` sets its `aria-expanded` and `searchLabel` names it (default "Search pages").
+The pill sits `--space-2` above the bottom edge, or right above the home indicator, and `--tab-bar-height` includes that gap, so the same padding clears it.
+A pill for the installed app only, keeping the bar in the browser:
+
+```svelte
+<script lang="ts">
+  const standalone = window.matchMedia('(display-mode: standalone)').matches;
+  let searchOpen = $state(false);
+</script>
+
+<TabBar items={tabs} variant={standalone ? 'pill' : 'bar'} {searchOpen} onsearch={() => (searchOpen = true)} />
+<PageSearch bind:open={searchOpen} pages={allPages} />
+```
+
+### Page search
+
+```svelte
+<script lang="ts">
+  import { PageSearch, type PageSearchItem } from '@firetailhosting/solscope-ui';
+  const pages: PageSearchItem[] = [
+    { href: '/', label: 'Dashboard', icon: 'dashboard', section: 'Overview', active: true },
+    { href: '/orders', label: 'Orders', icon: 'orders', section: 'Trading' }
+  ];
+  let open = $state(false);
+</script>
+
+<PageSearch bind:open {pages} />
+```
+
+Each page has a unique `href`, a `label`, an `icon`, an optional `section` shown beside it and `active` for the page shown, marked with `aria-current="page"`.
+It reuses [Dialog](#dialog): a sheet on phones and a card elsewhere, a fixed height so the field stays put as the list shrinks.
+The field takes focus on open and empties each time; every word typed must start a word of the label or section, and labels starting with the first word come first.
+Return goes to the first match, Down moves into the list, Up and Down move through it, and Up from the first goes back to the field.
+The number of matches is read out as it changes, and `emptyText` shows when nothing matches.
+`title`, `fieldLabel` and `placeholder` change the wording; `filterPages(pages, query)` is the same filter for code and tests.
 
 ### Inline confirm
 

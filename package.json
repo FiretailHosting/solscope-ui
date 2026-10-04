@@ -1,6 +1,6 @@
 {
 	"name": "@firetailhosting/solscope-ui",
-	"version": "0.13.2",
+	"version": "0.14.0",
 	"description": "UI component library for solscope, based on shadcn-svelte design patterns",
 	"license": "MIT",
 	"private": false,
