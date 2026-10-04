@@ -6,6 +6,7 @@
 		hint = '',
 		error = '',
 		errorId,
+		hintId,
 		class: extraClass = '',
 		children
 	}: {
@@ -15,6 +16,8 @@
 		error?: string;
 		/** An id for the error, for the input's aria-describedby. */
 		errorId?: string;
+		/** An id for the hint, for the input's aria-describedby. */
+		hintId?: string;
 		class?: string;
 		children?: Snippet;
 	} = $props();
@@ -29,7 +32,7 @@
 	{#if error}
 		<small class="error" id={errorId} role="alert">{error}</small>
 	{:else if hint}
-		<small class="hint">{hint}</small>
+		<small class="hint" id={hintId}>{hint}</small>
 	{/if}
 </label>
 

@@ -22,6 +22,7 @@
 		RowList,
 		SegmentedControl,
 		Select,
+		SeriesChart,
 		Skeleton,
 		Stat,
 		TabBar,
@@ -82,6 +83,29 @@
 		range === '1d'
 			? date.toLocaleTimeString('en-US', { hour: 'numeric', timeZone: 'UTC' })
 			: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+	// A made-up token price: hourly candles over a week, with a drift and a
+	// wobble so the line and the candles have something to show.
+	const priceSeries = Array.from({ length: 168 }, (_, index) => {
+		const t = now - (167 - index) * hour;
+		const base = 0.0042 + index * 0.000004 + Math.sin(index / 9) * 0.0004 + Math.sin(index / 2.3) * 0.00012;
+		const o = base + Math.cos(index * 1.3) * 0.00008;
+		const p = base + Math.sin(index * 2.1) * 0.00009;
+		return { t, o, p, h: Math.max(o, p) + 0.00006, l: Math.min(o, p) - 0.00007, v: 1200 + (index % 7) * 300 };
+	});
+	let priceKind = $state<'line' | 'candles'>('line');
+	const priceKinds = [
+		{ value: 'line' as const, label: 'Line' },
+		{ value: 'candles' as const, label: 'Candles' }
+	];
+	const formatPrice = (value: number) => `$${value.toFixed(5)}`;
+	const priceMarkers = [
+		{ t: now - 120 * hour, price: priceSeries[47].p, side: 'buy' as const, title: 'You bought 1,000,000 WIF for $4.20', note: { text: '+8.1% vs your buy', up: true } },
+		{ t: now - 30 * hour, price: priceSeries[137].p, side: 'sell' as const, title: 'You sold 400,000 WIF for $1.90' }
+	];
+	// Profit and loss around zero, for the baseline chart.
+	const pnlSeries = Array.from({ length: 48 }, (_, index) => ({ t: now - (47 - index) * hour, p: Math.round(Math.sin(index / 6) * 180 + index * 5 - 90) }));
+	const signed = (value: number) => `${value < 0 ? '-' : '+'}$${Math.abs(value).toLocaleString('en-US')}`;
 
 	const orders = [
 		{ month: 'May', buys: 14, sells: 9 },
@@ -228,6 +252,27 @@
 					{/snippet}
 				</BarChart>
 			</ChartContainer>
+		</Card>
+	</div>
+
+	<div class="row">
+		<Card title="Price history" icon="markets">
+			{#snippet actions()}
+				<SegmentedControl label="Chart kind" options={priceKinds} bind:value={priceKind} />
+			{/snippet}
+			<SeriesChart
+				points={priceSeries}
+				kind={priceKind}
+				markers={priceMarkers}
+				byTime
+				live
+				height={220}
+				format={formatPrice}
+				change={(difference) => `${difference < 0 ? '-' : '+'}$${Math.abs(difference).toFixed(5)}`}
+			/>
+		</Card>
+		<Card title="Profit/loss" icon="portfolio">
+			<SeriesChart points={pnlSeries} byTime baseline height={220} fixed format={signed} change={signed} noun="value" label="Profit/loss history" />
 		</Card>
 	</div>
 
