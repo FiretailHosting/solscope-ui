@@ -63,7 +63,8 @@ export const LISTED_TRADES = 3;
 /**
  * clusterLabel names a group's button for screen readers and voice control.
  * One trade reads as markerLabel; a few list each trade and when; more say
- * how many, from when to when, and how many were buys and sells.
+ * how many, from when to when, or at when if every time reads the same, and
+ * how many were buys and sells.
  */
 export function clusterLabel(members, formatTime, withYear) {
     if (members.length === 1)
@@ -74,7 +75,10 @@ export function clusterLabel(members, formatTime, withYear) {
     const buys = members.filter((member) => member.side === 'buy').length;
     const sells = members.length - buys;
     const sides = [buys && `${buys} ${buys === 1 ? 'buy' : 'buys'}`, sells && `${sells} ${sells === 1 ? 'sell' : 'sells'}`].filter(Boolean).join(', ');
-    return `${members.length} trades from ${formatTime(members[0].t, withYear)} to ${formatTime(members[members.length - 1].t, withYear)}: ${sides}`;
+    const first = formatTime(members[0].t, withYear);
+    const last = formatTime(members[members.length - 1].t, withYear);
+    const when = first === last ? `at ${first}` : `from ${first} to ${last}`;
+    return `${members.length} trades ${when}: ${sides}`;
 }
 /** initials are up to two letters from a name, the first of its first two words: "Maya Lopez" is "ML", "momentum-bot" is "MB". */
 export function initials(name) {

@@ -10,7 +10,7 @@ Charts are the one part with dependencies: [Lightweight Charts](https://github.c
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.18.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.18.1"
 ```
 
 ## Usage
@@ -498,7 +498,8 @@ A new series, another range or kind, wipes in from the left, a live tick does no
 The canvas is a picture to screen readers, named by `label` and described by `summary`, by default a sentence with the span, start, end, high and low.
 [Lightweight Charts](https://github.com/tradingview/lightweight-charts) paints the series on a canvas, loaded in its own chunk once a chart mounts, so server rendering and pages without a chart never load it.
 Everything read or reached is DOM over the canvas, placed with the chart's own coordinates and moved on every resize: the labels, crosshair, tooltip, slider and markers.
-Its attribution link, which its license asks to keep, sits above the time axis at the bottom left, named "Charting by TradingView (opens in a new tab)" and last in the chart's tab order.
+Its license asks for TradingView's attribution notice and a link to <https://www.tradingview.com/>: a small "Charts by TradingView" link sits in its own row under the plot, never over the series or a label, named "Charts by TradingView (opens in a new tab)" and last in the chart's tab order.
+Show `TRADINGVIEW_NOTICE`, the notice word for word, once on a page your users can reach, such as an about or licenses page.
 The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `chartSlots`, `slotAtTime`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
 
 ```svelte
@@ -518,7 +519,7 @@ A picture shows in an 18px circle with a ring in the side's colour and a small u
 Without a picture, while it loads, or when it fails, the circle shows the initials of `name`; without either, the buy or sell shape.
 Pictures load once the chart nears the screen, only for the markers drawn, and each is fetched and decoded once per page and shared by every chart; one that fails is not tried again.
 Pass only pictures the viewer may already see; the chart shows what it is given.
-Markers closer than 28px, 36px on a touch screen, group into one button with a "+N" count, so none covers another; a group's name lists up to three trades, or says "12 trades from ... to ...: 7 buys, 5 sells".
+Markers closer than 28px, 36px on a touch screen, group into one button with a "+N" count, so none covers another; a group's name lists up to three trades, or says "12 trades from ... to ...: 7 buys, 5 sells", or "6 trades at ...: 4 buys, 2 sells" when every time reads the same.
 Hover or focus shows a trade or a group's count in the readout and the tooltip; a press picks it, with `aria-pressed` and a ring, and a picked group lists its trades, scrolling past four.
 Targets are 24px, 44px on a touch screen; the markers come after the slider in the tab order, in time order.
 

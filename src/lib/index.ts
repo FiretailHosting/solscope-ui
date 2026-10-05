@@ -51,6 +51,7 @@ export {
 	type PlacedMarker
 } from './chart/markers.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
+export { TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from './chart/attribution.js';
 export {
 	getPayloadConfigFromPayload,
 	type ChartConfig

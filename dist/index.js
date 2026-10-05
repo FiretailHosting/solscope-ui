@@ -14,6 +14,7 @@ export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte
 export { candleWidth, carriedIndex, chartRows, chartSlots, colorWithAlpha, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, seriesSummary, slotAtTime, timeTicks, valueBounds, withinPlotHeight, xAtSlot } from './chart/series.js';
 export { clusterLabel, clusterMarkers, clusterSide, initials, markerFace, markerLabel } from './chart/markers.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
+export { TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from './chart/attribution.js';
 export { getPayloadConfigFromPayload } from './components/ui/chart/chart-utils.js';
 export { default as EmptyState } from './components/ui/EmptyState.svelte';
 export { default as FormField } from './components/ui/FormField.svelte';
