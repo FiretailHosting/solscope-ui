@@ -34,9 +34,10 @@ export declare function markerLabel(marker: SeriesMarker, formatTime: (t: number
 export declare const LISTED_TRADES = 3;
 /**
  * clusterLabel names a group's button for screen readers and voice control.
- * One trade reads as markerLabel; a few list each trade and when; more say
- * how many, from when to when, or at when if every time reads the same, and
- * how many were buys and sells.
+ * One trade reads as markerLabel. A group starts with its visible "+N"
+ * count, so voice control finds it by what it shows (WCAG 2.5.3); a few then
+ * list each trade and when; more say how many, from when to when, or at
+ * when if every time reads the same, and how many were buys and sells.
  */
 export declare function clusterLabel(members: SeriesMarker[], formatTime: (t: number, withYear: boolean) => string, withYear: boolean): string;
 /** initials are up to two letters from a name, the first of its first two words: "Maya Lopez" is "ML", "momentum-bot" is "MB". */

@@ -66,18 +66,18 @@ test('one trade is named as the readout shows it, a few are listed, and many are
 	const note = { text: '+8% vs your buy', up: true };
 	assert.equal(markerLabel(at(1, 0, 0, { note }), formatTime, false), 'trade 1, T1, +8% vs your buy');
 	assert.equal(clusterLabel([at(1, 0, 0)], formatTime, false), 'trade 1, T1');
-	assert.equal(clusterLabel([at(1, 0, 0), at(2, 0, 0)], formatTime, false), '2 trades: trade 1, T1; trade 2, T2');
+	assert.equal(clusterLabel([at(1, 0, 0), at(2, 0, 0)], formatTime, false), '+1 more, 2 trades: trade 1, T1; trade 2, T2');
 	const many = [at(1, 0, 0), at(2, 0, 0, { side: 'sell' }), at(3, 0, 0), at(4, 0, 0)];
-	assert.equal(clusterLabel(many, formatTime, false), '4 trades from T1 to T4: 3 buys, 1 sell');
-	assert.equal(clusterLabel(many.filter((member) => member.side === 'buy').concat(at(5, 0, 0)), formatTime, false), '4 trades from T1 to T5: 4 buys');
+	assert.equal(clusterLabel(many, formatTime, false), '+3 more, 4 trades from T1 to T4: 3 buys, 1 sell');
+	assert.equal(clusterLabel(many.filter((member) => member.side === 'buy').concat(at(5, 0, 0)), formatTime, false), '+3 more, 4 trades from T1 to T5: 4 buys');
 });
 
 test('a group whose first and last times read the same says when once', () => {
 	const minute = (t) => `Oct 1, ${Math.floor((t - start) / 3_600_000) + 2}:00 AM`;
 	const sameMinute = [at(0, 0, 0), at(0.1, 0, 0), at(0.2, 0, 0, { side: 'sell' }), at(0.3, 0, 0), at(0.4, 0, 0, { side: 'sell' }), at(0.5, 0, 0)];
-	assert.equal(clusterLabel(sameMinute, minute, false), '6 trades at Oct 1, 2:00 AM: 4 buys, 2 sells');
+	assert.equal(clusterLabel(sameMinute, minute, false), '+5 more, 6 trades at Oct 1, 2:00 AM: 4 buys, 2 sells');
 	// Times that read differently still give the span.
-	assert.equal(clusterLabel(sameMinute.concat(at(90, 0, 0)), minute, false), '7 trades from Oct 1, 2:00 AM to Oct 1, 3:00 AM: 5 buys, 2 sells');
+	assert.equal(clusterLabel(sameMinute.concat(at(90, 0, 0)), minute, false), '+6 more, 7 trades from Oct 1, 2:00 AM to Oct 1, 3:00 AM: 5 buys, 2 sells');
 });
 
 test('a group key names its trades, so a pick survives a re-layout that keeps it whole', () => {
