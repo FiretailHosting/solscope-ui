@@ -382,10 +382,9 @@
 	let touching = $state(false);
 	// Escape hides the tooltip until the next inspection (WCAG 1.4.13).
 	let tooltipDismissed = $state(false);
-	// While the slider has focus it announces each point itself, and a
-	// pointer scrubbing across would announce every point it passes.
-	let sliderFocused = $state(false);
-	let scrubbing = $state(false);
+	// The readout speaks only in the update that changes the pick, so a
+	// picked group shown again on blur is not read out a second time.
+	let pickChanged = $state(false);
 
 	const inspected = $derived(inspectedIndex == null ? null : (plotted[inspectedIndex] ?? null));
 	// A marker under the pointer or focus comes first, then an inspected
@@ -415,6 +414,7 @@
 		untrack(() => {
 			pickedGroup = null;
 			hoveredGroup = null;
+			pickChanged = false;
 		});
 	});
 
@@ -496,13 +496,11 @@
 		avatarVersion++;
 	}
 
-	// The tooltip shows what is inspected, unless a finger is down or Escape hid it.
-	const tooltipShown = $derived(!touching && !tooltipDismissed && (hoveredGroup != null || (inspected != null && !pointerInGap)));
-	const hoveredCluster = $derived(hoveredGroup ? clusters.find((cluster) => clusterKey(cluster.members) === clusterKey(hoveredGroup!)) : undefined);
-	const tooltipLeft = $derived.by(() => {
-		if (hoveredCluster) return hoveredCluster.left;
-		return inspectedIndex == null ? 0 : pointLeft(inspectedIndex);
-	});
+	// The tooltip shows an inspected point, unless a finger is down or Escape
+	// hid it. A marker has none: the readout shows its trade, and a tooltip
+	// the pointer cannot move onto would fail WCAG 1.4.13.
+	const tooltipShown = $derived(!touching && !tooltipDismissed && inspected != null && !pointerInGap);
+	const tooltipLeft = $derived(inspectedIndex == null ? 0 : pointLeft(inspectedIndex));
 
 	/** inspectAt finds the point under a pointer at this many pixels from the left of the plot. */
 	function inspectAt(left: number) {
@@ -514,7 +512,7 @@
 		inspectedIndex = index;
 		pointerInGap = inGap(plotted[index], x, byTime, gap);
 		tooltipDismissed = false;
-		scrubbing = true;
+		pickChanged = false;
 	}
 
 	function onPlotPointer(event: PointerEvent) {
@@ -529,7 +527,7 @@
 		inspectedIndex = null;
 		pointerInGap = false;
 		tooltipDismissed = false;
-		scrubbing = false;
+		pickChanged = false;
 		hoveredGroup = members;
 	}
 
@@ -537,13 +535,20 @@
 		pickedGroup = pickedKey === clusterKey(members) ? null : members;
 		// A press shows the pick in full, the list of a group's trades with it.
 		hoveredGroup = null;
+		pickChanged = true;
+	}
+
+	/** leaveGroup ends a marker's hover or focus; the pick, if any, shows again, silently. */
+	function leaveGroup() {
+		hoveredGroup = null;
+		pickChanged = false;
 	}
 
 	function stopInspecting() {
 		inspectedIndex = null;
 		pointerInGap = false;
 		touching = false;
-		scrubbing = false;
+		pickChanged = false;
 	}
 
 	// A touch inspection stays until the next tap outside the chart or a scroll.
@@ -561,7 +566,7 @@
 	});
 
 	function onWindowKey(event: KeyboardEvent) {
-		if (event.key === 'Escape' && (inspected || hoveredGroup)) tooltipDismissed = true;
+		if (event.key === 'Escape' && inspected) tooltipDismissed = true;
 	}
 
 	// Keyboard inspection: a visually hidden range input that moves the same
@@ -574,7 +579,7 @@
 		pointerInGap = false;
 		touching = false;
 		tooltipDismissed = false;
-		scrubbing = false;
+		pickChanged = false;
 	}
 
 	const withMarkers = $derived(markersAlong.length > 0);
@@ -606,11 +611,13 @@
 	}
 
 	// The slider and a focused marker announce themselves, and a pointer
-	// scrubbing would announce every point, so the readout is only live for
-	// the rest, such as a marker picked by pointer. The hint shown while
-	// nothing is inspected sits outside the live part, so a caller's hint
-	// that changes with every live tick is never read out (WCAG 2.2.2).
-	const readoutLive = $derived(!sliderFocused && !scrubbing && !hoveredGroup);
+	// scrubbing would announce every point, so the readout is live only in
+	// the update that changes the pick, which a group's button cannot say
+	// itself. The hint shown while nothing is inspected sits outside the
+	// live part, so a caller's hint that changes with every live tick is
+	// never read out (WCAG 2.2.2).
+	const readoutLive = $derived(pickChanged);
+	const pickedListId = `${uid}-picked`;
 
 	// The guides and their labels, and the times along the bottom.
 	const guideLines = $derived(guides && bounds ? guideValues(bounds.min, bounds.span).filter((value) => !(baseline && value === 0)) : []);
@@ -685,13 +692,11 @@
 				aria-label={label}
 				aria-valuetext={sliderText}
 				onfocus={() => {
-					sliderFocused = true;
-					pickedGroup = null;
+						pickedGroup = null;
 					inspectIndex(sliderIndex);
 				}}
 				onblur={() => {
-					sliderFocused = false;
-					stopInspecting();
+						stopInspecting();
 				}}
 				oninput={(event) => inspectIndex(event.currentTarget.valueAsNumber)}
 			/>
@@ -711,7 +716,8 @@
 			<!-- The picture of the chart for screen readers, and where a pointer
 			     or finger inspects it. -->
 			<div class="layer touch" bind:this={overlay} role="img" aria-label={label} aria-describedby={description ? `${uid}-summary` : undefined}></div>
-			<span id="{uid}-summary" hidden>{description}</span>
+			<!-- Visually hidden rather than hidden, so browse mode reads it too. -->
+			<span id="{uid}-summary" class="visually-hidden">{description}</span>
 
 			<!-- Over the canvas: the labels, the crosshair and the dots. They
 			     repeat what the slider and the readout say, so screen readers skip them. -->
@@ -770,20 +776,22 @@
 						class:face={face.kind !== 'shape'}
 						style="left: {cluster.left}px; top: {cluster.top}px"
 						aria-label={clusterLabel(members, formatTime, withYear)}
-						aria-pressed={pickedKey === key}
+						aria-pressed={members.length === 1 ? pickedKey === key : undefined}
+						aria-expanded={members.length > 1 ? pickedKey === key : undefined}
+						aria-controls={members.length > 1 && pickedKey === key && listShown ? pickedListId : undefined}
 						onclick={() => togglePick(members)}
 						onpointerenter={(event) => {
 							touching = event.pointerType === 'touch';
 							showGroup(members);
 						}}
-						onpointerleave={() => (hoveredGroup = null)}
+						onpointerleave={leaveGroup}
 						onfocus={() => {
 							touching = false;
 							focusedTrade = markerKey(members[0]);
 							showGroup(members);
 						}}
 						onblur={(event) => {
-							hoveredGroup = null;
+							leaveGroup();
 							const button = event.currentTarget;
 							// A button removed by a regroup keeps its trade for the new group to take focus.
 							queueMicrotask(() => {
@@ -810,10 +818,7 @@
 
 			{#if ready && tooltipShown}
 				<div class="tooltip" class:flip={tooltipLeft > plotWidth / 2} style="left: {tooltipLeft}px" aria-hidden="true">
-					{#if hoveredGroup}
-						<div class="tooltip-label">{hoveredGroup.length === 1 ? hoveredGroup[0].title : `${hoveredGroup.length} trades`}</div>
-						<span class="tooltip-value">{groupSpan(hoveredGroup)}</span>
-					{:else if inspected}
+					{#if inspected}
 						<div class="tooltip-label">{formatTime(inspected.t, withYear)}</div>
 						{#if candles && isCandle(inspected)}
 							<dl class="ohlc" class:rise={inspected.p >= inspected.o} class:fall={inspected.p < inspected.o}>
@@ -850,6 +855,10 @@
 				{#if trade.note}
 					<span class={trade.note.up ? 'up-text' : 'down-text'}>{trade.note.text}</span>
 				{/if}
+			{:else if shownGroup && shownGroup === pickedGroup && listShown}
+				<!-- Says the pick, so the press is heard; the list follows. -->
+				<strong>{shownGroup.length} trades picked</strong>
+				<span>{groupSpan(shownGroup)}<span class="visually-hidden">, listed below</span></span>
 			{:else if shownGroup}
 				<strong>{shownGroup.length} trades</strong>
 				<span>{groupSpan(shownGroup)}</span>
@@ -871,7 +880,7 @@
 			     every trade; the list stays while other markers are focused on the way to it. -->
 			<!-- A list that scrolls takes focus, so a keyboard can scroll it. -->
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<ul class="trade-list" class:scrolls={pickedGroup.length > LIST_ROWS} tabindex={pickedGroup.length > LIST_ROWS ? 0 : undefined} aria-label="{pickedGroup.length} trades picked">
+			<ul id={pickedListId} class="trade-list" class:scrolls={pickedGroup.length > LIST_ROWS} tabindex={pickedGroup.length > LIST_ROWS ? 0 : undefined} aria-label="{pickedGroup.length} trades picked">
 				{#each pickedGroup as trade (markerKey(trade))}
 					<li>
 						<strong class={trade.side === 'buy' ? 'buy-text' : 'sell-text'}>{trade.title}</strong>
@@ -950,18 +959,29 @@
 	}
 
 	/* TradingView's attribution: one small line of fixed height under the
-	   plot, at the right, outside the plot and its labels at any height. */
+	   plot, at the right, outside the plot and its labels at any height.
+	   The link is a 24px target that reaches into the readout's empty top
+	   margin, never up into the plot, and paints over any marker that
+	   spills below the plot; the rest of the row lets presses through. */
 	.sui-series-attribution {
-		height: 14px;
-		margin: var(--space-0-5) 0 0;
+		position: relative;
+		z-index: 1;
+		height: 16px;
+		margin: 0;
 		text-align: right;
 		font-size: var(--text-2xs);
-		line-height: 14px;
+		line-height: 24px;
 		white-space: nowrap;
+		pointer-events: none;
 	}
 	.sui-series-attribution a {
+		display: inline-block;
+		min-height: 24px;
+		margin-bottom: -8px;
+		padding: 0 var(--space-1);
 		color: var(--muted);
 		text-decoration: none;
+		pointer-events: auto;
 	}
 	.sui-series-attribution a:hover {
 		color: var(--fg);

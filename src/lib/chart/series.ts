@@ -184,14 +184,18 @@ export function inGap(point: PlottedPoint, x: number, byTime: boolean, gap: numb
 
 /**
  * inspectHint says how to inspect a chart while nothing is inspected. A
- * pointer hovers or drags; a finger can only drag, so a touch screen leaves
- * hovering out. noun is what a point is: "price", "value", "day". With
+ * pointer hovers or drags, and a keyboard uses the arrow keys; a finger can
+ * only drag, so a touch screen leaves hovering and keys out. noun is what a point is: "price", "value", "day". With
  * markers it also says how to see a trade.
  */
 export function inspectHint(noun: string, withMarkers: boolean, touch: boolean): string {
-	const verb = touch ? 'Tap or drag' : 'Hover or drag';
+	if (touch) {
+		if (withMarkers) return `Tap or drag to see a ${noun}. Select a marker to see the trade.`;
+		return `Tap or drag across the chart to see a ${noun}.`;
+	}
+	const verb = 'Hover, drag or use arrow keys';
 	if (withMarkers) return `${verb} to see a ${noun}. Select a marker to see the trade.`;
-	return `${verb} across the chart to see a ${noun}.`;
+	return `${verb} to see a ${noun}.`;
 }
 
 /** A marker's identity: what it shows and when. */

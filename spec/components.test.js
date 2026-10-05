@@ -47,7 +47,8 @@ test('the hint under a chart is outside the live region', () => {
 	const html = render(SeriesChart, { props: { points, hint: 'Latest $0.32' } }).body;
 	const readout = html.slice(html.lastIndexOf('<div', html.indexOf('class="sui-series-readout')));
 	assert.ok(!/aria-live/.test(openingTag(readout, 'div')), 'the readout itself is not live');
-	const live = readout.match(/<div class="readout-inspected[^"]*" aria-live="polite">([\s\S]*?)<\/div>/);
+	// The inspected part is a live region, quiet until a pick changes.
+	const live = readout.match(/<div class="readout-inspected[^"]*" aria-live="off">([\s\S]*?)<\/div>/);
 	assert.ok(live, 'the inspected part is live');
 	assert.ok(!live[1].includes('Latest'), 'the hint is not in it');
 	assert.ok(readout.includes('Latest $0.32'), 'the hint still shows');
@@ -65,13 +66,15 @@ test('the canvas chart keeps a DOM layer: a labelled slider, a described picture
 	assert.match(picture, /aria-label="BONK price history"/);
 	const describedBy = picture.match(/aria-describedby="([^"]+)"/)?.[1];
 	assert.ok(describedBy, 'the picture has a description');
-	assert.match(html, new RegExp(`<span id="${describedBy}" hidden[^>]*>From [^<]*3 points, started at \\$0\\.12, ended at \\$0\\.32`));
-	assert.equal(html.match(/aria-live="polite"/g)?.length, 1, 'only the inspected readout is live');
+	// Visually hidden, not hidden, so browse mode reads it in order too.
+	assert.match(html, new RegExp(`<span id="${describedBy}" class="visually-hidden[^"]*"[^>]*>From [^<]*3 points, started at \\$0\\.12, ended at \\$0\\.32`));
+	assert.equal(html.match(/aria-live=/g)?.length, 1, 'only the inspected readout is a live region');
+	assert.ok(!/aria-live="polite"/.test(html), 'and it says nothing before a pick');
 });
 
 test('a summary given replaces the built-in one', () => {
 	const html = render(SeriesChart, { props: { points, summary: 'Up 160% this week.' } }).body;
-	assert.match(html, /hidden[^>]*>Up 160% this week\.<\/span>/);
+	assert.match(html, /visually-hidden[^>]*>Up 160% this week\.<\/span>/);
 });
 
 test('fewer than two points show the empty text, with no chart', () => {

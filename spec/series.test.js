@@ -134,10 +134,11 @@ test('no markers without a time range', () => {
 	assert.deepEqual(markersInTime([at(0, 1), at(0, 2)], [{ t: start, price: 1, side: 'buy', title: 'x' }]), []);
 });
 
-test('the hint leaves hovering out on a touch screen, and says how to see a trade with markers', () => {
-	assert.equal(inspectHint('price', false, false), 'Hover or drag across the chart to see a price.');
+test('the hint names the arrow keys, leaves hovering and keys out on a touch screen, and says how to see a trade with markers', () => {
+	assert.equal(inspectHint('price', false, false), 'Hover, drag or use arrow keys to see a price.');
 	assert.equal(inspectHint('price', false, true), 'Tap or drag across the chart to see a price.');
 	assert.equal(inspectHint('value', true, true), 'Tap or drag to see a value. Select a marker to see the trade.');
+	assert.equal(inspectHint('price', true, false), 'Hover, drag or use arrow keys to see a price. Select a marker to see the trade.');
 });
 
 test('a rising candle is hollow and a falling one filled', () => {
