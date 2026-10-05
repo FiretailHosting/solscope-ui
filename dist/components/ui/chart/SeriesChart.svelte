@@ -6,6 +6,7 @@
 		candleReading,
 		candleTrend,
 		candleWidth,
+		carriedIndex,
 		guideLabels,
 		guideValues,
 		hasCandles,
@@ -54,6 +55,7 @@
 		live = false,
 		animate = true,
 		format = (n: number) => n.toLocaleString(),
+		axisFormat,
 		formatTime = chartTime,
 		formatDay = chartDay,
 		change,
@@ -89,6 +91,8 @@
 		animate?: boolean;
 		/** How a value reads when inspected. */
 		format?: (n: number) => string;
+		/** How a value reads on the plot's own labels: the guides, zero and the inspected level. `format` by default, so a shorter one keeps them apart on a phone. */
+		axisFormat?: (n: number) => string;
 		/** How a moment reads: "Sep 25, 5:21 AM". */
 		formatTime?: (t: number, withYear: boolean) => string;
 		/** How a day reads: "Sep 24". */
@@ -105,6 +109,7 @@
 
 	let context = $state<ChartState<PlottedPoint>>();
 
+	const formatAxis = $derived(axisFormat ?? format);
 	const candles = $derived(kind === 'candles' && hasCandles(points));
 	const plotted = $derived(plotPoints(points, byTime, gap));
 	const lone = $derived(lonePoints(plotted));
@@ -148,12 +153,16 @@
 	// point, so inspecting after a pick shows the point, and then the pick.
 	const shownMarker = $derived(hoveredMarker ?? (inspected ? null : pickedMarker));
 
-	// Anything inspected belongs to the series it was found on.
+	// New points keep what is inspected on the same moment, so a live tick
+	// does not throw away a keyboard or touch inspection. When that moment is
+	// gone, as when another range arrives, the inspection ends.
+	let previousPlotted: PlottedPoint[] = [];
 	$effect.pre(() => {
-		void plotted;
+		const next = plotted;
 		untrack(() => {
-			inspectedIndex = null;
-			pointerInGap = false;
+			inspectedIndex = carriedIndex(previousPlotted, next, inspectedIndex);
+			if (inspectedIndex == null) pointerInGap = false;
+			previousPlotted = next;
 		});
 	});
 
@@ -298,7 +307,9 @@
 
 	// The slider and a focused marker announce themselves, and a pointer
 	// scrubbing would announce every point, so the readout is only live for
-	// the rest, such as a marker picked by pointer.
+	// the rest, such as a marker picked by pointer. The hint shown while
+	// nothing is inspected sits outside the live part, so a caller's hint
+	// that changes with every live tick is never read out (WCAG 2.2.2).
 	const readoutLive = $derived(!sliderFocused && !scrubbing && !hoveredMarker);
 
 	// The guides and their labels, and the times along the bottom.
@@ -442,7 +453,7 @@
 						<!-- The labels repeat what the slider and the readout say, so
 						     screen readers skip them. -->
 						{#each labelledGuides(chart) as value (value)}
-							<span class="guide-label" style="top: {chart.yScale(value)}px" aria-hidden="true">{format(value)}</span>
+							<span class="guide-label" style="top: {chart.yScale(value)}px" aria-hidden="true">{formatAxis(value)}</span>
 						{/each}
 						{#each tickLabels as tick, index (tick.t)}
 							<span class="tick" class:first={index === 0} class:last={index === tickLabels.length - 1} style="left: {chart.xScale(tick.x)}px" aria-hidden="true">{tick.label}</span>
@@ -463,10 +474,10 @@
 									? `; --stroke: ${active.p >= 0 ? 'var(--up)' : 'var(--down)'}`
 									: ''}"
 							></span>
-							<span class="level-label" style="top: {chart.yScale(active.p)}px" aria-hidden="true">{format(active.p)}</span>
+							<span class="level-label" style="top: {chart.yScale(active.p)}px" aria-hidden="true">{formatAxis(active.p)}</span>
 						{/if}
 						{#if baseline}
-							<span class="zero-label" style="top: {chart.yScale(0)}px" aria-hidden="true">{format(0)}</span>
+							<span class="zero-label" style="top: {chart.yScale(0)}px" aria-hidden="true">{formatAxis(0)}</span>
 						{/if}
 						{#each placeMarkers(chart) as marker (markerKey(marker))}
 							<button
@@ -519,28 +530,33 @@
 		</ChartContainer>
 	</div>
 
-	<div class="sui-series-readout" aria-live={readoutLive ? 'polite' : 'off'}>
-		{#if shownMarker}
-			<strong class={shownMarker.side === 'buy' ? 'buy-text' : 'sell-text'}>{shownMarker.title}</strong>
-			<span>{formatTime(shownMarker.t, withYear)}</span>
-			{#if shownMarker.note}
-				<span class={shownMarker.note.up ? 'up-text' : 'down-text'}>{shownMarker.note.text}</span>
+	<div class="sui-series-readout">
+		<div class="readout-inspected" aria-live={readoutLive ? 'polite' : 'off'}>
+			{#if shownMarker}
+				<strong class={shownMarker.side === 'buy' ? 'buy-text' : 'sell-text'}>{shownMarker.title}</strong>
+				<span>{formatTime(shownMarker.t, withYear)}</span>
+				{#if shownMarker.note}
+					<span class={shownMarker.note.up ? 'up-text' : 'down-text'}>{shownMarker.note.text}</span>
+				{/if}
+			{:else if inspected && pointerInGap}
+				<span class="hint">No snapshots in this gap</span>
+			{:else if inspected}
+				<strong>{#if candles}<span class="visually-hidden">close </span>{/if}{format(inspected.p)}</strong>
+				<span>{formatTime(inspected.t, withYear)}</span>
+				{#if candles && isCandle(inspected)}
+					<span class="candle-text">{candleText(inspected)}</span>
+				{/if}
+				{#if changeText}
+					<span class={changeText.up ? 'up-text' : 'down-text'}>{changeText.text}</span>
+				{/if}
 			{/if}
-		{:else if inspected && pointerInGap}
-			<span class="hint">No snapshots in this gap</span>
-		{:else if inspected}
-			<strong>{#if candles}<span class="visually-hidden">close </span>{/if}{format(inspected.p)}</strong>
-			<span>{formatTime(inspected.t, withYear)}</span>
-			{#if candles && isCandle(inspected)}
-				<span class="candle-text">{candleText(inspected)}</span>
+		</div>
+		{#if !shownMarker && !inspected}
+			{#if hint}
+				<span class="hint">{hint}</span>
+			{:else}
+				<ChartHint {noun} {withMarkers} />
 			{/if}
-			{#if changeText}
-				<span class={changeText.up ? 'up-text' : 'down-text'}>{changeText.text}</span>
-			{/if}
-		{:else if hint}
-			<span class="hint">{hint}</span>
-		{:else}
-			<ChartHint {noun} {withMarkers} />
 		{/if}
 	</div>
 {/if}
@@ -866,13 +882,16 @@
 
 	/* The readout under the chart */
 	.sui-series-readout {
+		min-height: 1.5rem;
+		margin-top: var(--space-2);
+		font-variant-numeric: tabular-nums;
+	}
+	/* Empty while the hint shows, so it takes no room. */
+	.readout-inspected {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-0-5) var(--space-3);
 		align-items: baseline;
-		min-height: 1.5rem;
-		margin-top: var(--space-2);
-		font-variant-numeric: tabular-nums;
 	}
 	.sui-series-readout span {
 		font-size: var(--text-sm);

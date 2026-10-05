@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.16.1"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.17.0"
 ```
 
 ## Usage
@@ -47,7 +47,7 @@ Then use components:
 | `BackLink` | Link back to the parent page with an arrow, muted or a plain underlined `link`; a 44px tap target on phones, `hideInStandalone` hides it under the app's own Back button; see [Back link](#back-link) |
 | `Badge` | Inline status badge (default, up, down, accent) |
 | `Balance` | A balance above an amount field: `label`, the value as children with an optional `title`, `busy` while it loads and an `action` snippet at the end, such as a link Button for Max |
-| `Button` | Button or link (`href`), variants default, primary, danger, ghost and link, which is text alone in the accent colour for Max or Try again inside a line; optional `icon`; `loading` shows a spinner, blocks clicks and keeps the width; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why; a dimmed primary loses its fill for a dashed outline, so the state does not rest on colour alone |
+| `Button` | Button or link (`href`), variants default, primary, danger, ghost and link, which is text alone in the accent colour for Max or Try again inside a line; optional `icon`; `loading` shows a spinner, ignores presses (no second submit) and keeps the width, staying enabled with `aria-disabled` and `aria-busy` so it keeps focus, while `disabled` stays native; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why; a dimmed primary loses its fill for a dashed outline, so the state does not rest on colour alone |
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
 | `ChartHint` | What a chart says while nothing is inspected: hover wording for a mouse, drag wording on a touch screen |
@@ -489,8 +489,10 @@ It fits the data rather than zero, or keeps zero in view with `baseline`, where 
 Round-value `guides` run across the plot with labels at the left edge, kept out of the `timeAxis` row along the bottom and down to one on a plot under 150px tall, and `live` pulses the last point three times, and again when a new last point arrives.
 Rising candles are hollow and falling ones filled, so direction does not rest on colour alone.
 A pointer shows a crosshair, a value tag and a tooltip; a finger drags and reads the readout under the chart, which stays after it lifts; the keyboard moves a hidden slider that announces each point, a candle as open, high, low and close; Escape hides the tooltip.
+An inspected point stays on its moment when new points arrive, so a live tick does not move it; it ends when that moment is gone.
+Only what an inspection shows is a live region, never the hint, so a hint that changes with each tick is not read out.
 `markers` place trades on the line as buy and sell shapes that can be hovered, tapped or focused, and `change` adds each point's change since the first.
-`format`, `formatTime` and `formatDay` say how values and times read; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
+`format`, `formatTime` and `formatDay` say how values and times read, and `axisFormat` (by default `format`) how the plot's guide, zero and level labels read, so they can be shorter than the readout; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
 The line draws in and the fill fades up when the series changes, candles rise one after another, and nothing moves under reduced motion; `animate={false}` turns it off.
 The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
 

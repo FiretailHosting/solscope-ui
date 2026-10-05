@@ -11,7 +11,7 @@ export { default as ChartContainer } from './components/ui/chart/ChartContainer.
 export { default as ChartTooltip } from './components/ui/chart/ChartTooltip.svelte';
 export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
-export { candleWidth, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight } from './chart/series.js';
+export { candleWidth, carriedIndex, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight } from './chart/series.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
 export { getPayloadConfigFromPayload } from './components/ui/chart/chart-utils.js';
 export { default as EmptyState } from './components/ui/EmptyState.svelte';

@@ -130,6 +130,23 @@ export function nearestIndex(plotted, x) {
     return Math.abs(plotted[high].x - x) < Math.abs(plotted[low].x - x) ? high : low;
 }
 /**
+ * carriedIndex is where an inspected point sits once new points arrive: the
+ * index of the point with the same time, so a live tick leaves a keyboard or
+ * touch inspection where it was. When that time is gone, as when another
+ * range arrives, it is null and the inspection ends.
+ */
+export function carriedIndex(previous, next, index) {
+    if (index == null)
+        return null;
+    const time = previous[index]?.t;
+    if (time == null)
+        return null;
+    if (next[index]?.t === time)
+        return index;
+    const found = next.findIndex((point) => point.t === time);
+    return found === -1 ? null : found;
+}
+/**
  * inGap says x falls in a gap in the line: placed by time, its nearest point
  * is more than half a gap away, so no snapshot stands for that moment.
  */
@@ -145,7 +162,7 @@ export function inGap(point, x, byTime, gap) {
 export function inspectHint(noun, withMarkers, touch) {
     const verb = touch ? 'Tap or drag' : 'Hover or drag';
     if (withMarkers)
-        return `${verb} to see a ${noun}. Select a dot to see the trade.`;
+        return `${verb} to see a ${noun}. Select a marker to see the trade.`;
     return `${verb} across the chart to see a ${noun}.`;
 }
 /** A marker's identity: what it shows and when. */
