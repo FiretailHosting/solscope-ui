@@ -51,3 +51,29 @@ test('the hint under a chart is outside the live region', () => {
 	assert.ok(!live[1].includes('Latest'), 'the hint is not in it');
 	assert.ok(readout.includes('Latest $0.32'), 'the hint still shows');
 });
+
+test('the canvas chart keeps a DOM layer: a labelled slider, a described picture and one live region', () => {
+	const html = render(SeriesChart, { props: { points, label: 'BONK price history', format: (n) => `$${n.toFixed(2)}` } }).body;
+	const slider = openingTag(html, 'input');
+	assert.match(slider, /type="range"/);
+	assert.match(slider, /aria-label="BONK price history"/);
+	assert.match(slider, /max="2"/);
+	assert.match(slider, /aria-valuetext="\$0\.32, /, 'the slider reads the latest point before anything is inspected');
+	const picture = html.match(/<div[^>]*role="img"[^>]*>/)?.[0] ?? '';
+	assert.match(picture, /aria-label="BONK price history"/);
+	const describedBy = picture.match(/aria-describedby="([^"]+)"/)?.[1];
+	assert.ok(describedBy, 'the picture has a description');
+	assert.match(html, new RegExp(`<span id="${describedBy}" hidden[^>]*>From [^<]*3 points, started at \\$0\\.12, ended at \\$0\\.32`));
+	assert.equal(html.match(/aria-live="polite"/g)?.length, 1, 'only the inspected readout is live');
+});
+
+test('a summary given replaces the built-in one', () => {
+	const html = render(SeriesChart, { props: { points, summary: 'Up 160% this week.' } }).body;
+	assert.match(html, /hidden[^>]*>Up 160% this week\.<\/span>/);
+});
+
+test('fewer than two points show the empty text, with no chart', () => {
+	const html = render(SeriesChart, { props: { points: points.slice(0, 1), empty: 'Nothing yet.' } }).body;
+	assert.match(html, /Nothing yet\./);
+	assert.ok(!html.includes('type="range"'));
+});
