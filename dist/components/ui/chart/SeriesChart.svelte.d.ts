@@ -30,6 +30,8 @@ type $$ComponentProps = {
     animate?: boolean;
     /** How a value reads when inspected. */
     format?: (n: number) => string;
+    /** How a value reads on the plot's own labels: the guides, zero and the inspected level. `format` by default, so a shorter one keeps them apart on a phone. */
+    axisFormat?: (n: number) => string;
     /** How a moment reads: "Sep 25, 5:21 AM". */
     formatTime?: (t: number, withYear: boolean) => string;
     /** How a day reads: "Sep 24". */

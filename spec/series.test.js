@@ -1,6 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
-import { candleReading, candleTrend, candleWidth, guideLabels, guideValues, SHORT_PLOT_HEIGHT, hasCandles, inGap, inspectHint, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight } from '../src/lib/chart/series.ts';
+import { candleReading, candleTrend, candleWidth, carriedIndex, guideLabels, guideValues, SHORT_PLOT_HEIGHT, hasCandles, inGap, inspectHint, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight } from '../src/lib/chart/series.ts';
 import { axisTime, chartDay, chartTime, spansYears } from '../src/lib/chart/dates.ts';
 
 const HOUR = 3_600_000;
@@ -137,7 +137,7 @@ test('no markers without a time range', () => {
 test('the hint leaves hovering out on a touch screen, and says how to see a trade with markers', () => {
 	assert.equal(inspectHint('price', false, false), 'Hover or drag across the chart to see a price.');
 	assert.equal(inspectHint('price', false, true), 'Tap or drag across the chart to see a price.');
-	assert.equal(inspectHint('value', true, true), 'Tap or drag to see a value. Select a dot to see the trade.');
+	assert.equal(inspectHint('value', true, true), 'Tap or drag to see a value. Select a marker to see the trade.');
 });
 
 test('a rising candle is hollow and a falling one filled', () => {
@@ -164,4 +164,20 @@ test('a short chart keeps one guide label at most, the one nearest the middle', 
 	assert.deepEqual(guideLabels([], 96, 16), []);
 	assert.deepEqual(guideLabels(guides, 149, 0), [1]);
 	assert.deepEqual(guideLabels(guides, 150, 0), [3, 2, 1]);
+});
+
+test('an inspected point stays on its moment when a live tick arrives', () => {
+	const before = [at(0, 1), at(1, 2), at(2, 3)];
+	assert.equal(carriedIndex(before, [at(0, 1), at(1, 2), at(2, 3.5)], 1), 1);
+	assert.equal(carriedIndex(before, [...before, at(3, 4)], 1), 1);
+	// A sliding window drops the first point, so the same moment moves left.
+	assert.equal(carriedIndex(before, [at(1, 2), at(2, 3), at(3, 4)], 1), 0);
+});
+
+test('an inspection ends when its moment is gone, and nothing inspected stays so', () => {
+	const before = [at(0, 1), at(1, 2), at(2, 3)];
+	assert.equal(carriedIndex(before, [at(1, 2), at(2, 3), at(3, 4)], 0), null);
+	assert.equal(carriedIndex(before, [at(10, 1), at(20, 2)], 2), null);
+	assert.equal(carriedIndex(before, before, null), null);
+	assert.equal(carriedIndex([], before, 0), null);
 });

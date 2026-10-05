@@ -97,6 +97,13 @@ export declare function candleWidth(plotWidth: number, count: number): number;
  */
 export declare function nearestIndex(plotted: PlottedPoint[], x: number): number;
 /**
+ * carriedIndex is where an inspected point sits once new points arrive: the
+ * index of the point with the same time, so a live tick leaves a keyboard or
+ * touch inspection where it was. When that time is gone, as when another
+ * range arrives, it is null and the inspection ends.
+ */
+export declare function carriedIndex(previous: SeriesPoint[], next: SeriesPoint[], index: number | null): number | null;
+/**
  * inGap says x falls in a gap in the line: placed by time, its nearest point
  * is more than half a gap away, so no snapshot stands for that moment.
  */

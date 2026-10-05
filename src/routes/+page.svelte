@@ -104,6 +104,21 @@
 		{ value: 'candles' as const, label: 'Candles' }
 	];
 	const formatPrice = (value: number) => `$${value.toFixed(5)}`;
+	// Shorter on the plot's own labels, so they do not crowd a phone.
+	const formatPriceAxis = (value: number) => `$${value.toFixed(4)}`;
+	// A live tick every few seconds moves the latest price, as an app's live
+	// feed does; an inspected point stays put through it.
+	let livePriceSeries = $state(priceSeries);
+	$effect(() => {
+		let tick = 0;
+		const timer = setInterval(() => {
+			tick++;
+			const latest = priceSeries[priceSeries.length - 1];
+			const p = latest.p + Math.sin(tick) * 0.00005;
+			livePriceSeries = [...priceSeries.slice(0, -1), { ...latest, p, h: Math.max(latest.h, p), l: Math.min(latest.l, p) }];
+		}, 3000);
+		return () => clearInterval(timer);
+	});
 	const priceMarkers = [
 		{ t: now - 120 * hour, price: priceSeries[47].p, side: 'buy' as const, title: 'You bought 1,000,000 WIF for $4.20', note: { text: '+8.1% vs your buy', up: true } },
 		{ t: now - 30 * hour, price: priceSeries[137].p, side: 'sell' as const, title: 'You sold 400,000 WIF for $1.90' }
@@ -315,13 +330,14 @@
 				<SegmentedControl label="Chart kind" options={priceKinds} bind:value={priceKind} />
 			{/snippet}
 			<SeriesChart
-				points={priceSeries}
+				points={livePriceSeries}
 				kind={priceKind}
 				markers={priceMarkers}
 				byTime
 				live
 				height={220}
 				format={formatPrice}
+				axisFormat={formatPriceAxis}
 				change={(difference) => `${difference < 0 ? '-' : '+'}$${Math.abs(difference).toFixed(5)}`}
 			/>
 		</Card>

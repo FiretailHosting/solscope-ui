@@ -13,7 +13,9 @@ interface Props extends HTMLButtonAttributes {
     /**
      * Shows a spinner and blocks clicks while an action runs. The spinner
      * takes the icon's place, or covers the label when there is no icon,
-     * so the button keeps its width.
+     * so the button keeps its width. The button stays enabled, marked
+     * aria-disabled and aria-busy, so it keeps focus while it waits, and a
+     * press does nothing: no onclick, no second form submit.
      */
     loading?: boolean;
     children?: Snippet;
