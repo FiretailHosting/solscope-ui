@@ -2,6 +2,7 @@
 	import type { IChartApi, ISeriesApi, Logical, SeriesType } from 'lightweight-charts';
 	import { tick, untrack } from 'svelte';
 	import { forgetAvatarWaiter, loadAvatar, avatarStatus, settleAvatar } from '../../../chart/avatars.js';
+	import { TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from '../../../chart/attribution.js';
 	import { axisTime, chartDay, chartTime, spansYears } from '../../../chart/dates.js';
 	import {
 		clusterKey,
@@ -250,17 +251,6 @@
 		relayout();
 	}
 
-	/** labelAttribution names TradingView's attribution link, which its license asks to keep, and keeps it out of the way. */
-	function labelAttribution() {
-		const link = host?.querySelector<HTMLAnchorElement>('a#tv-attr-logo');
-		if (!link) return;
-		link.setAttribute('aria-label', 'Charting by TradingView (opens in a new tab)');
-		link.setAttribute('rel', 'noopener');
-		link.removeAttribute('title');
-		link.classList.add('sui-series-attribution');
-		link.querySelector('svg')?.setAttribute('aria-hidden', 'true');
-	}
-
 	// Made once the plot is on the page, and removed with it.
 	$effect(() => {
 		const element = host;
@@ -272,7 +262,7 @@
 			library_ = library;
 			chart = library.createChart(element, {
 				autoSize: true,
-				layout: { background: { type: library.ColorType.Solid, color: 'transparent' }, attributionLogo: true, textColor: '#888' },
+				layout: { background: { type: library.ColorType.Solid, color: 'transparent' }, attributionLogo: false, textColor: '#888' },
 				grid: { vertLines: { visible: false }, horzLines: { visible: false } },
 				rightPriceScale: { visible: false, scaleMargins: { top: 0.05, bottom: 0.05 } },
 				leftPriceScale: { visible: false },
@@ -284,7 +274,6 @@
 			});
 			// The chart lays itself out in a table; it is not a data table.
 			element.querySelector('table')?.setAttribute('role', 'presentation');
-			labelAttribution();
 			chart.timeScale().subscribeVisibleLogicalRangeChange(relayout);
 			resizeObserver = new ResizeObserver(fit);
 			resizeObserver.observe(element);
@@ -325,8 +314,6 @@
 			series?.applyOptions(seriesColors(shape, colors));
 			series?.setData(data as never[]);
 			fit();
-			// The theme also redraws the attribution logo.
-			labelAttribution();
 			reveal(`${shape}|${first}`);
 		});
 	});
@@ -841,10 +828,16 @@
 				</div>
 			{/if}
 
-			<!-- Lightweight Charts paints here, last, so TradingView's
-			     attribution link comes after the markers in the tab order. -->
+			<!-- Lightweight Charts paints here. -->
 			<div class="host" bind:this={host}></div>
 		</div>
+		<!-- TradingView's attribution, which Lightweight Charts' license asks
+		     for: in its own row under the plot, so it never covers the series
+		     or a label, and rendered with the page, so nothing moves when the
+		     chart loads. After the markers in the tab order. -->
+		<p class="sui-series-attribution">
+			<a href={TRADINGVIEW_URL} target="_blank" rel="noopener noreferrer" aria-label="{TRADINGVIEW_CREDIT} (opens in a new tab)" title={TRADINGVIEW_NOTICE}>{TRADINGVIEW_CREDIT}</a>
+		</p>
 	</div>
 
 	<div class="sui-series-readout">
@@ -955,18 +948,25 @@
 		pointer-events: none;
 	}
 
-	/* TradingView's attribution, which its license asks to keep: above the
-	   time axis row, with a focus ring. */
-	.host :global(a#tv-attr-logo.sui-series-attribution) {
-		left: var(--space-1);
-		bottom: calc(16px + var(--space-1));
-		opacity: 0.7;
+	/* TradingView's attribution: one small line of fixed height under the
+	   plot, at the right, outside the plot and its labels at any height. */
+	.sui-series-attribution {
+		height: 14px;
+		margin: var(--space-0-5) 0 0;
+		text-align: right;
+		font-size: var(--text-2xs);
+		line-height: 14px;
+		white-space: nowrap;
 	}
-	.host :global(a#tv-attr-logo.sui-series-attribution:hover),
-	.host :global(a#tv-attr-logo.sui-series-attribution:focus-visible) {
-		opacity: 1;
+	.sui-series-attribution a {
+		color: var(--muted);
+		text-decoration: none;
 	}
-	.host :global(a#tv-attr-logo.sui-series-attribution:focus-visible) {
+	.sui-series-attribution a:hover {
+		color: var(--fg);
+		text-decoration: underline;
+	}
+	.sui-series-attribution a:focus-visible {
 		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 		border-radius: var(--radius-sm);

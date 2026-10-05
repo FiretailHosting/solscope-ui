@@ -2,6 +2,7 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { render } from 'svelte/server';
 import { stopBusyClick } from '../src/lib/busy-click.ts';
+import { TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from '../src/lib/chart/attribution.ts';
 import Button from '../src/lib/components/ui/Button.svelte';
 import SeriesChart from '../src/lib/components/ui/chart/SeriesChart.svelte';
 
@@ -76,4 +77,26 @@ test('fewer than two points show the empty text, with no chart', () => {
 	const html = render(SeriesChart, { props: { points: points.slice(0, 1), empty: 'Nothing yet.' } }).body;
 	assert.match(html, /Nothing yet\./);
 	assert.ok(!html.includes('type="range"'));
+});
+
+test('TradingView is credited in its own row under the plot, rendered with the page, linking where its license asks', () => {
+	const html = render(SeriesChart, { props: { points } }).body;
+	const credit = html.match(/<p class="sui-series-attribution[^"]*">\s*(<a\b[^>]*>)([^<]*)<\/a>/);
+	assert.ok(credit, 'the credit renders on the server, so nothing moves when the chart loads');
+	const [, link, text] = credit;
+	assert.equal(text, TRADINGVIEW_CREDIT);
+	assert.ok(link.includes(`href="${TRADINGVIEW_URL}"`), link);
+	assert.match(link, /target="_blank"/);
+	assert.match(link, /rel="noopener noreferrer"/);
+	assert.match(link, /aria-label="Charts by TradingView \(opens in a new tab\)"/);
+	assert.ok(link.includes(`title="${TRADINGVIEW_NOTICE}"`), 'the notice is its description');
+	// Outside the plot, so it never covers the series or a label.
+	const plot = html.slice(html.indexOf('class="plot'), html.indexOf('class="sui-series-attribution'));
+	assert.ok(plot.includes('class="host'), 'the plot comes first');
+	assert.ok(!plot.includes('tradingview.com'), 'nothing in the plot links to TradingView');
+});
+
+test('the notice is word for word the one in Lightweight Charts\' NOTICE file', () => {
+	assert.equal(TRADINGVIEW_URL, 'https://www.tradingview.com/');
+	assert.equal(TRADINGVIEW_NOTICE, 'TradingView Lightweight Charts™ Copyright (с) 2025 TradingView, Inc. https://www.tradingview.com/');
 });
