@@ -1,6 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
-import { chartRows, chartSlots, colorWithAlpha, seriesSummary, slotAtTime, xAtSlot, candleReading, candleTrend, candleWidth, carriedIndex, guideLabels, guideValues, SHORT_PLOT_HEIGHT, hasCandles, inGap, inspectHint, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight } from '../src/lib/chart/series.ts';
+import { chartRows, chartSlots, colorWithAlpha, seriesSummary, slotAtTime, xAtSlot, candleReading, candleTrend, candleWidth, carriedIndex, guideLabels, guideValues, SHORT_PLOT_HEIGHT, hasCandles, inGap, inspectHint, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight, markersInRange, boundsWithMarkers, MARKER_PRICE_TOLERANCE } from '../src/lib/chart/series.ts';
 import { axisTime, chartDay, chartTime, spansYears } from '../src/lib/chart/dates.ts';
 
 const HOUR = 3_600_000;
@@ -94,6 +94,42 @@ test('markers a little outside the plot still show, far ones do not', () => {
 	assert.ok(withinPlotHeight(104, 100));
 	assert.ok(!withinPlotHeight(-6, 100));
 	assert.ok(!withinPlotHeight(106, 100));
+});
+
+test('markers near the prices show, far ones do not', () => {
+	const bounds = { min: 10, span: 2 };
+	const markers = [9.9, 9.89, 12.1, 12.11, 11].map((price) => ({ price }));
+	assert.equal(MARKER_PRICE_TOLERANCE, 0.05);
+	assert.deepEqual(markersInRange(markers, bounds).map((marker) => marker.price), [9.9, 12.1, 11]);
+	assert.deepEqual(markersInRange(markers, null), []);
+});
+
+test('the view widens to fit a trade just outside the prices, so it sits at its true price inside the plot', () => {
+	// 1-minute candles whose lowest low is 1.000, and a fill just under it.
+	const candles = [
+		{ t: start, p: 1.02, o: 1.01, h: 1.03, l: 1.0 },
+		{ t: start + 60_000, p: 1.04, o: 1.02, h: 1.05, l: 1.01 }
+	];
+	const bounds = valueBounds(candles, false, true);
+	const fill = { t: start + 30_000, price: 0.998 };
+	const shown = markersInRange([fill], bounds);
+	assert.deepEqual(shown, [fill]);
+	const fitted = boundsWithMarkers(bounds, shown);
+	assert.ok(Math.abs(fitted.min - 0.998) < 1e-12);
+	assert.ok(Math.abs(fitted.min + fitted.span - 1.05) < 1e-12, 'the top stays at the highest high');
+	// Where a price falls down the plot, from 0 at the top of the range to 1
+	// at its bottom: below 1 is under the plot, over the time axis.
+	const down = (range, price) => (range.min + range.span - price) / range.span;
+	assert.ok(down(bounds, fill.price) > 1, 'fitted to the candles alone, the fill falls below the plot');
+	assert.equal(down(fitted, fill.price), 1, 'fitted with it, the fill is the plot\'s lowest price');
+	for (const candle of candles) assert.ok(down(fitted, candle.l) <= 1 && down(fitted, candle.h) >= 0);
+});
+
+test('markers inside the prices leave the view as it is', () => {
+	const bounds = { min: 1, span: 2 };
+	assert.equal(boundsWithMarkers(bounds, [{ price: 1 }, { price: 3 }, { price: 2 }]), bounds);
+	assert.equal(boundsWithMarkers(bounds, []), bounds);
+	assert.deepEqual(boundsWithMarkers(bounds, [{ price: 3.05 }]), { min: 1, span: 2.05 });
 });
 
 test('chart times are short, with the year only across years', () => {

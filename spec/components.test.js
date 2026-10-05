@@ -2,7 +2,7 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { render } from 'svelte/server';
 import { stopBusyClick } from '../src/lib/busy-click.ts';
-import { TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from '../src/lib/chart/attribution.ts';
+import { CHART_ATTRIBUTION_HEIGHT, TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from '../src/lib/chart/attribution.ts';
 import Button from '../src/lib/components/ui/Button.svelte';
 import SeriesChart from '../src/lib/components/ui/chart/SeriesChart.svelte';
 
@@ -85,7 +85,7 @@ test('fewer than two points show the empty text, with no chart', () => {
 
 test('TradingView is credited in its own row under the plot, rendered with the page, linking where its license asks', () => {
 	const html = render(SeriesChart, { props: { points } }).body;
-	const credit = html.match(/<p class="sui-series-attribution[^"]*">\s*(<a\b[^>]*>)([^<]*)<\/a>/);
+	const credit = html.match(/<p class="sui-series-attribution[^"]*"[^>]*>\s*(<a\b[^>]*>)([^<]*)<\/a>/);
 	assert.ok(credit, 'the credit renders on the server, so nothing moves when the chart loads');
 	const [, link, text] = credit;
 	assert.equal(text, TRADINGVIEW_CREDIT);
@@ -98,6 +98,12 @@ test('TradingView is credited in its own row under the plot, rendered with the p
 	const plot = html.slice(html.indexOf('class="plot'), html.indexOf('class="sui-series-attribution'));
 	assert.ok(plot.includes('class="host'), 'the plot comes first');
 	assert.ok(!plot.includes('tradingview.com'), 'nothing in the plot links to TradingView');
+});
+
+test('the attribution row is CHART_ATTRIBUTION_HEIGHT tall, the same constant an app reserves in a skeleton', () => {
+	assert.equal(CHART_ATTRIBUTION_HEIGHT, 16);
+	const html = render(SeriesChart, { props: { points } }).body;
+	assert.match(html, new RegExp(`<p class="sui-series-attribution[^"]*" style="--attribution-height: ${CHART_ATTRIBUTION_HEIGHT}px;?"`));
 });
 
 test('the notice is word for word the one in Lightweight Charts\' NOTICE file', () => {
