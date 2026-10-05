@@ -2,7 +2,7 @@
 	import type { IChartApi, ISeriesApi, Logical, SeriesType } from 'lightweight-charts';
 	import { tick, untrack } from 'svelte';
 	import { forgetAvatarWaiter, loadAvatar, avatarStatus, settleAvatar } from '../../../chart/avatars.js';
-	import { TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from '../../../chart/attribution.js';
+	import { CHART_ATTRIBUTION_HEIGHT, TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from '../../../chart/attribution.js';
 	import { axisTime, chartDay, chartTime, spansYears } from '../../../chart/dates.js';
 	import {
 		clusterKey,
@@ -16,6 +16,7 @@
 		type PlacedMarker
 	} from '../../../chart/markers.js';
 	import {
+		boundsWithMarkers,
 		candleReading,
 		carriedIndex,
 		chartRows,
@@ -28,6 +29,7 @@
 		isCandle,
 		lonePoints,
 		markerKey,
+		markersInRange,
 		markersInTime,
 		nearestIndex,
 		plotPoints,
@@ -35,7 +37,6 @@
 		slotAtTime,
 		timeTicks,
 		valueBounds,
-		withinPlotHeight,
 		xAtSlot,
 		type PlottedPoint,
 		type SeriesMarker,
@@ -140,7 +141,11 @@
 		return plotted.flatMap((point, index) => (single.has(point) ? [index] : []));
 	});
 	const bounds = $derived(valueBounds(plotted, baseline, candles));
-	const markersAlong = $derived(markersInTime(points, markers));
+	// The markers drawn: in the points' time and near their prices. The view
+	// fits them too, so a fill just outside the prices sits at its true price
+	// inside the plot, never over the time axis or under the plot.
+	const markersShown = $derived(markersInRange(markersInTime(points, markers), bounds));
+	const fittedBounds = $derived(bounds ? boundsWithMarkers(bounds, markersShown) : null);
 	const withYear = $derived(spansYears(points));
 	const spanMs = $derived(points.length > 1 ? points[points.length - 1].t - points[0].t : 0);
 	// Each point's slot on the canvas's evenly spaced time scale, and what
@@ -300,7 +305,7 @@
 		const data = rows;
 		const shape = candles ? 'candles' : baseline ? 'baseline' : 'area';
 		const colors = { ...palette, line: up ? palette.up : palette.down };
-		const fitBounds = bounds;
+		const fitBounds = fittedBounds;
 		const first = plotted[0]?.t;
 		if (!ready) return;
 		untrack(() => {
@@ -418,16 +423,13 @@
 		});
 	});
 
-	// The markers in pixels, leaving out those well off the plotted range,
-	// and grouped where they would cover each other.
+	// The markers in pixels, grouped where they would cover each other.
 	const clusters = $derived.by((): MarkerCluster<PlacedMarker>[] => {
 		void layoutVersion;
 		if (!ready || plotHeight <= 0) return [];
 		const placed: PlacedMarker[] = [];
-		for (const marker of markersAlong) {
-			const top = yAt(marker.price);
-			if (!withinPlotHeight(top, plotHeight)) continue;
-			placed.push({ ...marker, left: xAt(slotAtTime(plotted, slots, marker.t)), top });
+		for (const marker of markersShown) {
+			placed.push({ ...marker, left: xAt(slotAtTime(plotted, slots, marker.t)), top: yAt(marker.price) });
 		}
 		return clusterMarkers(placed, coarse ? MARKER_CLUSTER_DISTANCE_COARSE : MARKER_CLUSTER_DISTANCE);
 	});
@@ -582,7 +584,7 @@
 		pickChanged = false;
 	}
 
-	const withMarkers = $derived(markersAlong.length > 0);
+	const withMarkers = $derived(markersShown.length > 0);
 	/** changeSince is a point's change from the first, "+$12.40 since Sep 24", when the caller asked for it. */
 	function changeSince(point: PlottedPoint | null) {
 		if (!change || !point || plotted.length === 0) return null;
@@ -620,7 +622,7 @@
 	const pickedListId = `${uid}-picked`;
 
 	// The guides and their labels, and the times along the bottom.
-	const guideLines = $derived(guides && bounds ? guideValues(bounds.min, bounds.span).filter((value) => !(baseline && value === 0)) : []);
+	const guideLines = $derived(guides && fittedBounds ? guideValues(fittedBounds.min, fittedBounds.span).filter((value) => !(baseline && value === 0)) : []);
 	// A tick that would repeat the label before it, as two days can in a
 	// 48-hour range, is left out.
 	const tickLabels = $derived(
@@ -841,7 +843,7 @@
 		     for: in its own row under the plot, so it never covers the series
 		     or a label, and rendered with the page, so nothing moves when the
 		     chart loads. After the markers in the tab order. -->
-		<p class="sui-series-attribution">
+		<p class="sui-series-attribution" style="--attribution-height: {CHART_ATTRIBUTION_HEIGHT}px">
 			<a href={TRADINGVIEW_URL} target="_blank" rel="noopener noreferrer" aria-label="{TRADINGVIEW_CREDIT} (opens in a new tab)" title={TRADINGVIEW_NOTICE}>{TRADINGVIEW_CREDIT}</a>
 		</p>
 	</div>
@@ -959,14 +961,15 @@
 	}
 
 	/* TradingView's attribution: one small line of fixed height under the
-	   plot, at the right, outside the plot and its labels at any height.
+	   plot, CHART_ATTRIBUTION_HEIGHT, at the right, outside the plot and its
+	   labels at any height.
 	   The link is a 24px target that reaches into the readout's empty top
 	   margin, never up into the plot, and paints over any marker that
 	   spills below the plot; the rest of the row lets presses through. */
 	.sui-series-attribution {
 		position: relative;
 		z-index: 1;
-		height: 16px;
+		height: var(--attribution-height);
 		margin: 0;
 		text-align: right;
 		font-size: var(--text-2xs);
@@ -977,7 +980,7 @@
 	.sui-series-attribution a {
 		display: inline-block;
 		min-height: 24px;
-		margin-bottom: -8px;
+		margin-bottom: calc(var(--attribution-height) - 24px);
 		padding: 0 var(--space-1);
 		color: var(--muted);
 		text-decoration: none;

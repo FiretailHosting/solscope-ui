@@ -203,10 +203,47 @@ export function markersInTime(points, markers, now = Date.now()) {
     })
         .map((marker) => ({ ...marker, along: Math.min(1, (marker.t - firstTime) / (lastTime - firstTime)) }));
 }
+/** How far outside a series' range a trade's price may be and still show, as a share of the range. */
+export const MARKER_PRICE_TOLERANCE = 0.05;
+/**
+ * markersInRange keeps the markers priced close enough to the range bounds
+ * spans to show: a trade can fill a little outside the sampled prices, as a
+ * fill just under a 1-minute candle's low, but not far. Close is within
+ * `tolerance` of the span below its low or above its high.
+ */
+export function markersInRange(markers, bounds, tolerance = MARKER_PRICE_TOLERANCE) {
+    if (!bounds)
+        return [];
+    const slack = bounds.span * tolerance;
+    const low = bounds.min - slack;
+    const high = bounds.min + bounds.span + slack;
+    return markers.filter((marker) => marker.price >= low && marker.price <= high);
+}
+/**
+ * boundsWithMarkers widens bounds to take in the markers' prices, so a trade
+ * priced just outside the plotted range is fitted into the plot at its true
+ * price, rather than drawn over the time axis or below the plot. Pass only
+ * markersInRange, or one stray price would flatten the series.
+ */
+export function boundsWithMarkers(bounds, markers) {
+    let min = bounds.min;
+    let max = bounds.min + bounds.span;
+    for (const marker of markers) {
+        if (marker.price < min)
+            min = marker.price;
+        if (marker.price > max)
+            max = marker.price;
+    }
+    if (min === bounds.min && max === bounds.min + bounds.span)
+        return bounds;
+    return { min, span: max - min };
+}
 /**
  * withinPlotHeight says a marker at top pixels from the top of a plot this
  * tall is close enough to the plotted range to show: a trade can fill a
- * little outside the sampled prices, but not far.
+ * little outside the sampled prices, but not far. SeriesChart no longer uses
+ * it, since it fits such trades into the plot with markersInRange and
+ * boundsWithMarkers, but it stays exported for code that places its own.
  */
 export function withinPlotHeight(top, plotHeight, tolerance = 0.05) {
     return top >= -tolerance * plotHeight && top <= (1 + tolerance) * plotHeight;

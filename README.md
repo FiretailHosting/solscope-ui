@@ -10,7 +10,7 @@ Charts are the one part with dependencies: [Lightweight Charts](https://github.c
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.18.2"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.18.3"
 ```
 
 ## Usage
@@ -500,7 +500,8 @@ The canvas is a picture to screen readers, named by `label` and described by `su
 Everything read or reached is DOM over the canvas, placed with the chart's own coordinates and moved on every resize: the labels, crosshair, tooltip, slider and markers.
 Its license asks for TradingView's attribution notice and a link to <https://www.tradingview.com/>: a small "Charts by TradingView" link, a 24px target, sits in its own row under the plot, never over the series, a label or a marker, named "Charts by TradingView (opens in a new tab)" and last in the chart's tab order.
 Show `TRADINGVIEW_NOTICE`, the notice word for word, once on a page your users can reach, such as an about or licenses page.
-The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `chartSlots`, `slotAtTime`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
+The row is `CHART_ATTRIBUTION_HEIGHT` (16) pixels tall, margins included; reserve it under a loading skeleton so nothing moves when the chart arrives.
+The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `markersInRange`, `boundsWithMarkers`, `chartSlots`, `slotAtTime`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
 
 ```svelte
 <SeriesChart points={history} kind={candles ? 'candles' : 'line'} markers={trades} byTime live format={usd} change={signedUsd} />
@@ -523,6 +524,7 @@ Markers closer than 28px, 36px on a touch screen, group into one button with a "
 Hover or focus shows a trade or a group's count in the readout, with no floating tooltip; a press picks it with a ring, a trade with `aria-pressed` and a group as a disclosure with `aria-expanded` and `aria-controls` on the list of its trades, which scrolls past four.
 The readout speaks only when a press changes the pick, "12 trades picked", so a pick shown again after focus moves on is not read twice.
 Targets are 24px, 44px on a touch screen; the markers come after the slider in the tab order, in time order.
+A trade priced a little outside the series, up to 5% of its range, as a fill just under a 1-minute candle's low, widens the view to fit, so it sits at its true price inside the plot; one further off is left out.
 
 ### Range picker
 

@@ -138,10 +138,37 @@ export declare function markerKey(marker: SeriesMarker): string;
 export declare function markersInTime(points: SeriesPoint[], markers: SeriesMarker[], now?: number): (SeriesMarker & {
     along: number;
 })[];
+/** How far outside a series' range a trade's price may be and still show, as a share of the range. */
+export declare const MARKER_PRICE_TOLERANCE = 0.05;
+/**
+ * markersInRange keeps the markers priced close enough to the range bounds
+ * spans to show: a trade can fill a little outside the sampled prices, as a
+ * fill just under a 1-minute candle's low, but not far. Close is within
+ * `tolerance` of the span below its low or above its high.
+ */
+export declare function markersInRange<Marker extends Pick<SeriesMarker, 'price'>>(markers: Marker[], bounds: {
+    min: number;
+    span: number;
+} | null, tolerance?: number): Marker[];
+/**
+ * boundsWithMarkers widens bounds to take in the markers' prices, so a trade
+ * priced just outside the plotted range is fitted into the plot at its true
+ * price, rather than drawn over the time axis or below the plot. Pass only
+ * markersInRange, or one stray price would flatten the series.
+ */
+export declare function boundsWithMarkers(bounds: {
+    min: number;
+    span: number;
+}, markers: Pick<SeriesMarker, 'price'>[]): {
+    min: number;
+    span: number;
+};
 /**
  * withinPlotHeight says a marker at top pixels from the top of a plot this
  * tall is close enough to the plotted range to show: a trade can fill a
- * little outside the sampled prices, but not far.
+ * little outside the sampled prices, but not far. SeriesChart no longer uses
+ * it, since it fits such trades into the plot with markersInRange and
+ * boundsWithMarkers, but it stays exported for code that places its own.
  */
 export declare function withinPlotHeight(top: number, plotHeight: number, tolerance?: number): boolean;
 /**

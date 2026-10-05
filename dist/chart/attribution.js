@@ -9,3 +9,9 @@ export const TRADINGVIEW_URL = 'https://www.tradingview.com/';
 export const TRADINGVIEW_NOTICE = 'TradingView Lightweight Charts™ Copyright (с) 2025 TradingView, Inc. https://www.tradingview.com/';
 /** The link's text under a chart. */
 export const TRADINGVIEW_CREDIT = 'Charts by TradingView';
+/**
+ * The height in pixels of the attribution's row under every SeriesChart,
+ * margins included, so an app's loading skeleton can keep the same space
+ * below the plot and nothing moves when the chart arrives.
+ */
+export const CHART_ATTRIBUTION_HEIGHT = 16;

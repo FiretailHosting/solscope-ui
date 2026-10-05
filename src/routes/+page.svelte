@@ -193,6 +193,17 @@
 			};
 		});
 	});
+	// A fill just under the lowest price drawn, as a 1-minute candle's low
+	// can miss, so the chart fits it in rather than drawing it over the time axis.
+	const lowFill = $derived.by((): SeriesMarker => {
+		const series = rangeSeries;
+		const candles = priceKind === 'candles';
+		const lows = series.map((point) => (candles ? (point.l ?? point.p) : point.p));
+		const highs = series.map((point) => (candles ? (point.h ?? point.p) : point.p));
+		const low = Math.min(...lows);
+		const lowest = series[lows.indexOf(low)];
+		return { t: lowest.t, price: low - (Math.max(...highs) - low) * 0.03, side: 'buy', title: 'Sam Okafor bought 4,200 WIF below the low', name: 'Sam Okafor' };
+	});
 	let showMarkers = $state(true);
 
 	// Profit and loss around zero, for the baseline chart.
@@ -402,12 +413,12 @@
 		{/snippet}
 		<div class="chart-controls">
 			<RangePicker label="Chart range" options={priceRanges} bind:value={priceRange} collapseBelow={700} />
-			<label class="marker-toggle"><input type="checkbox" bind:checked={showMarkers} /> {markerCount} trades</label>
+			<label class="marker-toggle"><input type="checkbox" bind:checked={showMarkers} /> {markerCount + 1} trades</label>
 		</div>
 		<SeriesChart
 			points={livePriceSeries}
 			kind={priceKind}
-			markers={showMarkers ? priceMarkers : []}
+			markers={showMarkers ? [...priceMarkers, lowFill] : []}
 			byTime
 			live
 			height={220}

@@ -12,6 +12,7 @@ export { default as ChartTooltip } from './components/ui/chart/ChartTooltip.svel
 export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
 export {
+	boundsWithMarkers,
 	candleWidth,
 	carriedIndex,
 	chartRows,
@@ -24,6 +25,8 @@ export {
 	isCandle,
 	lonePoints,
 	markerKey,
+	MARKER_PRICE_TOLERANCE,
+	markersInRange,
 	markersInTime,
 	nearestIndex,
 	plotPoints,
@@ -51,7 +54,7 @@ export {
 	type PlacedMarker
 } from './chart/markers.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
-export { TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from './chart/attribution.js';
+export { CHART_ATTRIBUTION_HEIGHT, TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from './chart/attribution.js';
 export {
 	getPayloadConfigFromPayload,
 	type ChartConfig
