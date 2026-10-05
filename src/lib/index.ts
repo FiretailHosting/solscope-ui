@@ -13,6 +13,7 @@ export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
 export {
 	candleWidth,
+	carriedIndex,
 	guideValues,
 	hasCandles,
 	inGap,
