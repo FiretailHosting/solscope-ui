@@ -60,6 +60,7 @@ test('the canvas chart keeps a DOM layer: a labelled slider, a described picture
 	assert.match(slider, /aria-label="BONK price history"/);
 	assert.match(slider, /max="2"/);
 	assert.match(slider, /aria-valuetext="\$0\.32, /, 'the slider reads the latest point before anything is inspected');
+	assert.ok(!/aria-describedby/.test(slider), 'only the picture carries the summary, so it is read once');
 	const picture = html.match(/<div[^>]*role="img"[^>]*>/)?.[0] ?? '';
 	assert.match(picture, /aria-label="BONK price history"/);
 	const describedBy = picture.match(/aria-describedby="([^"]+)"/)?.[1];

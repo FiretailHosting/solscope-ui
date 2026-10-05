@@ -671,7 +671,9 @@
 	>
 		<div class="plot" style={sizing}>
 			<!-- Before the chart, so keyboard focus reaches it before the trade
-			     markers. It sits on the inspected point, so screen magnifiers follow. -->
+			     markers. It sits on the inspected point, so screen magnifiers follow.
+			     Only the picture below carries the summary, so reading straight
+			     through does not announce it twice. -->
 			<input
 				class="scrub"
 				style={ready && sliderPoint ? `left: ${pointLeft(Math.min(sliderIndex, lastIndex))}px; top: ${yAt(sliderPoint.p)}px` : undefined}
@@ -682,7 +684,6 @@
 				value={sliderIndex}
 				aria-label={label}
 				aria-valuetext={sliderText}
-				aria-describedby={description ? `${uid}-summary` : undefined}
 				onfocus={() => {
 					sliderFocused = true;
 					pickedGroup = null;
