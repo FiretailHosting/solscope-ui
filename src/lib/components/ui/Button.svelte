@@ -3,6 +3,7 @@
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
 	import type { IconName } from '../../icons/icons.js';
+	import { stopBusyClick } from '../../busy-click.js';
 
 	type Variant = 'default' | 'primary' | 'danger' | 'ghost' | 'link';
 	type Size = 'default' | 'sm' | 'lg';
@@ -17,7 +18,9 @@
 		/**
 		 * Shows a spinner and blocks clicks while an action runs. The spinner
 		 * takes the icon's place, or covers the label when there is no icon,
-		 * so the button keeps its width.
+		 * so the button keeps its width. The button stays enabled, marked
+		 * aria-disabled and aria-busy, so it keeps focus while it waits, and a
+		 * press does nothing: no onclick, no second form submit.
 		 */
 		loading?: boolean;
 		children?: Snippet;
@@ -30,6 +33,7 @@
 		icon,
 		loading = false,
 		disabled,
+		onclick,
 		class: extraClass = '',
 		children,
 		...rest
@@ -38,6 +42,13 @@
 	const iconSize = $derived(size === 'sm' ? 14 : 16);
 	// Without an icon to replace, the spinner sits over the hidden label.
 	const spinnerCoversLabel = $derived(loading && !icon && !!children);
+
+	// A busy button is not natively disabled: a focused button that becomes
+	// disabled drops focus to the page. It ignores presses instead.
+	function onBusyAwareClick(event: MouseEvent) {
+		if (stopBusyClick(event, loading)) return;
+		(onclick as ((event: MouseEvent) => void) | null | undefined)?.call(event.currentTarget, event);
+	}
 </script>
 
 {#snippet content()}
@@ -77,8 +88,9 @@
 		class:loading
 		class:spinner-covers-label={spinnerCoversLabel}
 		{...rest as HTMLAnchorAttributes}
-		aria-disabled={loading || rest['aria-disabled']}
-		aria-busy={loading || rest['aria-busy']}
+		aria-disabled={loading ? 'true' : rest['aria-disabled']}
+		aria-busy={loading ? 'true' : rest['aria-busy']}
+		onclick={onBusyAwareClick}
 	>
 		{@render content()}
 	</a>
@@ -88,8 +100,10 @@
 		class:loading
 		class:spinner-covers-label={spinnerCoversLabel}
 		{...rest}
-		disabled={disabled || loading}
-		aria-busy={loading || rest['aria-busy']}
+		{disabled}
+		aria-disabled={loading ? 'true' : rest['aria-disabled']}
+		aria-busy={loading ? 'true' : rest['aria-busy']}
+		onclick={onBusyAwareClick}
 	>
 		{@render content()}
 	</button>
@@ -113,7 +127,7 @@
 		transition: border-color 100ms, background 100ms, color 100ms;
 	}
 
-	.sui-btn:hover:not(:disabled) {
+	.sui-btn:hover:not(:disabled, .loading) {
 		background: var(--card-alt);
 		border-color: var(--muted);
 	}
@@ -126,8 +140,8 @@
 	/* Cannot act right now but still focusable and tappable, so that pressing
 	   it can say why: grey text and border, with the same look under the
 	   pointer. The muted text keeps about 5:1 contrast in both themes. */
-	.sui-btn[aria-disabled='true'],
-	.sui-btn[aria-disabled='true']:hover:not(:disabled) {
+	.sui-btn[aria-disabled='true']:not(.loading),
+	.sui-btn[aria-disabled='true']:hover:not(:disabled, .loading) {
 		color: var(--muted);
 		background: var(--card);
 		border-color: var(--border);
@@ -138,13 +152,14 @@
 		outline-offset: 2px;
 	}
 
-	/* Loading */
+	/* Loading: dimmed in its own colours with the spinner, and still
+	   focusable, so the busy state is not the aria-disabled grey. */
 	.sui-btn.loading {
+		opacity: 0.5;
 		cursor: progress;
 	}
 
 	a.sui-btn.loading {
-		opacity: 0.5;
 		pointer-events: none;
 	}
 
@@ -209,7 +224,7 @@
 		color: var(--accent-fg);
 	}
 
-	.sui-btn.primary:hover:not(:disabled) {
+	.sui-btn.primary:hover:not(:disabled, .loading) {
 		background: var(--accent-hover);
 		border-color: var(--accent-hover);
 	}
@@ -218,8 +233,8 @@
 	   greyer fill alone: a dashed outline in the muted text colour, which the
 	   other variants' dimmed states do not have, so it still reads as the
 	   primary action. */
-	.sui-btn.primary[aria-disabled='true'],
-	.sui-btn.primary[aria-disabled='true']:hover:not(:disabled) {
+	.sui-btn.primary[aria-disabled='true']:not(.loading),
+	.sui-btn.primary[aria-disabled='true']:hover:not(:disabled, .loading) {
 		color: var(--muted);
 		background: var(--card);
 		border-style: dashed;
@@ -230,13 +245,13 @@
 		color: var(--down);
 	}
 
-	.sui-btn.danger:hover:not(:disabled) {
+	.sui-btn.danger:hover:not(:disabled, .loading) {
 		border-color: var(--down);
 		background: var(--down-subtle);
 	}
 
-	.sui-btn.danger[aria-disabled='true'],
-	.sui-btn.danger[aria-disabled='true']:hover:not(:disabled) {
+	.sui-btn.danger[aria-disabled='true']:not(.loading),
+	.sui-btn.danger[aria-disabled='true']:hover:not(:disabled, .loading) {
 		color: var(--muted);
 		background: var(--card);
 		border-color: var(--border);
@@ -247,13 +262,13 @@
 		background: transparent;
 	}
 
-	.sui-btn.ghost:hover:not(:disabled) {
+	.sui-btn.ghost:hover:not(:disabled, .loading) {
 		background: var(--card-alt);
 		border-color: var(--border);
 	}
 
-	.sui-btn.ghost[aria-disabled='true'],
-	.sui-btn.ghost[aria-disabled='true']:hover:not(:disabled) {
+	.sui-btn.ghost[aria-disabled='true']:not(.loading),
+	.sui-btn.ghost[aria-disabled='true']:hover:not(:disabled, .loading) {
 		color: var(--muted);
 		background: transparent;
 		border-color: transparent;
@@ -272,14 +287,14 @@
 		white-space: normal;
 	}
 
-	.sui-btn.link:hover:not(:disabled) {
+	.sui-btn.link:hover:not(:disabled, .loading) {
 		background: none;
 		border: 0;
 		text-decoration: underline;
 	}
 
-	.sui-btn.link[aria-disabled='true'],
-	.sui-btn.link[aria-disabled='true']:hover:not(:disabled) {
+	.sui-btn.link[aria-disabled='true']:not(.loading),
+	.sui-btn.link[aria-disabled='true']:hover:not(:disabled, .loading) {
 		color: var(--muted);
 		background: none;
 		border: 0;
