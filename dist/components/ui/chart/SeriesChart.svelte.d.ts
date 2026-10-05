@@ -4,6 +4,7 @@ type $$ComponentProps = {
     /** Candles need every point to carry o, h and l; otherwise a line is drawn. */
     kind?: 'line' | 'candles';
     height?: number;
+    /** Trades on the chart; each may carry the trader's `avatar` picture and `name`. */
     markers?: SeriesMarker[];
     label?: string;
     /** What a point is, for the default hint: "price", "market cap". */
@@ -12,6 +13,8 @@ type $$ComponentProps = {
     hint?: string;
     /** Shown in place of the chart when there are fewer than two points. */
     empty?: string;
+    /** The chart's description for screen readers; by default its span, start, end, high and low. */
+    summary?: string;
     /** Place points by their time rather than evenly, so gaps show. */
     byTime?: boolean;
     /** With byTime, break the line where points are further apart than this, in ms. */
@@ -20,13 +23,13 @@ type $$ComponentProps = {
     fixed?: boolean;
     /** Draw a zero line, keep it in view and fill toward it: above it reads as gain, below as loss. */
     baseline?: boolean;
-    /** Faint horizontal lines at round values, labelled at the right edge. */
+    /** Faint horizontal lines at round values, labelled at the left edge. */
     guides?: boolean;
     /** Times along the bottom edge. */
     timeAxis?: boolean;
     /** The last point is now: its dot pulses. */
     live?: boolean;
-    /** Draw the line in and fade the fill when the data changes; off under reduced motion anyway. */
+    /** Reveal the chart from left to right when a new series arrives; off under reduced motion anyway. */
     animate?: boolean;
     /** How a value reads when inspected. */
     format?: (n: number) => string;

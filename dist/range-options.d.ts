@@ -1,0 +1,12 @@
+/** One choice of a RangePicker or SegmentedControl; the same shape as SegmentedOption. */
+export type RangeOption<Value> = {
+    value: Value;
+    label: string;
+    disabled?: boolean;
+};
+/** selectedOptionIndex is the position of the option with this value, or -1 when none has it. */
+export declare function selectedOptionIndex<Value>(options: RangeOption<Value>[], value: Value | undefined): number;
+/** optionForSelectValue is the option a select's value, its position as text, stands for, unless it is missing or disabled. */
+export declare function optionForSelectValue<Value>(options: RangeOption<Value>[], selectValue: string): RangeOption<Value> | undefined;
+/** collapseQuery is the media query under which the picker shows a select, or null when it never does. */
+export declare function collapseQuery(collapseBelow: number): string | null;

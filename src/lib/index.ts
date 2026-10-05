@@ -14,6 +14,9 @@ export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte
 export {
 	candleWidth,
 	carriedIndex,
+	chartRows,
+	chartSlots,
+	colorWithAlpha,
 	guideValues,
 	hasCandles,
 	inGap,
@@ -24,13 +27,29 @@ export {
 	markersInTime,
 	nearestIndex,
 	plotPoints,
+	seriesSummary,
+	slotAtTime,
 	timeTicks,
 	valueBounds,
 	withinPlotHeight,
+	xAtSlot,
+	type ChartRow,
 	type PlottedPoint,
 	type SeriesMarker,
 	type SeriesPoint
 } from './chart/series.js';
+export {
+	clusterLabel,
+	clusterMarkers,
+	clusterSide,
+	initials,
+	markerFace,
+	markerLabel,
+	type AvatarStatus,
+	type MarkerCluster,
+	type MarkerFace,
+	type PlacedMarker
+} from './chart/markers.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
 export {
 	getPayloadConfigFromPayload,
@@ -57,6 +76,8 @@ export {
 } from './page-search.js';
 export { default as Pagination } from './components/ui/Pagination.svelte';
 export { default as Pill } from './components/ui/Pill.svelte';
+export { default as RangePicker } from './components/ui/RangePicker.svelte';
+export { optionForSelectValue, selectedOptionIndex, type RangeOption } from './range-options.js';
 export { default as RowItem } from './components/ui/RowItem.svelte';
 export { default as RowList } from './components/ui/RowList.svelte';
 export { default as Select } from './components/ui/Select.svelte';

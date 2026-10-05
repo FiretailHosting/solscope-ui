@@ -3,14 +3,14 @@
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
 Built on Svelte 5 with a flat, corporate design: neutral greys, one navy accent, no gradients or shadows.
 Dark and light mode, CSS variable theming, and a technical icon set drawn for the library.
-Charts are the one part with a dependency: [LayerChart](https://layerchart.com).
+Charts are the one part with dependencies: [Lightweight Charts](https://github.com/tradingview/lightweight-charts) (Apache-2.0, TradingView) draws `SeriesChart`, and [LayerChart](https://layerchart.com) the rest.
 
 ## Install
 
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.17.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.18.0"
 ```
 
 ## Usage
@@ -51,7 +51,7 @@ Then use components:
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
 | `ChartHint` | What a chart says while nothing is inspected: hover wording for a mouse, drag wording on a touch screen |
-| `SeriesChart` | A price or value over time as a line over a gradient fill or as candles, with guides, a time axis, a crosshair, trade markers and the same inspection by pointer, finger, keyboard and screen reader; see [Series chart](#series-chart) |
+| `SeriesChart` | A price or value over time as a line over a gradient fill or as candles, drawn by Lightweight Charts, with guides, a time axis, a crosshair, trade markers with traders' pictures and the same inspection by pointer, finger, keyboard and screen reader; see [Series chart](#series-chart) |
 | `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
 | `Dialog` | Modal over a native `<dialog>`: `title` or `label`, close button, Escape, backdrop tap, swipe down on phones, focus return; a centred card on desktop and a bottom sheet on phones; see [Dialog](#dialog) |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
@@ -66,6 +66,7 @@ Then use components:
 | `PageSearch` | A sheet with one field and the app's pages with their icons, filtered as you type; Return or a tap goes to the page and closes it; `sections` adds result sections the app searches, such as coins; see [Page search](#page-search) |
 | `Pagination` | Previous and Next buttons, "Page 2 of 14" and the row range for a long table; see [Pagination](#pagination) |
 | `Pill` | Status pill (default, live, ok) |
+| `RangePicker` | A chart's range as segmented buttons, or a labelled native select below `collapseBelow` pixels of screen width; see [Range picker](#range-picker) |
 | `RowList` | A list of `RowItem`s for a phone, where a table would scroll sideways; `label` names it, `busy` says rows are loading; see [Row list](#row-list) |
 | `RowItem` | One row: a name with a `detail` under it, a `value` with a `note` under it, `href` makes the row a link and `actions` sit outside it |
 | `Select` | Styled select dropdown |
@@ -491,14 +492,57 @@ Rising candles are hollow and falling ones filled, so direction does not rest on
 A pointer shows a crosshair, a value tag and a tooltip; a finger drags and reads the readout under the chart, which stays after it lifts; the keyboard moves a hidden slider that announces each point, a candle as open, high, low and close; Escape hides the tooltip.
 An inspected point stays on its moment when new points arrive, so a live tick does not move it; it ends when that moment is gone.
 Only what an inspection shows is a live region, never the hint, so a hint that changes with each tick is not read out.
-`markers` place trades on the line as buy and sell shapes that can be hovered, tapped or focused, and `change` adds each point's change since the first.
+`markers` place trades on the line as buttons that can be hovered, tapped or focused, and `change` adds each point's change since the first; see [Trade markers](#trade-markers).
 `format`, `formatTime` and `formatDay` say how values and times read, and `axisFormat` (by default `format`) how the plot's guide, zero and level labels read, so they can be shorter than the readout; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
-The line draws in and the fill fades up when the series changes, candles rise one after another, and nothing moves under reduced motion; `animate={false}` turns it off.
-The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
+A new series, another range or kind, wipes in from the left, a live tick does not, and nothing moves under reduced motion; `animate={false}` turns it off.
+The canvas is a picture to screen readers, named by `label` and described by `summary`, by default a sentence with the span, start, end, high and low.
+[Lightweight Charts](https://github.com/tradingview/lightweight-charts) paints the series on a canvas, loaded in its own chunk once a chart mounts, so server rendering and pages without a chart never load it.
+Everything read or reached is DOM over the canvas, placed with the chart's own coordinates and moved on every resize: the labels, crosshair, tooltip, slider and markers.
+Its attribution link, which its license asks to keep, sits above the time axis at the bottom left, named "Charting by TradingView (opens in a new tab)" and last in the chart's tab order.
+The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `chartSlots`, `slotAtTime`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
 
 ```svelte
 <SeriesChart points={history} kind={candles ? 'candles' : 'line'} markers={trades} byTime live format={usd} change={signedUsd} />
 ```
+
+#### Trade markers
+
+```ts
+const trades: SeriesMarker[] = [
+  { t, price, side: 'buy', title: 'Maya bought 1,200,000 BONK for $0.50', avatar: '/api/files/users/abc/maya.webp', name: 'Maya' }
+];
+```
+
+Each marker is `{ t, price, side, title }` with an optional `note`, `avatar` (the trader's picture, a person's or a bot's) and `name`.
+A picture shows in an 18px circle with a ring in the side's colour and a small up or down badge, so buy and sell never rest on colour.
+Without a picture, while it loads, or when it fails, the circle shows the initials of `name`; without either, the buy or sell shape.
+Pictures load once the chart nears the screen, only for the markers drawn, and each is fetched and decoded once per page and shared by every chart; one that fails is not tried again.
+Pass only pictures the viewer may already see; the chart shows what it is given.
+Markers closer than 28px, 36px on a touch screen, group into one button with a "+N" count, so none covers another; a group's name lists up to three trades, or says "12 trades from ... to ...: 7 buys, 5 sells".
+Hover or focus shows a trade or a group's count in the readout and the tooltip; a press picks it, with `aria-pressed` and a ring, and a picked group lists its trades, scrolling past four.
+Targets are 24px, 44px on a touch screen; the markers come after the slider in the tab order, in time order.
+
+### Range picker
+
+```svelte
+<script lang="ts">
+  import { RangePicker, type RangeOption } from '@firetailhosting/solscope-ui';
+  const ranges: RangeOption<number>[] = [
+    { value: 1, label: '24H' },
+    { value: 7, label: '7D' },
+    { value: 30, label: '30D' },
+    { value: 365, label: '1Y', disabled: true }
+  ];
+  let days = $state(7);
+</script>
+
+<RangePicker label="Chart range" options={ranges} bind:value={days} onchange={load} collapseBelow={480} />
+```
+
+Options are `{ value, label, disabled? }`, the same shape as `SegmentedOption`, and values can be numbers or strings.
+At `collapseBelow` pixels of screen width and up it shows a [SegmentedControl](#segmented-control); below, a native select named by `label`, which a phone opens as its own picker.
+Both are rendered and a media query shows one, so the server renders the right one and nothing jumps when the page starts; `collapseBelow={0}` keeps the buttons.
+A value no option has selects nothing.
 
 ### Charts
 

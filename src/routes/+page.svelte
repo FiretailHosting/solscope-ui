@@ -22,6 +22,7 @@
 		Pill,
 		RowItem,
 		RowList,
+		RangePicker,
 		SegmentedControl,
 		Select,
 		SeriesChart,
@@ -37,6 +38,7 @@
 		type PageSearchResult,
 		type PageSearchSection,
 		type SegmentedOption,
+		type SeriesMarker,
 		type TabBarItem
 	} from '$lib';
 	import { BarChart, LineChart } from 'layerchart';
@@ -89,15 +91,45 @@
 			? date.toLocaleTimeString('en-US', { hour: 'numeric', timeZone: 'UTC' })
 			: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
-	// A made-up token price: hourly candles over a week, with a drift and a
-	// wobble so the line and the candles have something to show.
-	const priceSeries = Array.from({ length: 168 }, (_, index) => {
-		const t = now - (167 - index) * hour;
-		const base = 0.0042 + index * 0.000004 + Math.sin(index / 9) * 0.0004 + Math.sin(index / 2.3) * 0.00012;
-		const o = base + Math.cos(index * 1.3) * 0.00008;
-		const p = base + Math.sin(index * 2.1) * 0.00009;
-		return { t, o, p, h: Math.max(o, p) + 0.00006, l: Math.min(o, p) - 0.00007, v: 1200 + (index % 7) * 300 };
-	});
+	// A made-up token price over the picked range, with a drift and a wobble
+	// so the line and the candles have something to show.
+	type PriceRange = '1h' | '3h' | '6h' | '24h' | '7d' | '30d' | '90d' | '1y';
+	const minute = 60 * 1000;
+	const day = 24 * hour;
+	const priceRanges: SegmentedOption<PriceRange>[] = [
+		{ value: '1h', label: '1H' },
+		{ value: '3h', label: '3H' },
+		{ value: '6h', label: '6H' },
+		{ value: '24h', label: '24H' },
+		{ value: '7d', label: '7D' },
+		{ value: '30d', label: '30D' },
+		{ value: '90d', label: '90D' },
+		{ value: '1y', label: '1Y' }
+	];
+	// How many points each range has, and how far apart.
+	const rangeSteps: Record<PriceRange, { count: number; step: number }> = {
+		'1h': { count: 60, step: minute },
+		'3h': { count: 90, step: 2 * minute },
+		'6h': { count: 72, step: 5 * minute },
+		'24h': { count: 96, step: 15 * minute },
+		'7d': { count: 168, step: hour },
+		'30d': { count: 180, step: 4 * hour },
+		'90d': { count: 90, step: day },
+		'1y': { count: 365, step: day }
+	};
+	let priceRange = $state<PriceRange>('7d');
+	function priceHistory(range: PriceRange) {
+		const { count, step } = rangeSteps[range];
+		return Array.from({ length: count }, (_, index) => {
+			const t = now - (count - 1 - index) * step;
+			const base = 0.0042 + index * (0.00067 / count) + Math.sin(index / 9) * 0.0004 + Math.sin(index / 2.3) * 0.00012;
+			const o = base + Math.cos(index * 1.3) * 0.00008;
+			const p = base + Math.sin(index * 2.1) * 0.00009;
+			return { t, o, p, h: Math.max(o, p) + 0.00006, l: Math.min(o, p) - 0.00007, v: 1200 + (index % 7) * 300 };
+		});
+	}
+	const priceSeries = priceHistory('7d');
+	const rangeSeries = $derived(priceHistory(priceRange));
 	let priceKind = $state<'line' | 'candles'>('line');
 	const priceKinds = [
 		{ value: 'line' as const, label: 'Line' },
@@ -108,21 +140,61 @@
 	const formatPriceAxis = (value: number) => `$${value.toFixed(4)}`;
 	// A live tick every few seconds moves the latest price, as an app's live
 	// feed does; an inspected point stays put through it.
-	let livePriceSeries = $state(priceSeries);
+	let liveTick = $state(0);
 	$effect(() => {
-		let tick = 0;
-		const timer = setInterval(() => {
-			tick++;
-			const latest = priceSeries[priceSeries.length - 1];
-			const p = latest.p + Math.sin(tick) * 0.00005;
-			livePriceSeries = [...priceSeries.slice(0, -1), { ...latest, p, h: Math.max(latest.h, p), l: Math.min(latest.l, p) }];
-		}, 3000);
+		const timer = setInterval(() => liveTick++, 3000);
 		return () => clearInterval(timer);
 	});
-	const priceMarkers = [
-		{ t: now - 120 * hour, price: priceSeries[47].p, side: 'buy' as const, title: 'You bought 1,000,000 WIF for $4.20', note: { text: '+8.1% vs your buy', up: true } },
-		{ t: now - 30 * hour, price: priceSeries[137].p, side: 'sell' as const, title: 'You sold 400,000 WIF for $1.90' }
-	];
+	const livePriceSeries = $derived.by(() => {
+		const latest = rangeSeries[rangeSeries.length - 1];
+		const p = latest.p + Math.sin(liveTick) * 0.00005;
+		return [...rangeSeries.slice(0, -1), { ...latest, p, h: Math.max(latest.h, p), l: Math.min(latest.l, p) }];
+	});
+
+	// Traders with pictures drawn here as data URIs, one whose picture
+	// fails, one with a name alone and one with neither, so every fallback shows.
+	function avatarPicture(background: string, initial: string) {
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" fill="${background}"/><circle cx="20" cy="15" r="7" fill="#fff" opacity="0.85"/><path d="M6 40c2-9 8-13 14-13s12 4 14 13z" fill="#fff" opacity="0.85"/><text x="34" y="10" font-size="8" font-family="sans-serif" fill="#fff">${initial}</text></svg>`;
+		return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+	}
+	const traders = [
+		{ name: 'Maya Lopez', avatar: avatarPicture('#1f4f8f', 'M') },
+		{ name: 'Theo', avatar: avatarPicture('#7a3e9d', 'T') },
+		{ name: 'Momentum bot', avatar: avatarPicture('#1d7a4c', 'B') },
+		{ name: 'Priya Shah', avatar: avatarPicture('#b4322c', 'P') },
+		{ name: 'Broken picture', avatar: '/missing-avatar.png' },
+		{ name: 'Sam Okafor' },
+		{}
+	] as { name?: string; avatar?: string }[];
+	// Many markers, so they group into "+N" buttons: busy hours have bursts
+	// of trades by the same people, the rest a scattering.
+	const markerCount = 500;
+	const priceMarkers = $derived.by((): SeriesMarker[] => {
+		const series = rangeSeries;
+		const first = series[0].t;
+		const span = series[series.length - 1].t - first;
+		return Array.from({ length: markerCount }, (_, index) => {
+			const burst = index % 5 === 0;
+			const along = burst ? ((index * 7) % 40) / 40 + 0.012 * Math.sin(index) : ((index * 37) % 500) / 500;
+			const t = Math.round(first + Math.min(1, Math.max(0, along)) * span);
+			const point = series[Math.min(series.length - 1, Math.round(((t - first) / span) * (series.length - 1)))];
+			const trader = traders[index % traders.length];
+			const side = index % 3 === 0 ? ('sell' as const) : ('buy' as const);
+			const who = trader.name ?? 'Someone';
+			const tokens = (1000 + ((index * 7919) % 90000)).toLocaleString('en-US');
+			return {
+				t,
+				price: point.p,
+				side,
+				title: `${who} ${side === 'buy' ? 'bought' : 'sold'} ${tokens} WIF`,
+				avatar: trader.avatar,
+				name: trader.name,
+				...(index === 1 ? { note: { text: '+8.1% vs your buy', up: true } } : {})
+			};
+		});
+	});
+	let showMarkers = $state(true);
+
 	// Profit and loss around zero, for the baseline chart.
 	const pnlSeries = Array.from({ length: 48 }, (_, index) => ({ t: now - (47 - index) * hour, p: Math.round(Math.sin(index / 6) * 180 + index * 5 - 90) }));
 	const signed = (value: number) => `${value < 0 ? '-' : '+'}$${Math.abs(value).toLocaleString('en-US')}`;
@@ -324,23 +396,28 @@
 		</Card>
 	</div>
 
+	<Card title="Price history" icon="markets">
+		{#snippet actions()}
+			<SegmentedControl label="Chart kind" options={priceKinds} bind:value={priceKind} />
+		{/snippet}
+		<div class="chart-controls">
+			<RangePicker label="Chart range" options={priceRanges} bind:value={priceRange} collapseBelow={700} />
+			<label class="marker-toggle"><input type="checkbox" bind:checked={showMarkers} /> {markerCount} trades</label>
+		</div>
+		<SeriesChart
+			points={livePriceSeries}
+			kind={priceKind}
+			markers={showMarkers ? priceMarkers : []}
+			byTime
+			live
+			height={220}
+			format={formatPrice}
+			axisFormat={formatPriceAxis}
+			change={(difference) => `${difference < 0 ? '-' : '+'}$${Math.abs(difference).toFixed(5)}`}
+		/>
+	</Card>
+
 	<div class="row">
-		<Card title="Price history" icon="markets">
-			{#snippet actions()}
-				<SegmentedControl label="Chart kind" options={priceKinds} bind:value={priceKind} />
-			{/snippet}
-			<SeriesChart
-				points={livePriceSeries}
-				kind={priceKind}
-				markers={priceMarkers}
-				byTime
-				live
-				height={220}
-				format={formatPrice}
-				axisFormat={formatPriceAxis}
-				change={(difference) => `${difference < 0 ? '-' : '+'}$${Math.abs(difference).toFixed(5)}`}
-			/>
-		</Card>
 		<Card title="Profit/loss" icon="portfolio">
 			<SeriesChart points={pnlSeries} byTime baseline height={220} fixed format={signed} change={signed} noun="value" label="Profit/loss history" />
 		</Card>
@@ -636,6 +713,23 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+	}
+
+	.chart-controls {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		margin-bottom: var(--space-3);
+	}
+
+	.marker-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1-5);
+		color: var(--muted);
+		font-size: var(--text-sm);
 	}
 
 	.stats,

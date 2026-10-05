@@ -1,12 +1,25 @@
 <script lang="ts">
-	import { Area, Chart, Circle, Html, RectClipPath, Spline, Svg, type ChartState } from 'layerchart';
-	import { untrack } from 'svelte';
+	import type { IChartApi, ISeriesApi, Logical, SeriesType } from 'lightweight-charts';
+	import { tick, untrack } from 'svelte';
+	import { forgetAvatarWaiter, loadAvatar, avatarStatus, settleAvatar } from '../../../chart/avatars.js';
 	import { axisTime, chartDay, chartTime, spansYears } from '../../../chart/dates.js';
 	import {
+		clusterKey,
+		clusterLabel,
+		clusterMarkers,
+		clusterSide,
+		MARKER_CLUSTER_DISTANCE,
+		MARKER_CLUSTER_DISTANCE_COARSE,
+		markerFace,
+		type MarkerCluster,
+		type PlacedMarker
+	} from '../../../chart/markers.js';
+	import {
 		candleReading,
-		candleTrend,
-		candleWidth,
 		carriedIndex,
+		chartRows,
+		chartSlots,
+		colorWithAlpha,
 		guideLabels,
 		guideValues,
 		hasCandles,
@@ -17,23 +30,26 @@
 		markersInTime,
 		nearestIndex,
 		plotPoints,
+		seriesSummary,
+		slotAtTime,
 		timeTicks,
 		valueBounds,
 		withinPlotHeight,
+		xAtSlot,
 		type PlottedPoint,
 		type SeriesMarker,
 		type SeriesPoint
 	} from '../../../chart/series.js';
-	import type { ChartConfig } from './chart-utils.js';
-	import ChartContainer from './ChartContainer.svelte';
 	import ChartHint from './ChartHint.svelte';
-	import ChartTooltip from './ChartTooltip.svelte';
 
-	// A price or value over time, inspected by pointer, finger, keyboard and
-	// screen reader alike: a tooltip and crosshair for a mouse, the readout
-	// under the chart for touch and screen readers, a hidden range slider for
-	// the keyboard, and Escape to hide the tooltip. Drawn as a line over a
-	// gradient, or as candles when the points carry open, high and low.
+	// A price or value over time, drawn by Lightweight Charts (TradingView,
+	// Apache-2.0) on a canvas, and inspected by pointer, finger, keyboard and
+	// screen reader alike. The canvas only paints the line, area or candles;
+	// everything a person reads or reaches is DOM laid over it with the
+	// chart's own coordinates: the guides and time labels, the crosshair, a
+	// tooltip for a mouse, the readout under the chart for touch and screen
+	// readers, a hidden range slider for the keyboard, and the trade markers
+	// as real buttons. Escape hides the tooltip.
 
 	const uid = $props.id();
 
@@ -46,6 +62,7 @@
 		noun = 'price',
 		hint,
 		empty = 'Not enough history to draw a chart.',
+		summary,
 		byTime = false,
 		gap = 0,
 		fixed = false,
@@ -65,6 +82,7 @@
 		/** Candles need every point to carry o, h and l; otherwise a line is drawn. */
 		kind?: 'line' | 'candles';
 		height?: number;
+		/** Trades on the chart; each may carry the trader's `avatar` picture and `name`. */
 		markers?: SeriesMarker[];
 		label?: string;
 		/** What a point is, for the default hint: "price", "market cap". */
@@ -73,6 +91,8 @@
 		hint?: string;
 		/** Shown in place of the chart when there are fewer than two points. */
 		empty?: string;
+		/** The chart's description for screen readers; by default its span, start, end, high and low. */
+		summary?: string;
 		/** Place points by their time rather than evenly, so gaps show. */
 		byTime?: boolean;
 		/** With byTime, break the line where points are further apart than this, in ms. */
@@ -81,13 +101,13 @@
 		fixed?: boolean;
 		/** Draw a zero line, keep it in view and fill toward it: above it reads as gain, below as loss. */
 		baseline?: boolean;
-		/** Faint horizontal lines at round values, labelled at the right edge. */
+		/** Faint horizontal lines at round values, labelled at the left edge. */
 		guides?: boolean;
 		/** Times along the bottom edge. */
 		timeAxis?: boolean;
 		/** The last point is now: its dot pulses. */
 		live?: boolean;
-		/** Draw the line in and fade the fill when the data changes; off under reduced motion anyway. */
+		/** Reveal the chart from left to right when a new series arrives; off under reduced motion anyway. */
 		animate?: boolean;
 		/** How a value reads when inspected. */
 		format?: (n: number) => string;
@@ -106,38 +126,270 @@
 	const PAD = 8;
 	// The height of the row of times along the bottom, which guide labels keep out of.
 	const TICK_ROW = 16;
-
-	let context = $state<ChartState<PlottedPoint>>();
+	// The most trades a picked group lists before the list scrolls.
+	const LIST_ROWS = 4;
 
 	const formatAxis = $derived(axisFormat ?? format);
 	const candles = $derived(kind === 'candles' && hasCandles(points));
 	const plotted = $derived(plotPoints(points, byTime, gap));
-	const lone = $derived(lonePoints(plotted));
+	// Runs of one point, which a line alone would not show, by their index.
+	const lone = $derived.by(() => {
+		if (candles) return [];
+		const single = new Set(lonePoints(plotted));
+		return plotted.flatMap((point, index) => (single.has(point) ? [index] : []));
+	});
 	const bounds = $derived(valueBounds(plotted, baseline, candles));
 	const markersAlong = $derived(markersInTime(points, markers));
 	const withYear = $derived(spansYears(points));
 	const spanMs = $derived(points.length > 1 ? points[points.length - 1].t - points[0].t : 0);
+	// Each point's slot on the canvas's evenly spaced time scale, and what
+	// fills every slot: the points, the line between them, or nothing.
+	const slots = $derived(chartSlots(plotted, byTime, gap));
+	const rows = $derived(chartRows(plotted, slots, candles));
+	const description = $derived(summary ?? seriesSummary(points, candles, format, formatTime, withYear));
 
 	// Green when the range ends higher than it started, red when lower. The
-	// line, its fill and the tooltip all take this one colour.
+	// line, its fill and the end dot all take this one colour.
 	const up = $derived(points.length > 1 ? points[points.length - 1].p >= points[0].p : true);
 	const lineColor = $derived(up ? 'var(--up)' : 'var(--down)');
-	// ChartTooltip only draws a row, and calls its formatter, for a series
-	// with a label, so the one series needs one even though it is never shown.
-	const config = $derived({ p: { label: 'Value', color: lineColor } } satisfies ChartConfig);
-	const gradientId = $derived(`sui-series-fill-${uid.replace(/:/g, '')}`);
+	const sizing = $derived(fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}`);
 
-	const sizing = $derived(fixed ? `height: ${height}px; aspect-ratio: auto` : `aspect-ratio: 800 / ${height}`);
+	// The canvas chart. It is made in the browser once the plot is on the
+	// page, from a chunk of its own, so pages without a chart and server
+	// rendering never load it. Its coordinates change on every resize and new
+	// series, and layoutVersion moves then, so what is placed with them moves.
+	let host = $state<HTMLElement>();
+	let plotElement = $state<HTMLElement>();
+	let overlay = $state<HTMLElement>();
+	let library_: typeof import('lightweight-charts') | null = null;
+	let chart: IChartApi | null = null;
+	let series: ISeriesApi<SeriesType> | null = null;
+	let seriesShape = '';
+	let ready = $state(false);
+	let layoutVersion = $state(0);
+	let plotWidth = $state(0);
+	let plotHeight = $state(0);
 
-	// The marks are drawn afresh, and animated in, when the series changes.
-	const seriesKey = $derived(`${kind}|${plotted.length}|${plotted[0]?.t ?? 0}|${plotted[plotted.length - 1]?.t ?? 0}`);
+	/** xAt is the left of a fractional slot on the plot, in pixels. */
+	function xAt(slot: number): number {
+		void layoutVersion;
+		if (!chart) return 0;
+		// The time scale converts whole slots; a slot between two is placed between them.
+		const scale = chart.timeScale();
+		const below = Math.floor(slot);
+		const from = scale.logicalToCoordinate(below as Logical) ?? 0;
+		if (slot === below) return from;
+		const to = scale.logicalToCoordinate((below + 1) as Logical) ?? from;
+		return from + (to - from) * (slot - below);
+	}
+
+	/** yAt is the top of a value on the plot, in pixels. */
+	function yAt(value: number): number {
+		void layoutVersion;
+		return series?.priceToCoordinate(value) ?? 0;
+	}
+
+	/** pointLeft is where the plotted point at this index sits across the plot. */
+	function pointLeft(index: number): number {
+		return xAt(slots[index] ?? 0);
+	}
+
+	// The theme's colours, for the canvas, which cannot read CSS variables.
+	// Read again when the theme changes, by the toggle or the system.
+	let palette = $state({ up: '', down: '' });
+
+	function readPalette() {
+		if (!plotElement) return;
+		const style = getComputedStyle(plotElement);
+		const next = { up: style.getPropertyValue('--up').trim() || '#1d7a4c', down: style.getPropertyValue('--down').trim() || '#b4322c' };
+		if (next.up !== palette.up || next.down !== palette.down) palette = next;
+	}
+
+	$effect(() => {
+		if (!plotElement) return;
+		readPalette();
+		const dark = window.matchMedia('(prefers-color-scheme: dark)');
+		const observer = new MutationObserver(readPalette);
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] });
+		dark.addEventListener('change', readPalette);
+		return () => {
+			observer.disconnect();
+			dark.removeEventListener('change', readPalette);
+		};
+	});
+
+	// A finger needs markers further apart before they group.
+	let coarse = $state(false);
+	$effect(() => {
+		const query = window.matchMedia('(pointer: coarse)');
+		const update = () => (coarse = query.matches);
+		update();
+		query.addEventListener('change', update);
+		return () => query.removeEventListener('change', update);
+	});
+
+	let layoutFrame = 0;
+	/** relayout moves the DOM layer once the canvas has redrawn, at most once a frame. */
+	function relayout() {
+		if (layoutFrame) return;
+		layoutFrame = requestAnimationFrame(() => {
+			layoutFrame = 0;
+			if (!host || !chart) return;
+			plotWidth = host.clientWidth;
+			plotHeight = host.clientHeight;
+			layoutVersion++;
+		});
+	}
+
+	/** fit keeps the whole series in view with PAD pixels above and below it, as the plot's size changes. */
+	function fit() {
+		if (!host || !chart) return;
+		const margin = host.clientHeight > 0 ? Math.min(0.2, PAD / host.clientHeight) : 0.05;
+		chart.priceScale('right').applyOptions({ scaleMargins: { top: margin, bottom: margin } });
+		chart.timeScale().fitContent();
+		relayout();
+	}
+
+	/** labelAttribution names TradingView's attribution link, which its license asks to keep, and keeps it out of the way. */
+	function labelAttribution() {
+		const link = host?.querySelector<HTMLAnchorElement>('a#tv-attr-logo');
+		if (!link) return;
+		link.setAttribute('aria-label', 'Charting by TradingView (opens in a new tab)');
+		link.setAttribute('rel', 'noopener');
+		link.removeAttribute('title');
+		link.classList.add('sui-series-attribution');
+		link.querySelector('svg')?.setAttribute('aria-hidden', 'true');
+	}
+
+	// Made once the plot is on the page, and removed with it.
+	$effect(() => {
+		const element = host;
+		if (!element) return;
+		let disposed = false;
+		let resizeObserver: ResizeObserver | undefined;
+		import('lightweight-charts').then((library) => {
+			if (disposed) return;
+			library_ = library;
+			chart = library.createChart(element, {
+				autoSize: true,
+				layout: { background: { type: library.ColorType.Solid, color: 'transparent' }, attributionLogo: true, textColor: '#888' },
+				grid: { vertLines: { visible: false }, horzLines: { visible: false } },
+				rightPriceScale: { visible: false, scaleMargins: { top: 0.05, bottom: 0.05 } },
+				leftPriceScale: { visible: false },
+				timeScale: { visible: false, fixLeftEdge: true, fixRightEdge: true, rightOffset: 0, minBarSpacing: 0.001, lockVisibleTimeRangeOnResize: true },
+				crosshair: { mode: library.CrosshairMode.Hidden, vertLine: { visible: false, labelVisible: false }, horzLine: { visible: false, labelVisible: false } },
+				handleScroll: false,
+				handleScale: false,
+				kineticScroll: { touch: false, mouse: false }
+			});
+			// The chart lays itself out in a table; it is not a data table.
+			element.querySelector('table')?.setAttribute('role', 'presentation');
+			labelAttribution();
+			chart.timeScale().subscribeVisibleLogicalRangeChange(relayout);
+			resizeObserver = new ResizeObserver(fit);
+			resizeObserver.observe(element);
+			ready = true;
+		});
+		return () => {
+			disposed = true;
+			resizeObserver?.disconnect();
+			if (layoutFrame) cancelAnimationFrame(layoutFrame);
+			layoutFrame = 0;
+			chart?.remove();
+			chart = null;
+			series = null;
+			seriesShape = '';
+			ready = false;
+		};
+	});
+
+	let currentBounds: { min: number; span: number } | null = null;
+	let revealedKey = '';
+
+	// Draws the series whenever the points, the kind or the theme change.
+	$effect(() => {
+		const data = rows;
+		const shape = candles ? 'candles' : baseline ? 'baseline' : 'area';
+		const colors = { ...palette, line: up ? palette.up : palette.down };
+		const fitBounds = bounds;
+		const first = plotted[0]?.t;
+		if (!ready) return;
+		untrack(() => {
+			if (!chart || !library_) return;
+			currentBounds = fitBounds;
+			if (shape !== seriesShape) {
+				if (series) chart.removeSeries(series);
+				series = addSeries(library_, chart, shape);
+				seriesShape = shape;
+			}
+			series?.applyOptions(seriesColors(shape, colors));
+			series?.setData(data as never[]);
+			fit();
+			// The theme also redraws the attribution logo.
+			labelAttribution();
+			reveal(`${shape}|${first}`);
+		});
+	});
+
+	function addSeries(library: typeof import('lightweight-charts'), target: IChartApi, shape: string): ISeriesApi<SeriesType> {
+		const common = {
+			priceLineVisible: false,
+			lastValueVisible: false,
+			// The view fits the data rather than zero, or keeps zero in view with a baseline.
+			autoscaleInfoProvider: () => (currentBounds ? { priceRange: { minValue: currentBounds.min, maxValue: currentBounds.min + currentBounds.span } } : null)
+		};
+		if (shape === 'candles') return target.addSeries(library.CandlestickSeries, { ...common, borderVisible: true });
+		if (shape === 'baseline') {
+			return target.addSeries(library.BaselineSeries, { ...common, baseValue: { type: 'price', price: 0 }, lineWidth: 2, crosshairMarkerVisible: false });
+		}
+		return target.addSeries(library.AreaSeries, { ...common, lineWidth: 2, crosshairMarkerVisible: false, lineType: library.LineType.Simple });
+	}
+
+	/** seriesColors paints the series from the theme: hollow rising candles, a gain and loss baseline, or a line over a fading fill. */
+	function seriesColors(shape: string, colors: { up: string; down: string; line: string }) {
+		if (shape === 'candles') {
+			// Shape as well as colour: a rising candle is hollow, a falling one filled.
+			return {
+				upColor: 'rgba(0, 0, 0, 0)',
+				borderUpColor: colors.up,
+				wickUpColor: colors.up,
+				downColor: colors.down,
+				borderDownColor: colors.down,
+				wickDownColor: colors.down
+			};
+		}
+		if (shape === 'baseline') {
+			return {
+				topLineColor: colors.up,
+				topFillColor1: colorWithAlpha(colors.up, 0.28),
+				topFillColor2: colorWithAlpha(colors.up, 0.04),
+				bottomLineColor: colors.down,
+				bottomFillColor1: colorWithAlpha(colors.down, 0.04),
+				bottomFillColor2: colorWithAlpha(colors.down, 0.28)
+			};
+		}
+		return { lineColor: colors.line, topColor: colorWithAlpha(colors.line, 0.28), bottomColor: colorWithAlpha(colors.line, 0) };
+	}
+
+	/** reveal wipes a new series in from the left; a live tick on the same series does not. Nothing moves under reduced motion. */
+	function reveal(key: string) {
+		if (key === revealedKey) return;
+		revealedKey = key;
+		if (!animate || !host || typeof host.animate !== 'function') return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		host.animate([{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], {
+			duration: candles ? 600 : 900,
+			easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+		});
+	}
 
 	// What is being inspected. The pointer, the keyboard slider and the trade
 	// markers all set it, and the tooltip, crosshair and readout follow it.
 	let inspectedIndex = $state<number | null>(null);
 	let pointerInGap = $state(false);
-	let hoveredMarker = $state<SeriesMarker | null>(null);
-	let pickedMarker = $state<SeriesMarker | null>(null);
+	// A group of trades under the pointer or focus, and one picked by a press.
+	let hoveredGroup = $state<SeriesMarker[] | null>(null);
+	let pickedGroup = $state<SeriesMarker[] | null>(null);
 	// A finger covers a floating tooltip, so touch inspects through the
 	// readout alone, and it stays after the finger lifts.
 	let touching = $state(false);
@@ -151,7 +403,10 @@
 	const inspected = $derived(inspectedIndex == null ? null : (plotted[inspectedIndex] ?? null));
 	// A marker under the pointer or focus comes first, then an inspected
 	// point, so inspecting after a pick shows the point, and then the pick.
-	const shownMarker = $derived(hoveredMarker ?? (inspected ? null : pickedMarker));
+	const shownGroup = $derived(hoveredGroup ?? (inspected ? null : pickedGroup));
+	// A picked group lists its trades under the readout until a point is inspected.
+	const listShown = $derived(!inspected && pickedGroup != null && pickedGroup.length > 1);
+	const pickedKey = $derived(pickedGroup ? clusterKey(pickedGroup) : null);
 
 	// New points keep what is inspected on the same moment, so a live tick
 	// does not throw away a keyboard or touch inspection. When that moment is
@@ -171,51 +426,103 @@
 	$effect.pre(() => {
 		void markerKeys;
 		untrack(() => {
-			pickedMarker = null;
-			hoveredMarker = null;
+			pickedGroup = null;
+			hoveredGroup = null;
 		});
 	});
 
-	/** Markers in pixels on this chart, leaving out those well off the plotted range. */
-	function placeMarkers(chart: ChartState<PlottedPoint>) {
-		return markersAlong
-			.map((marker) => ({ ...marker, left: marker.along * chart.width, top: chart.yScale(marker.price) }))
-			.filter((marker) => withinPlotHeight(marker.top, chart.height));
+	// The markers in pixels, leaving out those well off the plotted range,
+	// and grouped where they would cover each other.
+	const clusters = $derived.by((): MarkerCluster<PlacedMarker>[] => {
+		void layoutVersion;
+		if (!ready || plotHeight <= 0) return [];
+		const placed: PlacedMarker[] = [];
+		for (const marker of markersAlong) {
+			const top = yAt(marker.price);
+			if (!withinPlotHeight(top, plotHeight)) continue;
+			placed.push({ ...marker, left: xAt(slotAtTime(plotted, slots, marker.t)), top });
+		}
+		return clusterMarkers(placed, coarse ? MARKER_CLUSTER_DISTANCE_COARSE : MARKER_CLUSTER_DISTANCE);
+	});
+
+	// Traders' pictures load once the chart is near the screen, only for the
+	// markers drawn, once per page; until then, and if one fails, the
+	// marker shows initials or the buy or sell shape in the same circle.
+	let nearScreen = $state(false);
+	let avatarVersion = $state(0);
+	const avatarSettled = () => avatarVersion++;
+	$effect(() => {
+		if (!plotElement) return;
+		if (typeof IntersectionObserver === 'undefined') {
+			nearScreen = true;
+			return;
+		}
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((entry) => entry.isIntersecting)) {
+					nearScreen = true;
+					observer.disconnect();
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+		observer.observe(plotElement);
+		return () => observer.disconnect();
+	});
+	$effect(() => {
+		if (!nearScreen) return;
+		for (const cluster of clusters) {
+			const url = cluster.members[0].avatar;
+			if (url) untrack(() => loadAvatar(url, avatarSettled));
+		}
+	});
+	$effect(() => () => forgetAvatarWaiter(avatarSettled));
+
+	// The trade whose marker has focus. A live trade, a resize or a rotation
+	// can merge or split groups, which replaces the focused button; focus
+	// then moves to the button whose group holds that trade (WCAG 2.4.3).
+	let focusedTrade: string | null = null;
+	let markersLayer = $state<HTMLElement>();
+	$effect(() => {
+		void clusters;
+		untrack(() => {
+			if (!focusedTrade || !markersLayer) return;
+			const trade = focusedTrade;
+			tick().then(() => {
+				const active = document.activeElement;
+				if (active && active !== document.body) return;
+				const button = [...(markersLayer?.querySelectorAll<HTMLElement>('.marker') ?? [])].find((candidate) =>
+					(candidate.dataset.trades ?? '').split('\n').includes(trade)
+				);
+				button?.focus();
+			});
+		});
+	});
+
+	function faceOf(marker: SeriesMarker) {
+		void avatarVersion;
+		return markerFace(marker, marker.avatar ? avatarStatus(marker.avatar) : undefined);
 	}
 
-	function isPicked(marker: SeriesMarker) {
-		return pickedMarker != null && markerKey(pickedMarker) === markerKey(marker);
+	function avatarFailed(url: string) {
+		settleAvatar(url, 'failed');
+		avatarVersion++;
 	}
 
 	// The tooltip shows what is inspected, unless a finger is down or Escape hid it.
-	$effect(() => {
-		const chart = context;
-		if (!chart) return;
-		const marker = hoveredMarker;
-		const point = inspected;
-		const visible = !touching && !tooltipDismissed;
-		untrack(() => {
-			if (visible && marker) {
-				// The tooltip needs a point of the series to draw; it shows the trade instead.
-				const along = markersAlong.find((candidate) => markerKey(candidate) === markerKey(marker))?.along ?? 1;
-				const nearest = plotted[nearestIndex(plotted, xAlong(along))];
-				chart.tooltip.show({ data: nearest, point: { x: along * chart.width, y: chart.yScale(marker.price) } });
-				return;
-			}
-			if (visible && point && !pointerInGap) chart.tooltip.show({ data: point });
-			else chart.tooltip.hide();
-		});
+	const tooltipShown = $derived(!touching && !tooltipDismissed && (hoveredGroup != null || (inspected != null && !pointerInGap)));
+	const hoveredCluster = $derived(hoveredGroup ? clusters.find((cluster) => clusterKey(cluster.members) === clusterKey(hoveredGroup!)) : undefined);
+	const tooltipLeft = $derived.by(() => {
+		if (hoveredCluster) return hoveredCluster.left;
+		return inspectedIndex == null ? 0 : pointLeft(inspectedIndex);
 	});
 
-	/** xAlong is the x value this fraction of the way across the plot. */
-	function xAlong(fraction: number) {
-		const first = plotted[0].x;
-		return first + Math.min(1, Math.max(0, fraction)) * (plotted[plotted.length - 1].x - first);
-	}
-
 	/** inspectAt finds the point under a pointer at this many pixels from the left of the plot. */
-	function inspectAt(chart: ChartState<PlottedPoint>, left: number) {
-		const x = xAlong(left / chart.width);
+	function inspectAt(left: number) {
+		if (!chart || plotted.length === 0) return;
+		const logical = chart.timeScale().coordinateToLogical(left);
+		if (logical == null) return;
+		const x = xAtSlot(plotted, slots, logical);
 		const index = nearestIndex(plotted, x);
 		inspectedIndex = index;
 		pointerInGap = inGap(plotted[index], x, byTime, gap);
@@ -224,19 +531,25 @@
 	}
 
 	function onPlotPointer(event: PointerEvent) {
-		if (!context || (event.target as Element).closest('.marker')) return;
+		const target = event.target as Element;
+		if (!overlay || target.closest('.marker, a, .scrub')) return;
 		touching = event.pointerType === 'touch';
-		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-		inspectAt(context, event.clientX - rect.left);
+		inspectAt(event.clientX - overlay.getBoundingClientRect().left);
 	}
 
 	/** A marker under the pointer or focus takes over from any inspected point. */
-	function showMarker(marker: SeriesMarker) {
+	function showGroup(members: SeriesMarker[]) {
 		inspectedIndex = null;
 		pointerInGap = false;
 		tooltipDismissed = false;
 		scrubbing = false;
-		hoveredMarker = marker;
+		hoveredGroup = members;
+	}
+
+	function togglePick(members: SeriesMarker[]) {
+		pickedGroup = pickedKey === clusterKey(members) ? null : members;
+		// A press shows the pick in full, the list of a group's trades with it.
+		hoveredGroup = null;
 	}
 
 	function stopInspecting() {
@@ -245,8 +558,6 @@
 		touching = false;
 		scrubbing = false;
 	}
-
-	let plotElement = $state<HTMLElement>();
 
 	// A touch inspection stays until the next tap outside the chart or a scroll.
 	$effect(() => {
@@ -263,7 +574,7 @@
 	});
 
 	function onWindowKey(event: KeyboardEvent) {
-		if (event.key === 'Escape' && (inspected || hoveredMarker)) tooltipDismissed = true;
+		if (event.key === 'Escape' && (inspected || hoveredGroup)) tooltipDismissed = true;
 	}
 
 	// Keyboard inspection: a visually hidden range input that moves the same
@@ -300,9 +611,11 @@
 		return `${value}, ${formatTime(sliderPoint.t, withYear)}${since ? `, ${since.text}` : ''}`;
 	});
 
-	/** A marker's name to screen readers: the trade, when, and any note, as the readout shows them. */
-	function markerLabel(marker: SeriesMarker) {
-		return [marker.title, formatTime(marker.t, withYear), marker.note?.text].filter(Boolean).join(', ');
+	/** groupSpan is when a group's trades ran: "Sep 25, 5:21 AM to Sep 25, 6:40 AM". */
+	function groupSpan(members: SeriesMarker[]) {
+		const first = formatTime(members[0].t, withYear);
+		const last = formatTime(members[members.length - 1].t, withYear);
+		return first === last ? first : `${first} to ${last}`;
 	}
 
 	// The slider and a focused marker announce themselves, and a pointer
@@ -310,7 +623,7 @@
 	// the rest, such as a marker picked by pointer. The hint shown while
 	// nothing is inspected sits outside the live part, so a caller's hint
 	// that changes with every live tick is never read out (WCAG 2.2.2).
-	const readoutLive = $derived(!sliderFocused && !scrubbing && !hoveredMarker);
+	const readoutLive = $derived(!sliderFocused && !scrubbing && !hoveredGroup);
 
 	// The guides and their labels, and the times along the bottom.
 	const guideLines = $derived(guides && bounds ? guideValues(bounds.min, bounds.span).filter((value) => !(baseline && value === 0)) : []);
@@ -318,54 +631,47 @@
 	// 48-hour range, is left out.
 	const tickLabels = $derived(
 		(timeAxis ? timeTicks(plotted) : [])
-			.map((tick) => ({ ...tick, label: axisTime(tick.t, spanMs, withYear) }))
+			.map((tick) => ({ ...tick, index: plotted.indexOf(tick), label: axisTime(tick.t, spanMs, withYear) }))
 			.filter((tick, index, all) => index === 0 || tick.label !== all[index - 1].label)
 	);
-	const last = $derived(plotted[plotted.length - 1]);
+	const lastIndex = $derived(plotted.length - 1);
+	const last = $derived(plotted[lastIndex]);
+	const active = $derived(inspected && !pointerInGap ? inspected : null);
 
 	/** The guides that get a label: none in the time axis's row, and one at most on a short chart. */
-	function labelledGuides(chart: ChartState<PlottedPoint>) {
-		const placed = guideLines.map((value) => ({ value, y: chart.yScale(value) }));
-		return guideLabels(placed, chart.height, tickLabels.length > 0 ? TICK_ROW : 0);
+	const labelledGuides = $derived.by(() => {
+		if (!ready) return [];
+		const placed = guideLines.map((value) => ({ value, y: yAt(value) }));
+		return guideLabels(placed, plotHeight, tickLabels.length > 0 ? TICK_ROW : 0);
+	});
+
+	/** The ring and badge side of a marker or group, as a class. */
+	function sideClass(members: SeriesMarker[]) {
+		return clusterSide(members);
 	}
 </script>
 
 <svelte:window onkeydown={onWindowKey} />
 
-{#snippet line(chart: ChartState<PlottedPoint>, tone: 'line' | 'up' | 'down' = 'line')}
-	<!-- Filled down to the bottom edge, or toward zero with a baseline, in a
-	     gradient that fades out so the line stays the subject. -->
-	<Area z="run" y0={() => (baseline ? 0 : chart.yScale.domain()[0])} fill="url(#{gradientId}-{tone})" class="area" />
-	<Spline z="run" pathLength={1} class="line" />
-	{#each lone as point (point.t)}
-		<Circle cx={chart.xScale(point.x)} cy={chart.yScale(point.p)} r={2} class="lone" />
-	{/each}
-{/snippet}
-
-{#snippet candleMarks(chart: ChartState<PlottedPoint>)}
-	{@const width = candleWidth(chart.width, plotted.length)}
-	{#each plotted as point, index (point.t)}
-		{#if isCandle(point)}
-			{@const x = chart.xScale(point.x)}
-			{@const top = chart.yScale(Math.max(point.o, point.p))}
-			{@const bottom = top + Math.max(1, chart.yScale(Math.min(point.o, point.p)) - top)}
-			<!-- Shape as well as colour: a rising candle is hollow, a falling one
-			     filled. The wick stops at the body, so a hollow body stays empty. -->
-			<g class="candle {candleTrend(point)}" class:inspected={inspected === point && !pointerInGap} style="--i: {Math.min(index, 80)}">
-				<line x1={x} y1={chart.yScale(point.h)} x2={x} y2={top} class="wick" />
-				<line x1={x} y1={bottom} x2={x} y2={chart.yScale(point.l)} class="wick" />
-				<rect x={x - width / 2} y={top} {width} height={bottom - top} class="body" />
-			</g>
+{#snippet sideShape(side: 'buy' | 'sell' | 'mixed', size: number)}
+	<!-- Shape as well as colour: up for a buy, down for a sell, both for a mix. -->
+	<svg viewBox="0 0 12 12" width={size} height={size} aria-hidden="true" class="shape">
+		{#if side === 'buy'}
+			<polygon class="buy-fill" points="6,1 11.5,10.5 0.5,10.5" />
+		{:else if side === 'sell'}
+			<polygon class="sell-fill" points="0.5,1.5 11.5,1.5 6,11" />
+		{:else}
+			<polygon class="buy-fill" points="6,0.5 10.5,5.25 1.5,5.25" />
+			<polygon class="sell-fill" points="1.5,6.75 10.5,6.75 6,11.5" />
 		{/if}
-	{/each}
+	</svg>
 {/snippet}
 
 {#if !bounds}
-	<p class="sui-series-empty" style={sizing}>{empty}</p>
+	<p class="sui-series-empty" style={fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}`}>{empty}</p>
 {:else}
 	<div
 		class="sui-series-chart {extraClass}"
-		class:animate
 		style="--stroke: {lineColor}"
 		bind:this={plotElement}
 		onpointermove={onPlotPointer}
@@ -376,168 +682,183 @@
 		onpointercancel={stopInspecting}
 		role="presentation"
 	>
-		<!-- Before the chart, so keyboard focus reaches it before the trade
-		     markers. It sits on the inspected point, so screen magnifiers follow. -->
-		<input
-			class="scrub"
-			style={context && sliderPoint ? `left: ${context.xScale(sliderPoint.x)}px; top: ${context.yScale(sliderPoint.p)}px` : undefined}
-			type="range"
-			min="0"
-			max={plotted.length - 1}
-			step="1"
-			value={sliderIndex}
-			aria-label={label}
-			aria-valuetext={sliderText}
-			onfocus={() => {
-				sliderFocused = true;
-				pickedMarker = null;
-				inspectIndex(sliderIndex);
-			}}
-			onblur={() => {
-				sliderFocused = false;
-				stopInspecting();
-			}}
-			oninput={(event) => inspectIndex(event.currentTarget.valueAsNumber)}
-		/>
-		<ChartContainer {config} style={sizing}>
-			<Chart
-				bind:context
-				data={plotted}
-				x="x"
-				y="p"
-				yDomain={[bounds.min, bounds.min + bounds.span]}
-				yPadding={[PAD, PAD]}
-				series={[{ key: 'p', label: config.p.label, color: lineColor }]}
-				tooltipContext={{ mode: 'manual' }}
-			>
-				{#snippet children({ context: chart })}
-					{@const active = inspected && !pointerInGap ? inspected : null}
-					<Svg role="img" aria-label={label}>
-						<defs>
-							<!-- One gradient in the line's colour, and one each for the gain
-							     and loss halves of a baseline chart. -->
-							{#each ['line', 'up', 'down'] as tone (tone)}
-								<linearGradient id="{gradientId}-{tone}" x1="0" y1="0" x2="0" y2="1" class="fill {tone}">
-									<stop offset="0%" class="fill-start" />
-									<stop offset="100%" class="fill-end" />
-								</linearGradient>
-							{/each}
-						</defs>
-						{#each guideLines as value (value)}
-							{@const y = chart.yScale(value)}
-							<line x1={0} y1={y} x2={chart.width} y2={y} class="guide" />
-						{/each}
-						{#key seriesKey}
-							{#if candles}
-								{@render candleMarks(chart)}
-							{:else if baseline}
-								{@const zeroTop = chart.yScale(0)}
-								<!-- The same line twice, clipped above zero as gain and below as loss. -->
-								<RectClipPath x={0} y={0} width={chart.width} height={zeroTop}>
-									<g class="gain">{@render line(chart, 'up')}</g>
-								</RectClipPath>
-								<RectClipPath x={0} y={zeroTop} width={chart.width} height={chart.height - zeroTop}>
-									<g class="loss">{@render line(chart, 'down')}</g>
-								</RectClipPath>
-								<line x1={0} y1={zeroTop} x2={chart.width} y2={zeroTop} class="zero" />
-							{:else}
-								{@render line(chart)}
-							{/if}
-						{/key}
-						{#if active}
-							<line x1={chart.xScale(active.x)} y1={0} x2={chart.xScale(active.x)} y2={chart.height} class="cursor" />
-							<line x1={0} y1={chart.yScale(active.p)} x2={chart.width} y2={chart.yScale(active.p)} class="cursor level" />
-						{/if}
-					</Svg>
-					<Html>
-						<!-- The labels repeat what the slider and the readout say, so
-						     screen readers skip them. -->
-						{#each labelledGuides(chart) as value (value)}
-							<span class="guide-label" style="top: {chart.yScale(value)}px" aria-hidden="true">{formatAxis(value)}</span>
-						{/each}
-						{#each tickLabels as tick, index (tick.t)}
-							<span class="tick" class:first={index === 0} class:last={index === tickLabels.length - 1} style="left: {chart.xScale(tick.x)}px" aria-hidden="true">{tick.label}</span>
-						{/each}
-						{#if !candles && last && !active}
-							<!-- The latest point, pulsing a few times when it is live, and
-							     again when a new one arrives. -->
-							{#key last.t}
-								<span class="dot end" class:live style="left: {chart.xScale(last.x)}px; top: {chart.yScale(last.p)}px{baseline ? `; --stroke: ${last.p >= 0 ? 'var(--up)' : 'var(--down)'}` : ''}"></span>
-							{/key}
-						{/if}
-						{#if active}
-							<!-- With a baseline the inspected point is a gain or a loss by its side of zero. -->
+		<div class="plot" style={sizing}>
+			<!-- Before the chart, so keyboard focus reaches it before the trade
+			     markers. It sits on the inspected point, so screen magnifiers follow. -->
+			<input
+				class="scrub"
+				style={ready && sliderPoint ? `left: ${pointLeft(Math.min(sliderIndex, lastIndex))}px; top: ${yAt(sliderPoint.p)}px` : undefined}
+				type="range"
+				min="0"
+				max={plotted.length - 1}
+				step="1"
+				value={sliderIndex}
+				aria-label={label}
+				aria-valuetext={sliderText}
+				aria-describedby={description ? `${uid}-summary` : undefined}
+				onfocus={() => {
+					sliderFocused = true;
+					pickedGroup = null;
+					inspectIndex(sliderIndex);
+				}}
+				onblur={() => {
+					sliderFocused = false;
+					stopInspecting();
+				}}
+				oninput={(event) => inspectIndex(event.currentTarget.valueAsNumber)}
+			/>
+
+			<!-- Behind the canvas: the guides and the zero line. -->
+			<div class="layer back" aria-hidden="true">
+				{#if ready}
+					{#each guideLines as value (value)}
+						<span class="guide" style="top: {yAt(value)}px"></span>
+					{/each}
+					{#if baseline}
+						<span class="zero" style="top: {yAt(0)}px"></span>
+					{/if}
+				{/if}
+			</div>
+
+			<!-- The picture of the chart for screen readers, and where a pointer
+			     or finger inspects it. -->
+			<div class="layer touch" bind:this={overlay} role="img" aria-label={label} aria-describedby={description ? `${uid}-summary` : undefined}></div>
+			<span id="{uid}-summary" hidden>{description}</span>
+
+			<!-- Over the canvas: the labels, the crosshair and the dots. They
+			     repeat what the slider and the readout say, so screen readers skip them. -->
+			<div class="layer front" aria-hidden="true">
+				{#if ready}
+					{#each labelledGuides as value (value)}
+						<span class="guide-label" style="top: {yAt(value)}px">{formatAxis(value)}</span>
+					{/each}
+					{#each tickLabels as tick, index (tick.t)}
+						<span class="tick" class:first={index === 0} class:last={index === tickLabels.length - 1} style="left: {pointLeft(tick.index)}px">{tick.label}</span>
+					{/each}
+					{#each lone as index (plotted[index].t)}
+						<span class="lone" style="left: {pointLeft(index)}px; top: {yAt(plotted[index].p)}px"></span>
+					{/each}
+					{#if baseline}
+						<span class="zero-label" style="top: {yAt(0)}px">{formatAxis(0)}</span>
+					{/if}
+					{#if !candles && last && !active}
+						<!-- The latest point, pulsing a few times when it is live, and
+						     again when a new one arrives. -->
+						{#key last.t}
 							<span
-								class="dot"
-								class:hidden={candles}
-								style="left: {chart.xScale(active.x)}px; top: {chart.yScale(active.p)}px{baseline
-									? `; --stroke: ${active.p >= 0 ? 'var(--up)' : 'var(--down)'}`
-									: ''}"
+								class="dot end"
+								class:live
+								class:animate
+								style="left: {pointLeft(lastIndex)}px; top: {yAt(last.p)}px{baseline ? `; --stroke: ${last.p >= 0 ? 'var(--up)' : 'var(--down)'}` : ''}"
 							></span>
-							<span class="level-label" style="top: {chart.yScale(active.p)}px" aria-hidden="true">{formatAxis(active.p)}</span>
+						{/key}
+					{/if}
+					{#if active && inspectedIndex != null}
+						{@const left = pointLeft(inspectedIndex)}
+						{@const top = yAt(active.p)}
+						<span class="cursor vertical" style="left: {left}px"></span>
+						<span class="cursor horizontal" style="top: {top}px"></span>
+						{#if !candles}
+							<!-- With a baseline the inspected point is a gain or a loss by its side of zero. -->
+							<span class="dot" style="left: {left}px; top: {top}px{baseline ? `; --stroke: ${active.p >= 0 ? 'var(--up)' : 'var(--down)'}` : ''}"></span>
 						{/if}
-						{#if baseline}
-							<span class="zero-label" style="top: {chart.yScale(0)}px" aria-hidden="true">{formatAxis(0)}</span>
-						{/if}
-						{#each placeMarkers(chart) as marker (markerKey(marker))}
-							<button
-								class="marker {marker.side}"
-								class:picked={isPicked(marker)}
-								style="left: {marker.left}px; top: {marker.top}px"
-								aria-label={markerLabel(marker)}
-								aria-pressed={isPicked(marker)}
-								onclick={() => (pickedMarker = isPicked(marker) ? null : marker)}
-								onpointerenter={(event) => {
-									touching = event.pointerType === 'touch';
-									showMarker(marker);
-								}}
-								onpointerleave={() => (hoveredMarker = null)}
-								onfocus={() => {
-									touching = false;
-									showMarker(marker);
-								}}
-								onblur={() => (hoveredMarker = null)}
-							>
-								<svg viewBox="0 0 12 12" aria-hidden="true">
-									<!-- Shape as well as colour: up for a buy, down for a sell. -->
-									<polygon points={marker.side === 'buy' ? '6,1 11.5,10.5 0.5,10.5' : '0.5,1.5 11.5,1.5 6,11'} />
-								</svg>
-							</button>
-						{/each}
-					</Html>
-					<ChartTooltip
-						aria-hidden="true"
-						hideIndicator
-						labelFormatter={() => (hoveredMarker ? hoveredMarker.title : inspected ? formatTime(inspected.t, withYear) : '')}
+						<span class="level-label" style="top: {top}px">{formatAxis(active.p)}</span>
+					{/if}
+				{/if}
+			</div>
+
+			<!-- The trades, as buttons, grouped where they would cover each other. -->
+			<div class="layer markers" bind:this={markersLayer}>
+				{#each clusters as cluster (clusterKey(cluster.members))}
+					{@const members = cluster.members}
+					{@const key = clusterKey(members)}
+					{@const side = sideClass(members)}
+					{@const face = faceOf(members[0])}
+					<button
+						type="button"
+						class="marker {side}"
+						data-trades={members.map(markerKey).join('\n')}
+						class:picked={pickedKey === key}
+						class:face={face.kind !== 'shape'}
+						style="left: {cluster.left}px; top: {cluster.top}px"
+						aria-label={clusterLabel(members, formatTime, withYear)}
+						aria-pressed={pickedKey === key}
+						onclick={() => togglePick(members)}
+						onpointerenter={(event) => {
+							touching = event.pointerType === 'touch';
+							showGroup(members);
+						}}
+						onpointerleave={() => (hoveredGroup = null)}
+						onfocus={() => {
+							touching = false;
+							focusedTrade = markerKey(members[0]);
+							showGroup(members);
+						}}
+						onblur={(event) => {
+							hoveredGroup = null;
+							const button = event.currentTarget;
+							// A button removed by a regroup keeps its trade for the new group to take focus.
+							queueMicrotask(() => {
+								if (button.isConnected) focusedTrade = null;
+							});
+						}}
 					>
-						{#snippet formatter({ value })}
-							{#if hoveredMarker}
-								<span class="tooltip-value">{formatTime(hoveredMarker.t, withYear)}</span>
-							{:else if candles && inspected && isCandle(inspected)}
-								<dl class="ohlc" class:rise={inspected.p >= inspected.o} class:fall={inspected.p < inspected.o}>
-									<dt>O</dt><dd>{format(inspected.o)}</dd>
-									<dt>H</dt><dd>{format(inspected.h)}</dd>
-									<dt>L</dt><dd>{format(inspected.l)}</dd>
-									<dt>C</dt><dd>{format(inspected.p)}</dd>
-								</dl>
-							{:else}
-								<span class="tooltip-value">{format(value as number)}</span>
-							{/if}
-						{/snippet}
-					</ChartTooltip>
-				{/snippet}
-			</Chart>
-		</ChartContainer>
+						{#if face.kind === 'image'}
+							<img class="avatar" src={face.src} alt="" width="18" height="18" loading="lazy" decoding="async" draggable="false" onerror={() => avatarFailed(face.src)} />
+						{:else if face.kind === 'initials'}
+							<span class="avatar initials" aria-hidden="true">{face.text}</span>
+						{:else}
+							{@render sideShape(side, 11)}
+						{/if}
+						{#if face.kind !== 'shape'}
+							<span class="side-badge" aria-hidden="true">{@render sideShape(side, 7)}</span>
+						{/if}
+						{#if members.length > 1}
+							<span class="count" aria-hidden="true">+{members.length - 1}</span>
+						{/if}
+					</button>
+				{/each}
+			</div>
+
+			{#if ready && tooltipShown}
+				<div class="tooltip" class:flip={tooltipLeft > plotWidth / 2} style="left: {tooltipLeft}px" aria-hidden="true">
+					{#if hoveredGroup}
+						<div class="tooltip-label">{hoveredGroup.length === 1 ? hoveredGroup[0].title : `${hoveredGroup.length} trades`}</div>
+						<span class="tooltip-value">{groupSpan(hoveredGroup)}</span>
+					{:else if inspected}
+						<div class="tooltip-label">{formatTime(inspected.t, withYear)}</div>
+						{#if candles && isCandle(inspected)}
+							<dl class="ohlc" class:rise={inspected.p >= inspected.o} class:fall={inspected.p < inspected.o}>
+								<dt>O</dt><dd>{format(inspected.o)}</dd>
+								<dt>H</dt><dd>{format(inspected.h)}</dd>
+								<dt>L</dt><dd>{format(inspected.l)}</dd>
+								<dt>C</dt><dd>{format(inspected.p)}</dd>
+							</dl>
+						{:else}
+							<span class="tooltip-value">{format(inspected.p)}</span>
+						{/if}
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Lightweight Charts paints here, last, so TradingView's
+			     attribution link comes after the markers in the tab order. -->
+			<div class="host" bind:this={host}></div>
+		</div>
 	</div>
 
 	<div class="sui-series-readout">
 		<div class="readout-inspected" aria-live={readoutLive ? 'polite' : 'off'}>
-			{#if shownMarker}
-				<strong class={shownMarker.side === 'buy' ? 'buy-text' : 'sell-text'}>{shownMarker.title}</strong>
-				<span>{formatTime(shownMarker.t, withYear)}</span>
-				{#if shownMarker.note}
-					<span class={shownMarker.note.up ? 'up-text' : 'down-text'}>{shownMarker.note.text}</span>
+			{#if shownGroup && shownGroup.length === 1}
+				{@const trade = shownGroup[0]}
+				<strong class={trade.side === 'buy' ? 'buy-text' : 'sell-text'}>{trade.title}</strong>
+				<span>{formatTime(trade.t, withYear)}</span>
+				{#if trade.note}
+					<span class={trade.note.up ? 'up-text' : 'down-text'}>{trade.note.text}</span>
 				{/if}
+			{:else if shownGroup}
+				<strong>{shownGroup.length} trades</strong>
+				<span>{groupSpan(shownGroup)}</span>
 			{:else if inspected && pointerInGap}
 				<span class="hint">No snapshots in this gap</span>
 			{:else if inspected}
@@ -551,7 +872,24 @@
 				{/if}
 			{/if}
 		</div>
-		{#if !shownMarker && !inspected}
+		{#if listShown && pickedGroup}
+			<!-- Outside the live part, so a press announces the count and not
+			     every trade; the list stays while other markers are focused on the way to it. -->
+			<!-- A list that scrolls takes focus, so a keyboard can scroll it. -->
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<ul class="trade-list" class:scrolls={pickedGroup.length > LIST_ROWS} tabindex={pickedGroup.length > LIST_ROWS ? 0 : undefined} aria-label="{pickedGroup.length} trades picked">
+				{#each pickedGroup as trade (markerKey(trade))}
+					<li>
+						<strong class={trade.side === 'buy' ? 'buy-text' : 'sell-text'}>{trade.title}</strong>
+						<span>{formatTime(trade.t, withYear)}</span>
+						{#if trade.note}
+							<span class={trade.note.up ? 'up-text' : 'down-text'}>{trade.note.text}</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		{#if !shownGroup && !inspected}
 			{#if hint}
 				<span class="hint">{hint}</span>
 			{:else}
@@ -567,15 +905,40 @@
 		position: relative;
 		touch-action: pan-y;
 	}
-	/* This chart drives its tooltip itself, so LayerChart's own pointer
-	   handling must not show or hide it. */
-	.sui-series-chart :global(.lc-tooltip-context) {
-		pointer-events: none;
-	}
 	.sui-series-chart:has(.scrub:focus-visible) {
 		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 		border-radius: var(--radius-sm);
+	}
+	/* Its own stacking order: the guides behind the canvas, the labels,
+	   markers and tooltip over it. */
+	.plot {
+		position: relative;
+		isolation: isolate;
+		width: 100%;
+	}
+	.host {
+		position: absolute;
+		inset: 0;
+	}
+	.layer {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+	.layer.back {
+		z-index: -1;
+	}
+	.layer.touch {
+		z-index: 2;
+		pointer-events: auto;
+	}
+	.layer.front {
+		z-index: 4;
+		overflow: hidden;
+	}
+	.layer.markers {
+		z-index: 5;
 	}
 	.scrub {
 		position: absolute;
@@ -592,123 +955,52 @@
 		pointer-events: none;
 	}
 
-	/* The line and its fill */
-	.sui-series-chart :global(.line) {
-		fill: none;
-		stroke: var(--stroke);
-		stroke-width: 2;
-		stroke-linejoin: round;
-		stroke-linecap: round;
+	/* TradingView's attribution, which its license asks to keep: above the
+	   time axis row, with a focus ring. */
+	.host :global(a#tv-attr-logo.sui-series-attribution) {
+		left: var(--space-1);
+		bottom: calc(16px + var(--space-1));
+		opacity: 0.7;
 	}
-	.sui-series-chart :global(.lone) {
-		fill: var(--stroke);
+	.host :global(a#tv-attr-logo.sui-series-attribution:hover),
+	.host :global(a#tv-attr-logo.sui-series-attribution:focus-visible) {
+		opacity: 1;
 	}
-	/* The fill fades from the line colour to nothing. */
-	.fill-start {
-		stop-color: var(--stroke);
-		stop-opacity: 0.28;
-	}
-	.fill-end {
-		stop-color: var(--stroke);
-		stop-opacity: 0;
-	}
-	.gain {
-		--stroke: var(--up);
-	}
-	.loss {
-		--stroke: var(--down);
-	}
-	.fill.up {
-		--stroke: var(--up);
-	}
-	.fill.down {
-		--stroke: var(--down);
+	.host :global(a#tv-attr-logo.sui-series-attribution:focus-visible) {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+		border-radius: var(--radius-sm);
 	}
 
-	/* Drawn in from left to right when the series arrives, with the fill
-	   fading up behind it; a candle rises into place, each a little after
-	   the one before. Nothing moves under reduced motion. */
-	@media (prefers-reduced-motion: no-preference) {
-		.animate :global(.line) {
-			stroke-dasharray: 1;
-			stroke-dashoffset: 1;
-			animation: sui-series-draw 900ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-		}
-		.animate :global(.area),
-		.animate :global(.lone) {
-			animation: sui-series-fade 700ms ease-out 250ms both;
-		}
-		.animate .candle {
-			transform-box: fill-box;
-			transform-origin: center;
-			animation: sui-series-rise 360ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
-			animation-delay: calc(var(--i) * 6ms);
-		}
-		.animate .dot.end {
-			animation: sui-series-fade 300ms ease-out 900ms both;
-		}
-		.dot.end.live::after {
-			/* A few pulses, not forever (WCAG 2.2.2); a new last point starts them again. */
-			animation: sui-series-pulse 2s ease-out 3;
-		}
+	/* The guides, the zero line and the crosshair: dashed 1px lines. */
+	.guide,
+	.zero,
+	.cursor {
+		position: absolute;
+		pointer-events: none;
 	}
-	@keyframes sui-series-draw {
-		to {
-			stroke-dashoffset: 0;
-		}
+	.guide,
+	.zero,
+	.cursor.horizontal {
+		left: 0;
+		right: 0;
+		height: 1px;
 	}
-	@keyframes sui-series-fade {
-		from {
-			opacity: 0;
-		}
-	}
-	@keyframes sui-series-rise {
-		from {
-			opacity: 0;
-			transform: scaleY(0.4);
-		}
-	}
-	@keyframes sui-series-pulse {
-		from {
-			transform: scale(1);
-			opacity: 0.7;
-		}
-		to {
-			transform: scale(3);
-			opacity: 0;
-		}
-	}
-
-	/* Candles */
-	.candle .wick {
-		stroke: var(--candle);
-		stroke-width: 1;
-	}
-	.candle .body {
-		fill: var(--candle);
-		stroke: var(--candle);
-		stroke-width: 1;
-	}
-	.candle.rise .body {
-		fill: transparent;
-	}
-	.candle.rise {
-		--candle: var(--up);
-	}
-	.candle.fall {
-		--candle: var(--down);
-	}
-	.candle.inspected .body {
-		stroke: var(--fg);
-		stroke-width: 1;
-	}
-
-	/* Guides, the zero line, the crosshair and their labels */
 	.guide {
-		stroke: var(--border);
-		stroke-width: 1;
-		stroke-dasharray: 2 4;
+		background: repeating-linear-gradient(to right, var(--border) 0 2px, transparent 2px 6px);
 		opacity: 0.8;
+	}
+	.zero {
+		background: repeating-linear-gradient(to right, var(--muted) 0 4px, transparent 4px 8px);
+	}
+	.cursor.horizontal {
+		background: repeating-linear-gradient(to right, var(--border-strong) 0 3px, transparent 3px 6px);
+	}
+	.cursor.vertical {
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background: repeating-linear-gradient(to bottom, var(--border-strong) 0 3px, transparent 3px 6px);
 	}
 	.guide-label,
 	.tick,
@@ -740,19 +1032,9 @@
 	.tick.last {
 		transform: translateX(-100%);
 	}
-	.zero {
-		stroke: var(--muted);
-		stroke-width: 1;
-		stroke-dasharray: 4 4;
-	}
 	.zero-label {
 		left: 0;
 		transform: translateY(-100%);
-	}
-	.cursor {
-		stroke: var(--border-strong);
-		stroke-width: 1;
-		stroke-dasharray: 3 3;
 	}
 	.level-label {
 		right: 0;
@@ -760,6 +1042,14 @@
 		background: var(--fg);
 		color: var(--bg);
 		font-weight: 600;
+	}
+	.lone {
+		position: absolute;
+		width: 4px;
+		height: 4px;
+		margin: -2px 0 0 -2px;
+		border-radius: 50%;
+		background: var(--stroke);
 	}
 	.dot {
 		position: absolute;
@@ -772,9 +1062,6 @@
 		border: 2px solid var(--stroke);
 		pointer-events: none;
 	}
-	.dot.hidden {
-		display: none;
-	}
 	.dot.end {
 		background: var(--stroke);
 	}
@@ -786,9 +1073,36 @@
 		background: var(--stroke);
 		opacity: 0;
 	}
+	@media (prefers-reduced-motion: no-preference) {
+		.dot.end.animate {
+			animation: sui-series-fade 300ms ease-out 900ms both;
+		}
+		.dot.end.live::after {
+			/* A few pulses, not forever (WCAG 2.2.2); a new last point starts them again. */
+			animation: sui-series-pulse 2s ease-out 3;
+		}
+	}
+	@keyframes sui-series-fade {
+		from {
+			opacity: 0;
+		}
+	}
+	@keyframes sui-series-pulse {
+		from {
+			transform: scale(1);
+			opacity: 0.7;
+		}
+		to {
+			transform: scale(3);
+			opacity: 0;
+		}
+	}
 
-	/* Trade markers: a 24px target around an 11px shape. */
+	/* Trade markers: a 24px target around an 11px shape, or the trader's
+	   picture or initials in an 18px circle with a ring in the side's colour
+	   and a badge with the side's shape, so buy and sell never rest on colour. */
 	.marker {
+		--ring: var(--up);
 		position: absolute;
 		width: 24px;
 		height: 24px;
@@ -799,25 +1113,81 @@
 		border: 0;
 		border-radius: 50%;
 		background: none;
+		color: var(--fg);
 		cursor: pointer;
 		pointer-events: auto;
 	}
-	.marker svg {
-		width: 11px;
-		height: 11px;
+	.marker.sell {
+		--ring: var(--down);
+	}
+	.marker.mixed {
+		--ring: var(--border-strong);
+	}
+	.marker .shape {
 		overflow: visible;
 	}
-	.marker polygon {
+	.marker .shape polygon {
 		stroke: var(--bg);
 		stroke-width: 1.5;
 		stroke-linejoin: round;
 		paint-order: stroke;
 	}
-	.marker.buy polygon {
+	.buy-fill {
 		fill: var(--up);
 	}
-	.marker.sell polygon {
+	.sell-fill {
 		fill: var(--down);
+	}
+	.avatar {
+		box-sizing: border-box;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		object-fit: cover;
+		background: var(--card-alt);
+		box-shadow:
+			0 0 0 2px var(--ring),
+			0 0 0 3px var(--bg);
+	}
+	.initials {
+		display: grid;
+		place-items: center;
+		color: var(--fg);
+		font-size: 8px;
+		font-weight: 600;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
+	.side-badge {
+		position: absolute;
+		right: -1px;
+		bottom: -1px;
+		display: grid;
+		place-items: center;
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+		background: var(--bg);
+	}
+	.side-badge .shape polygon {
+		stroke-width: 0;
+	}
+	.count {
+		position: absolute;
+		top: -5px;
+		right: -7px;
+		min-width: 14px;
+		height: 14px;
+		padding: 0 3px;
+		box-sizing: border-box;
+		border-radius: 7px;
+		background: var(--fg);
+		color: var(--bg);
+		font-size: 9px;
+		font-weight: 600;
+		line-height: 14px;
+		text-align: center;
+		font-variant-numeric: tabular-nums;
 	}
 	.marker::after {
 		content: '';
@@ -826,14 +1196,17 @@
 		border-radius: 50%;
 		pointer-events: none;
 	}
+	.marker.face::after {
+		inset: -2px;
+	}
 	.marker.picked::after {
 		box-shadow: 0 0 0 2px var(--fg);
 	}
 	.marker:focus-visible {
 		outline: 2px solid var(--accent);
-		outline-offset: 0;
+		outline-offset: 2px;
 	}
-	/* A finger needs a 44px target; the ring stays the same size around the shape. */
+	/* A finger needs a 44px target; the picture and ring stay the same size. */
 	@media (pointer: coarse) {
 		.marker {
 			width: 44px;
@@ -843,15 +1216,56 @@
 		.marker::after {
 			inset: 13px;
 		}
+		.marker.face::after {
+			inset: 8px;
+		}
+		.side-badge {
+			right: 9px;
+			bottom: 9px;
+		}
+		.count {
+			top: 5px;
+			right: 3px;
+		}
 	}
 	@media (prefers-reduced-motion: no-preference) {
-		.marker:hover svg,
-		.marker:focus-visible svg {
-			transform: scale(1.3);
+		.marker .shape,
+		.marker .avatar {
+			transition: transform 120ms;
+		}
+		.marker:hover > .shape,
+		.marker:focus-visible > .shape,
+		.marker:hover > .avatar,
+		.marker:focus-visible > .avatar {
+			transform: scale(1.2);
 		}
 	}
 
-	/* The tooltip's rows */
+	/* The tooltip, beside the inspected point or marker, never under a finger. */
+	.tooltip {
+		position: absolute;
+		top: var(--space-2);
+		z-index: 6;
+		display: grid;
+		gap: var(--space-1);
+		min-width: 7rem;
+		max-width: 16rem;
+		margin-left: var(--space-3);
+		padding: var(--space-1-5) var(--space-2-5);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-lg);
+		color: var(--fg);
+		font-size: var(--text-xs);
+		pointer-events: none;
+	}
+	.tooltip.flip {
+		margin-left: 0;
+		transform: translateX(calc(-100% - var(--space-3)));
+	}
+	.tooltip-label {
+		font-weight: 500;
+	}
 	.tooltip-value {
 		font-family: var(--font-mono);
 		font-weight: 500;
@@ -906,6 +1320,31 @@
 	.sell-text,
 	.down-text {
 		color: var(--down);
+	}
+	/* A picked group's trades, one a line, scrolling past a few. */
+	.trade-list {
+		flex-basis: 100%;
+		display: grid;
+		gap: var(--space-1);
+		margin: var(--space-1) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+	.trade-list.scrolls {
+		max-height: 7.5rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	.trade-list:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+		border-radius: var(--radius-sm);
+	}
+	.trade-list li {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-0-5) var(--space-3);
+		align-items: baseline;
 	}
 	/* On a phone the hint and a trade wrap to two lines; keep room for them
 	   so the page below does not jump. */

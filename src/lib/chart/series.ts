@@ -4,8 +4,22 @@
 /** One point of a series: a value at a time, and for a candle its open, high and low, and volume. */
 export type SeriesPoint = { t: number; p: number; o?: number; h?: number; l?: number; v?: number };
 
-/** A trade on a chart. note is a short extra line when it is picked, such as the change since a buy. */
-export type SeriesMarker = { t: number; price: number; side: 'buy' | 'sell'; title: string; note?: { text: string; up: boolean } };
+/**
+ * A trade on a chart. note is a short extra line when it is picked, such as
+ * the change since a buy. avatar is the trader's picture, a person's or a
+ * bot's, drawn in the marker; name gives initials when there is no picture
+ * or it fails to load. Neither is required: without both, the marker is the
+ * buy or sell shape.
+ */
+export type SeriesMarker = {
+	t: number;
+	price: number;
+	side: 'buy' | 'sell';
+	title: string;
+	note?: { text: string; up: boolean };
+	avatar?: string;
+	name?: string;
+};
 
 /** A point as drawn: x is its time when placed by time, else its index; run numbers the line it belongs to. */
 export type PlottedPoint = SeriesPoint & { x: number; run: number };
@@ -121,7 +135,9 @@ export function timeTicks(plotted: PlottedPoint[], count = 2): PlottedPoint[] {
 /**
  * candleWidth is how wide a candle's body is, in pixels, for a plot this wide
  * holding this many candles, leaving a gap between neighbours and never so
- * thin it vanishes or so wide it looks like a bar chart.
+ * thin it vanishes or so wide it looks like a bar chart. SeriesChart no
+ * longer uses it, since Lightweight Charts sizes its candles, but it stays
+ * exported for code that draws its own.
  */
 export function candleWidth(plotWidth: number, count: number): number {
 	if (count < 1 || plotWidth <= 0) return 1;
@@ -185,7 +201,8 @@ export function markerKey(marker: SeriesMarker): string {
 
 /**
  * markersInTime keeps the markers within the points' time range, each with how
- * far along it sits, from 0 to 1. Price history is cached and sampled, so it
+ * far along it sits in time, from 0 to 1; SeriesChart places them between
+ * their neighbouring points with slotAtTime instead. Price history is cached and sampled, so it
  * usually ends a little before now; trades since then pin to the right edge
  * instead of vanishing. Markers that show the same thing at the same time
  * would sit on top of each other, so only the first is kept.
@@ -218,4 +235,171 @@ export function markersInTime(
  */
 export function withinPlotHeight(top: number, plotHeight: number, tolerance = 0.05): boolean {
 	return top >= -tolerance * plotHeight && top <= (1 + tolerance) * plotHeight;
+}
+
+/**
+ * The most slots a chart placed by time spreads its points across, on top of
+ * one per point, so a long range with a few close points stays cheap to draw.
+ */
+export const MAX_TIME_SLOTS = 4000;
+
+/**
+ * chartSlots places each plotted point in a slot of the chart's time scale,
+ * which Lightweight Charts draws evenly spaced. Placed evenly, point i is
+ * slot i. Placed by time, slots follow time, with the closest neighbours one
+ * slot apart and never finer than the span over maxSlots, so gaps show as
+ * space; every point gets its own slot, and a gap wider than `gap` ms leaves
+ * at least one empty slot, which breaks the line there.
+ */
+export function chartSlots(plotted: PlottedPoint[], byTime: boolean, gap: number, maxSlots = MAX_TIME_SLOTS): number[] {
+	if (plotted.length === 0) return [];
+	const first = plotted[0].t;
+	const span = plotted[plotted.length - 1].t - first;
+	if (!byTime || !(span > 0)) return plotted.map((_, index) => index);
+	let step = Infinity;
+	for (let index = 1; index < plotted.length; index++) {
+		const between = plotted[index].t - plotted[index - 1].t;
+		if (between > 0 && between < step) step = between;
+	}
+	step = Math.max(step, span / maxSlots);
+	const slots: number[] = [];
+	for (let index = 0; index < plotted.length; index++) {
+		const ideal = Math.round((plotted[index].t - first) / step);
+		if (index === 0) {
+			slots.push(ideal);
+			continue;
+		}
+		const breaks = plotted[index].run !== plotted[index - 1].run;
+		slots.push(Math.max(ideal, slots[index - 1] + (breaks ? 2 : 1)));
+	}
+	return slots;
+}
+
+/**
+ * One slot of the chart's time scale, in the shape Lightweight Charts takes:
+ * time is the slot number plus one, as it needs unique ascending times; a
+ * line slot has a value, a candle slot open, high, low and close, and an
+ * empty slot neither.
+ */
+export type ChartRow = { time: number; value?: number; open?: number; high?: number; low?: number; close?: number };
+
+/**
+ * chartRows fills every slot from the first point's to the last's. A point's
+ * slot holds the point. Between two points of one run, a line's slots hold
+ * values on the straight line between them, so the line looks unbroken
+ * however far apart they sit; between runs, and between candles, slots stay
+ * empty, which shows as a break or a space.
+ */
+export function chartRows(plotted: PlottedPoint[], slots: number[], candles: boolean): ChartRow[] {
+	const rows: ChartRow[] = [];
+	for (let index = 0; index < plotted.length; index++) {
+		const point = plotted[index];
+		const slot = slots[index];
+		if (candles && isCandle(point)) rows.push({ time: slot + 1, open: point.o, high: point.h, low: point.l, close: point.p });
+		else rows.push({ time: slot + 1, value: point.p });
+		const next = plotted[index + 1];
+		if (!next) break;
+		const nextSlot = slots[index + 1];
+		const joined = !candles && next.run === point.run;
+		for (let between = slot + 1; between < nextSlot; between++) {
+			if (!joined) {
+				rows.push({ time: between + 1 });
+				continue;
+			}
+			const fraction = (between - slot) / (nextSlot - slot);
+			rows.push({ time: between + 1, value: point.p + (next.p - point.p) * fraction });
+		}
+	}
+	return rows;
+}
+
+/** bracketIndex is the last index whose value is at or before target, in an ascending list, or -1. */
+function bracketIndex(count: number, valueAt: (index: number) => number, target: number): number {
+	let low = 0;
+	let high = count - 1;
+	if (count === 0 || target < valueAt(0)) return -1;
+	while (low < high) {
+		const middle = (low + high + 1) >> 1;
+		if (valueAt(middle) <= target) low = middle;
+		else high = middle - 1;
+	}
+	return low;
+}
+
+/**
+ * slotAtTime is where a moment falls on the time scale, as a fractional
+ * slot: between the slots of the points either side of it, in proportion to
+ * time. A moment before the first point is the first slot, and after the
+ * last, as a trade since the last sample, the last slot.
+ */
+export function slotAtTime(plotted: PlottedPoint[], slots: number[], t: number): number {
+	if (plotted.length === 0) return 0;
+	const last = plotted.length - 1;
+	if (t <= plotted[0].t) return slots[0];
+	if (t >= plotted[last].t) return slots[last];
+	const index = bracketIndex(plotted.length, (at) => plotted[at].t, t);
+	const from = plotted[index];
+	const to = plotted[index + 1];
+	const fraction = to.t > from.t ? (t - from.t) / (to.t - from.t) : 0;
+	return slots[index] + (slots[index + 1] - slots[index]) * fraction;
+}
+
+/**
+ * xAtSlot turns a fractional slot, such as one under the pointer, back into
+ * the chart's x units, a time or an index as plotPoints placed them, so
+ * nearestIndex and inGap work on it. It is clamped to the plotted range.
+ */
+export function xAtSlot(plotted: PlottedPoint[], slots: number[], slot: number): number {
+	if (plotted.length === 0) return 0;
+	const last = plotted.length - 1;
+	if (slot <= slots[0]) return plotted[0].x;
+	if (slot >= slots[last]) return plotted[last].x;
+	const index = bracketIndex(slots.length, (at) => slots[at], slot);
+	const from = slots[index];
+	const to = slots[index + 1];
+	const fraction = to > from ? (slot - from) / (to - from) : 0;
+	return plotted[index].x + (plotted[index + 1].x - plotted[index].x) * fraction;
+}
+
+/**
+ * seriesSummary describes a whole series in a sentence for screen readers,
+ * as the chart's description: its span, how many points, where it started
+ * and ended, and its high and low. Candles read their first open and last
+ * close, and the highs and lows of the candles.
+ */
+export function seriesSummary(
+	points: SeriesPoint[],
+	candles: boolean,
+	format: (n: number) => string,
+	formatTime: (t: number, withYear: boolean) => string,
+	withYear: boolean
+): string {
+	if (points.length < 2) return '';
+	const first = points[0];
+	const last = points[points.length - 1];
+	const highs = candles ? points.map((point) => point.h ?? point.p) : points.map((point) => point.p);
+	const lows = candles ? points.map((point) => point.l ?? point.p) : points.map((point) => point.p);
+	const span = `From ${formatTime(first.t, withYear)} to ${formatTime(last.t, withYear)}`;
+	const count = `${points.length} ${candles ? 'candles' : 'points'}`;
+	const ends = candles ? `opened at ${format(first.o ?? first.p)}, closed at ${format(last.p)}` : `started at ${format(first.p)}, ended at ${format(last.p)}`;
+	return `${span}: ${count}, ${ends}, high ${format(Math.max(...highs))}, low ${format(Math.min(...lows))}.`;
+}
+
+/**
+ * colorWithAlpha is a colour token at this opacity, for the canvas, which
+ * cannot read CSS variables or mix colours: "#1d7a4c" at 0.28 is
+ * "rgba(29, 122, 76, 0.28)". Hex and rgb() colours are mixed; any other
+ * colour comes back as it is.
+ */
+export function colorWithAlpha(color: string, alpha: number): string {
+	const value = color.trim();
+	const hex = value.match(/^#([0-9a-f]{3,8})$/i)?.[1];
+	if (hex && (hex.length === 3 || hex.length === 6 || hex.length === 8)) {
+		const full = hex.length === 3 ? [...hex].map((digit) => digit + digit).join('') : hex.slice(0, 6);
+		const [red, green, blue] = [0, 2, 4].map((offset) => parseInt(full.slice(offset, offset + 2), 16));
+		return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+	}
+	const channels = value.match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+	if (channels) return `rgba(${channels[1]}, ${channels[2]}, ${channels[3]}, ${alpha})`;
+	return value;
 }
