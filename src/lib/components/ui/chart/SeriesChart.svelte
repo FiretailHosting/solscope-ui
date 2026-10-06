@@ -174,16 +174,23 @@
 	let overlay = $state<HTMLElement>();
 	let Plot = $state<Component<any> | null>(null);
 	let context = $state<ChartState<PlottedPoint>>();
-	const ready = $derived(Plot != null && context != null && context.width > 0 && context.height > 0);
+	// A chunk that fails to load, as offline, shows the empty text in the plot's place.
+	let plotFailed = $state(false);
+	const ready = $derived(Plot != null && context != null && context.isMeasured && context.width > 0 && context.height > 0);
 	const plotWidth = $derived(context?.width ?? 0);
 	const plotHeight = $derived(context?.height ?? 0);
 
 	$effect(() => {
 		if (!host || Plot) return;
 		let disposed = false;
-		import('./SeriesPlot.svelte').then((module) => {
-			if (!disposed) Plot = module.default;
-		});
+		import('./SeriesPlot.svelte').then(
+			(module) => {
+				if (!disposed) Plot = module.default;
+			},
+			() => {
+				if (!disposed) plotFailed = true;
+			}
+		);
 		return () => {
 			disposed = true;
 		};
@@ -493,6 +500,20 @@
 	const last = $derived(plotted[lastIndex]);
 	const active = $derived(inspected && !pointerInGap ? inspected : null);
 
+	// Each level tag's width, so a tag over the line's live end dot can fade
+	// and let the latest price show through.
+	let levelTagWidths = $state<number[]>([]);
+	const END_DOT_REACH = 6;
+	function coversEnd(index: number): boolean {
+		if (!ready || candles || !last || active) return false;
+		const top = levelLabelTops[index];
+		const width = levelTagWidths[index] ?? 0;
+		if (top == null || width === 0) return false;
+		const x = pointLeft(lastIndex);
+		const y = yAt(last.p);
+		return x >= plotWidth - width - END_DOT_REACH && y >= top - END_DOT_REACH && y <= top + LEVEL_LABEL + END_DOT_REACH;
+	}
+
 	/** The guides that get a label: none in the time axis's row, and one at most on a short chart. */
 	const labelledGuides = $derived.by(() => {
 		if (!ready) return [];
@@ -536,7 +557,7 @@
 	</svg>
 {/snippet}
 
-{#if !bounds}
+{#if !bounds || plotFailed}
 	<p class="sui-series-empty" style={fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}`}>{empty}</p>
 {:else}
 	<div
@@ -701,10 +722,17 @@
 			<!-- The levels' tags at the right edge, over the markers so a trade
 			     never hides what a level is; presses pass through to the markers.
 			     A pinned level's arrow says which way it lies. -->
-			<div class="layer levels" aria-hidden="true">
+			<!-- Under the crosshair and its value while something is inspected. -->
+			<div class="layer levels" class:under={active != null} aria-hidden="true">
 				{#if ready}
 					{#each placedLevels as level, index (level.key)}
-						<span class="level-tag {level.tone ?? 'neutral'}" class:pinned={level.pinned} style="top: {levelLabelTops[index] ?? 0}px">
+						<span
+							class="level-tag {level.tone ?? 'neutral'}"
+							class:pinned={level.pinned}
+							class:faded={coversEnd(index)}
+							style="top: {levelLabelTops[index] ?? 0}px"
+							bind:offsetWidth={levelTagWidths[index]}
+						>
 							{#if level.pinned}
 								<svg viewBox="0 0 8 8" width="8" height="8" class="pin-arrow">
 									<polygon points={level.pinned === 'above' ? '4,0.5 7.5,7 0.5,7' : '0.5,1 7.5,1 4,7.5'} />
@@ -738,7 +766,7 @@
 			<!-- LayerChart paints here. -->
 			<div class="host" bind:this={host}>
 				{#if Plot}
-					<Plot bind:context {plotted} {candles} {baseline} {yDomain} pad={PAD} id="sui-series-{uid.replace(/[^a-zA-Z0-9_-]/g, '')}" />
+					<Plot bind:context {plotted} {candles} {baseline} byTime={byTime && plotted.length > 1 && plotted[plotted.length - 1].t > plotted[0].t} {yDomain} pad={PAD} id="sui-series-{uid.replace(/[^a-zA-Z0-9_-]/g, '')}" />
 				{/if}
 			</div>
 		</div>
@@ -844,6 +872,9 @@
 	.layer.levels {
 		z-index: 6;
 		overflow: hidden;
+	}
+	.layer.levels.under {
+		z-index: 3;
 	}
 	.scrub {
 		position: absolute;
@@ -965,6 +996,9 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+	.level-tag.faded {
+		opacity: 0.85;
 	}
 	.level-value {
 		font-variant-numeric: tabular-nums;

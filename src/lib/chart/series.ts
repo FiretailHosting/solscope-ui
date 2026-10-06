@@ -143,6 +143,59 @@ export function candleWidth(plotWidth: number, count: number): number {
 }
 
 /**
+ * candleWidthByStep is how wide a candle's body is, in pixels, for candles
+ * placed by time: from the smallest distance between two neighbours, so
+ * candles close in time never overlap, never thinner than 1 or wider than
+ * 14, as candleWidth. xs are the candles' x values in order, and the plot
+ * is plotWidth pixels across from the first to the last.
+ */
+export function candleWidthByStep(plotWidth: number, xs: number[]): number {
+	if (xs.length < 2 || plotWidth <= 0) return candleWidth(plotWidth, xs.length);
+	const span = xs[xs.length - 1] - xs[0];
+	let step = Infinity;
+	for (let index = 1; index < xs.length; index++) {
+		const between = xs[index] - xs[index - 1];
+		if (between > 0 && between < step) step = between;
+	}
+	if (!(span > 0) || !Number.isFinite(step)) return candleWidth(plotWidth, xs.length);
+	return Math.max(1, Math.min(14, Math.floor(((plotWidth * step) / span) * 0.65)));
+}
+
+/** Below this body width, in pixels, a candle is a line: too narrow to show hollow or filled. */
+export const THIN_CANDLE_WIDTH = 3;
+
+/** Below this body height, in pixels, a candle's body is a level line: it opened and closed at about the same price. */
+export const FLAT_CANDLE_HEIGHT = 2;
+
+/**
+ * How a candle is drawn, in pixels. A thin one is a 1px line from high to
+ * low with a 2px line over its body, since a body under THIN_CANDLE_WIDTH
+ * cannot show hollow or filled, so colour alone tells rise from fall there
+ * and the readout names it. A flat one, a doji, is a wick straight through
+ * a level line across the body's width. Any other is a body box with a wick
+ * above and below it, hollow when rising.
+ */
+export type CandleMarks =
+	| { kind: 'thin'; x: number; high: number; low: number; top: number; bottom: number }
+	| { kind: 'flat'; x: number; high: number; low: number; y: number; left: number; right: number }
+	| { kind: 'body'; x: number; high: number; low: number; top: number; bottom: number; left: number; width: number };
+
+/**
+ * candleMarks places one candle: its centre x, the y of its high, low, and
+ * body top and bottom, as the y scale gives them, and its body width.
+ */
+export function candleMarks(x: number, high: number, low: number, top: number, bottom: number, width: number): CandleMarks {
+	const upper = Math.min(top, bottom);
+	const lower = Math.max(top, bottom);
+	if (width < THIN_CANDLE_WIDTH) return { kind: 'thin', x, high, low, top: upper, bottom: Math.max(lower, upper + 1) };
+	if (lower - upper < FLAT_CANDLE_HEIGHT) {
+		const y = (upper + lower) / 2;
+		return { kind: 'flat', x, high: Math.min(high, y), low: Math.max(low, y), y, left: x - width / 2, right: x + width / 2 };
+	}
+	return { kind: 'body', x, high, low, top: upper, bottom: lower, left: x - width / 2, width };
+}
+
+/**
  * nearestIndex is the plotted point closest to x, in the chart's x units.
  * Points are in x order, so it bisects.
  */

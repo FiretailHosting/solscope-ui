@@ -489,6 +489,8 @@ Medium (500) and Bold (700) are used less and can load on demand.
 It fits the data rather than zero, or keeps zero in view with `baseline`, where the line above zero reads as gain and below as loss.
 Round-value `guides` run across the plot with labels at the left edge, kept out of the `timeAxis` row along the bottom and down to one on a plot under 150px tall, and `live` pulses the last point three times, and again when a new last point arrives.
 Rising candles are hollow and falling ones filled, so direction does not rest on colour alone.
+Candles under 3px wide, as many in a narrow plot, are a high-low line with a thicker body line, so at that density rise and fall show by colour and the readout names each candle's open and close; a doji is a level line with its wick through it.
+Placed by time, candles size to the closest two, so a burst never overlaps.
 A pointer shows a crosshair, a value tag and a tooltip; a finger drags and reads the readout under the chart, which stays after it lifts; the keyboard moves a hidden slider that announces each point, a candle as open, high, low and close; Escape hides the tooltip.
 An inspected point stays on its moment when new points arrive, so a live tick does not move it; it ends when that moment is gone.
 Only what an inspection shows is a live region, never the hint, so a hint that changes with each tick is not read out.

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ChartState } from 'layerchart';
 	import { Area, ChartCore, Spline, Svg } from 'layerchart/svg';
-	import { candleTrend, candleWidth, isCandle, type PlottedPoint } from '../../../chart/series.js';
+	import { candleMarks, candleTrend, candleWidth, candleWidthByStep, isCandle, type PlottedPoint } from '../../../chart/series.js';
 
 	// The picture inside SeriesChart: its line over a gradient fill, its gain
 	// and loss around zero, or its candles, drawn by LayerChart in SVG. It
@@ -14,6 +14,7 @@
 		plotted,
 		candles,
 		baseline,
+		byTime = false,
 		yDomain,
 		pad,
 		id,
@@ -22,6 +23,8 @@
 		plotted: PlottedPoint[];
 		candles: boolean;
 		baseline: boolean;
+		/** Points placed by time, so candles size to the closest two. */
+		byTime?: boolean;
 		yDomain: [number, number];
 		/** Space above and below the series, in pixels, so peaks and troughs are not cut off. */
 		pad: number;
@@ -31,8 +34,12 @@
 	} = $props();
 
 	const xDomain = $derived<[number, number]>([plotted[0]?.x ?? 0, plotted[plotted.length - 1]?.x ?? 1]);
+	// A candle's body width: from the closest two candles when placed by
+	// time, so none overlaps its neighbour, or from the count when even.
+	const xs = $derived(plotted.map((point) => point.x));
+	const bodyWidth = (width: number) => (byTime ? candleWidthByStep(width, xs) : candleWidth(width, plotted.length));
 	// Candles are inset by half a body, so the first and last are not cut in half.
-	const inset = (width: number) => (candles ? Math.ceil(candleWidth(width, plotted.length) / 2) + 1 : 0);
+	const inset = (width: number) => (candles ? Math.ceil(bodyWidth(width) / 2) + 1 : 0);
 	const xRange = $derived(({ width }: { width: number; height: number }) => [inset(width), Math.max(inset(width), width - inset(width))]);
 	const yRange = ({ height }: { width: number; height: number }) => [Math.max(pad, height - pad), Math.min(pad, height / 2)];
 </script>
@@ -56,18 +63,28 @@
 				{/if}
 			{/snippet}
 			{#if candles}
-				{@const width = candleWidth(chart.width, plotted.length)}
-				{#each plotted as point (point.t)}
+				{@const width = bodyWidth(chart.width)}
+				<!-- Keyed by place as well as time, so two candles at one time never clash. -->
+				{#each plotted as point, index (`${point.t}:${index}`)}
 					{#if isCandle(point)}
-						{@const x = chart.xScale(point.x)}
-						{@const top = chart.yScale(Math.max(point.o, point.p))}
-						{@const end = top + Math.max(1, chart.yScale(Math.min(point.o, point.p)) - top)}
-						<!-- Shape as well as colour: a rising candle is hollow, a falling one
-						     filled. The wick stops at the body, so a hollow body stays empty. -->
+						{@const marks = candleMarks(chart.xScale(point.x), chart.yScale(point.h), chart.yScale(point.l), chart.yScale(Math.max(point.o, point.p)), chart.yScale(Math.min(point.o, point.p)), width)}
 						<g class="candle {candleTrend(point)}">
-							<line x1={x} y1={chart.yScale(point.h)} x2={x} y2={top} />
-							<line x1={x} y1={end} x2={x} y2={chart.yScale(point.l)} />
-							<rect x={x - width / 2 + 0.5} y={top + 0.5} width={Math.max(0, width - 1)} height={Math.max(0, end - top - 1)} />
+							{#if marks.kind === 'thin'}
+								<!-- Too narrow for hollow or filled: a line from high to low and a
+								     thicker one over the body; colour and the readout tell rise from fall. -->
+								<line x1={marks.x} y1={marks.high} x2={marks.x} y2={marks.low} />
+								<line class="thin-body" x1={marks.x} y1={marks.top} x2={marks.x} y2={marks.bottom} />
+							{:else if marks.kind === 'flat'}
+								<!-- Opened and closed at about one price: a level line with the wick through it. -->
+								<line x1={marks.x} y1={marks.high} x2={marks.x} y2={marks.low} />
+								<line class="flat-body" x1={marks.left} y1={marks.y} x2={marks.right} y2={marks.y} />
+							{:else}
+								<!-- Shape as well as colour: a rising candle is hollow, a falling one
+								     filled. The wick stops at the body, so a hollow body stays empty. -->
+								<line x1={marks.x} y1={marks.high} x2={marks.x} y2={marks.top} />
+								<line x1={marks.x} y1={marks.bottom} x2={marks.x} y2={marks.low} />
+								<rect x={marks.left + 0.5} y={marks.top + 0.5} width={marks.width - 1} height={marks.bottom - marks.top - 1} />
+							{/if}
 						</g>
 					{/if}
 				{/each}
@@ -132,6 +149,11 @@
 	}
 	.candle rect {
 		stroke-width: 1;
+	}
+	.candle .thin-body,
+	.candle .flat-body {
+		stroke-width: 2;
+		shape-rendering: auto;
 	}
 	.candle.rise line,
 	.candle.rise rect {

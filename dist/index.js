@@ -11,7 +11,7 @@ export { default as ChartContainer } from './components/ui/chart/ChartContainer.
 export { default as ChartTooltip } from './components/ui/chart/ChartTooltip.svelte';
 export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
-export { boundsWithMarkers, candleWidth, carriedIndex, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, MARKER_PRICE_TOLERANCE, markersInRange, markersInTime, nearestIndex, plotPoints, seriesSummary, timeTicks, valueBounds, withinPlotHeight, xAtTime } from './chart/series.js';
+export { boundsWithMarkers, candleMarks, candleWidth, candleWidthByStep, carriedIndex, FLAT_CANDLE_HEIGHT, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, MARKER_PRICE_TOLERANCE, markersInRange, markersInTime, nearestIndex, plotPoints, seriesSummary, THIN_CANDLE_WIDTH, timeTicks, valueBounds, withinPlotHeight, xAtTime } from './chart/series.js';
 export { clusterLabel, clusterMarkers, clusterSide, initials, markerFace, markerLabel } from './chart/markers.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
 export { boundsWithLevels, LEVEL_PRICE_TOLERANCE, levelPin, levelsInRange, levelsSummary, levelText, placeLevels, stackLabels } from './chart/levels.js';

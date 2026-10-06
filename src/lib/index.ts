@@ -13,8 +13,11 @@ export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
 export {
 	boundsWithMarkers,
+	candleMarks,
 	candleWidth,
+	candleWidthByStep,
 	carriedIndex,
+	FLAT_CANDLE_HEIGHT,
 	guideValues,
 	hasCandles,
 	inGap,
@@ -28,10 +31,12 @@ export {
 	nearestIndex,
 	plotPoints,
 	seriesSummary,
+	THIN_CANDLE_WIDTH,
 	timeTicks,
 	valueBounds,
 	withinPlotHeight,
 	xAtTime,
+	type CandleMarks,
 	type PlottedPoint,
 	type SeriesMarker,
 	type SeriesPoint

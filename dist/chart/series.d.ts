@@ -100,6 +100,56 @@ export declare function timeTicks(plotted: PlottedPoint[], count?: number): Plot
  */
 export declare function candleWidth(plotWidth: number, count: number): number;
 /**
+ * candleWidthByStep is how wide a candle's body is, in pixels, for candles
+ * placed by time: from the smallest distance between two neighbours, so
+ * candles close in time never overlap, never thinner than 1 or wider than
+ * 14, as candleWidth. xs are the candles' x values in order, and the plot
+ * is plotWidth pixels across from the first to the last.
+ */
+export declare function candleWidthByStep(plotWidth: number, xs: number[]): number;
+/** Below this body width, in pixels, a candle is a line: too narrow to show hollow or filled. */
+export declare const THIN_CANDLE_WIDTH = 3;
+/** Below this body height, in pixels, a candle's body is a level line: it opened and closed at about the same price. */
+export declare const FLAT_CANDLE_HEIGHT = 2;
+/**
+ * How a candle is drawn, in pixels. A thin one is a 1px line from high to
+ * low with a 2px line over its body, since a body under THIN_CANDLE_WIDTH
+ * cannot show hollow or filled, so colour alone tells rise from fall there
+ * and the readout names it. A flat one, a doji, is a wick straight through
+ * a level line across the body's width. Any other is a body box with a wick
+ * above and below it, hollow when rising.
+ */
+export type CandleMarks = {
+    kind: 'thin';
+    x: number;
+    high: number;
+    low: number;
+    top: number;
+    bottom: number;
+} | {
+    kind: 'flat';
+    x: number;
+    high: number;
+    low: number;
+    y: number;
+    left: number;
+    right: number;
+} | {
+    kind: 'body';
+    x: number;
+    high: number;
+    low: number;
+    top: number;
+    bottom: number;
+    left: number;
+    width: number;
+};
+/**
+ * candleMarks places one candle: its centre x, the y of its high, low, and
+ * body top and bottom, as the y scale gives them, and its body width.
+ */
+export declare function candleMarks(x: number, high: number, low: number, top: number, bottom: number, width: number): CandleMarks;
+/**
  * nearestIndex is the plotted point closest to x, in the chart's x units.
  * Points are in x order, so it bisects.
  */

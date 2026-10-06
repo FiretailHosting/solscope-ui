@@ -4,6 +4,8 @@ type $$ComponentProps = {
     plotted: PlottedPoint[];
     candles: boolean;
     baseline: boolean;
+    /** Points placed by time, so candles size to the closest two. */
+    byTime?: boolean;
     yDomain: [number, number];
     /** Space above and below the series, in pixels, so peaks and troughs are not cut off. */
     pad: number;

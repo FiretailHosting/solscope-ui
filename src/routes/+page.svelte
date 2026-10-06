@@ -220,7 +220,7 @@
 		return [
 			{ key: 'tp', value: high + (high - low) * 0.06, label: 'Take profit', tone: 'up' },
 			{ key: 'limit', value: low + (high - low) * 0.3, label: 'Limit buy', tone: 'neutral', dashed: true },
-			{ key: 'trail', value: latest - (high - low) * 0.12, label: 'Trailing stop', tone: 'down', dashed: true },
+			{ key: 'trail', value: latest - (high - low) * 0.04, label: 'Trailing stop', tone: 'down', dashed: true },
 			{ key: 'sl', value: low * 0.5, label: 'Stop loss', tone: 'down' }
 		];
 	});
