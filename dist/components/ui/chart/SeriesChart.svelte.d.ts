@@ -17,6 +17,10 @@ type $$ComponentProps = {
     hint?: string;
     /** Shown in place of the chart when there are fewer than two points. */
     empty?: string;
+    /** Shown in place of the plot when its code fails to load, as offline; the readout row keeps its space. */
+    failed?: string;
+    /** Called once when the plot's code fails to load. */
+    onfailed?: () => void;
     /** The chart's description for screen readers; by default its span, start, end, high and low. The levels are read after it. */
     summary?: string;
     /** Place points by their time rather than evenly, so gaps show. */

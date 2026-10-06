@@ -61,6 +61,8 @@
 		noun = 'price',
 		hint,
 		empty = 'Not enough history to draw a chart.',
+		failed = 'Could not load the chart.',
+		onfailed,
 		summary,
 		byTime = false,
 		gap = 0,
@@ -92,6 +94,10 @@
 		hint?: string;
 		/** Shown in place of the chart when there are fewer than two points. */
 		empty?: string;
+		/** Shown in place of the plot when its code fails to load, as offline; the readout row keeps its space. */
+		failed?: string;
+		/** Called once when the plot's code fails to load. */
+		onfailed?: () => void;
 		/** The chart's description for screen readers; by default its span, start, end, high and low. The levels are read after it. */
 		summary?: string;
 		/** Place points by their time rather than evenly, so gaps show. */
@@ -174,7 +180,9 @@
 	let overlay = $state<HTMLElement>();
 	let Plot = $state<Component<any> | null>(null);
 	let context = $state<ChartState<PlottedPoint>>();
-	// A chunk that fails to load, as offline, shows the empty text in the plot's place.
+	// A chunk that fails to load, as offline, shows the failed text in the
+	// plot's place, at the plot's size and with the readout row's space kept,
+	// so nothing below moves.
 	let plotFailed = $state(false);
 	const ready = $derived(Plot != null && context != null && context.isMeasured && context.width > 0 && context.height > 0);
 	const plotWidth = $derived(context?.width ?? 0);
@@ -188,7 +196,9 @@
 				if (!disposed) Plot = module.default;
 			},
 			() => {
-				if (!disposed) plotFailed = true;
+				if (disposed) return;
+				plotFailed = true;
+				onfailed?.();
 			}
 		);
 		return () => {
@@ -557,8 +567,11 @@
 	</svg>
 {/snippet}
 
-{#if !bounds || plotFailed}
-	<p class="sui-series-empty" style={fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}`}>{empty}</p>
+{#if !bounds}
+	<p class="sui-series-empty" style={sizing}>{empty}</p>
+{:else if plotFailed}
+	<p class="sui-series-empty" style={sizing}>{failed}</p>
+	<div class="sui-series-readout" aria-hidden="true"></div>
 {:else}
 	<div
 		class="sui-series-chart {extraClass}"
