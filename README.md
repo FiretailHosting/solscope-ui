@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com) 
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.0"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.1"
 ```
 
 ## Usage
@@ -499,6 +499,7 @@ Only what an inspection shows is a live region, never the hint, so a hint that c
 A new series, another range or kind, wipes in from the left, a live tick does not, and nothing moves under reduced motion; `animate={false}` turns it off.
 The picture is an image to screen readers, named by `label` and described by `summary`, by default a sentence with the span, start, end, high and low, then the levels, also in the reading order as visually hidden text; the slider is not described by it, so it is read once.
 [LayerChart](https://layerchart.com) draws the series in SVG from a chunk of its own, with only the pieces it uses, loaded once a chart mounts, so server rendering and pages without a chart never load it.
+Fewer than two points show `empty` in the plot's place; a chunk that fails to load, as offline, shows `failed` (default "Could not load the chart.") at the plot's size and keeps the readout row's space, so nothing below moves, and calls `onfailed`.
 Everything read or reached is DOM over the picture, placed with the chart's own scales and moved on every resize: the labels, levels, crosshair, tooltip, slider and markers.
 The readout sits right under the plot, a `--space-2` gap below it, with no attribution row.
 The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `markersInRange`, `boundsWithMarkers`, `xAtTime`, `levelsInRange`, `boundsWithLevels`, `placeLevels`, `stackLabels`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
