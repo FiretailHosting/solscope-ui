@@ -11,6 +11,7 @@ export { default as ChartContainer } from './components/ui/chart/ChartContainer.
 export { default as ChartTooltip } from './components/ui/chart/ChartTooltip.svelte';
 export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
+export { default as SeriesHintRow } from './components/ui/chart/SeriesHintRow.svelte';
 export {
 	boundsWithMarkers,
 	candleMarks,

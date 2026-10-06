@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com) 
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.3"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.4"
 ```
 
 ## Usage
@@ -52,6 +52,7 @@ Then use components:
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
 | `ChartHint` | What a chart says while nothing is inspected: hover wording for a mouse, drag wording on a touch screen |
 | `SeriesChart` | A price or value over time as a line over a gradient fill or as candles, drawn by LayerChart, with guides, a time axis, a crosshair, price levels, trade markers with traders' pictures and the same inspection by pointer, finger, keyboard and screen reader; see [Series chart](#series-chart) |
+| `SeriesHintRow` | The row under a `SeriesChart`'s plot for a stand-in while it loads: the same gap and height, its hint held unseen, children such as a skeleton over it, hidden from screen readers; see [Series chart](#series-chart) |
 | `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
 | `Dialog` | Modal over a native `<dialog>`: `title` or `label`, close button, Escape, backdrop tap, swipe down on phones, focus return; a centred card on desktop and a bottom sheet on phones; see [Dialog](#dialog) |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
@@ -499,6 +500,16 @@ Only what an inspection shows is a live region, never the hint, so a hint that c
 Otherwise the plot is as wide as its parent and `height` pixels tall per 800 pixels of width, but never shorter than `minHeight`, by default `seriesMinHeight(height)`: `SERIES_CHART_MIN_HEIGHT` (220px), or `height` when less.
 The height follows the width of a size container around the plot and never the other way, so a narrow card never grows sideways; give the chart a width where its parent sizes to its content, such as a flex row item.
 A stand-in for the chart, such as a skeleton, takes `seriesPlotStyle(height, { fixed, minHeight })` in a parent with `container-type: inline-size`, so nothing moves when it lands.
+The hint under the plot says how to see a trade only while markers show, so it is longer then and can wrap to another line.
+`markersPossible` keeps that longer hint's room whether or not markers show, so the chart does not move when trades come and go; the plain hint still shows, and screen readers hear only what shows.
+The row holds its hint unseen under the readout, so inspecting a point does not shorten it either.
+A stand-in holds the same row with `SeriesHintRow`, given the chart's `noun`, `hint` and `markersPossible`, with anything to show over it as children:
+
+```svelte
+<div style="container-type: inline-size"><div style={seriesPlotStyle(260)}><Skeleton height="100%" /></div></div>
+<SeriesHintRow markersPossible><Skeleton width="12rem" /></SeriesHintRow>
+```
+
 A new series, another range or kind, wipes in from the left, a live tick does not, and nothing moves under reduced motion; `animate={false}` turns it off.
 The picture is an image to screen readers, named by `label` and described by `summary`, by default a sentence with the span, start, end, high and low, then the levels, also in the reading order as visually hidden text; the slider is not described by it, so it is read once.
 [LayerChart](https://layerchart.com) draws the series in SVG from a chunk of its own, with only the pieces it uses, loaded once a chart mounts, so server rendering and pages without a chart never load it.
