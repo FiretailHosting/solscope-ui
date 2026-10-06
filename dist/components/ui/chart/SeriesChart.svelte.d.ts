@@ -8,7 +8,7 @@ type $$ComponentProps = {
     height?: number;
     /** Trades on the chart; each may carry the trader's `avatar` picture and `name`. */
     markers?: SeriesMarker[];
-    /** Markers may show on this chart, now or later: the hint row keeps the room of the hint with markers, so it does not move when they come or go. */
+    /** Markers may show on this chart, now or later: the hint row keeps the room of the hint with markers, also beside a `hint` of your own, so it does not move when they come or go. */
     markersPossible?: boolean;
     /** Prices marked across the plot, such as an open order or a take profit, each with its label and value at the right edge; updated in place by key. */
     levels?: SeriesLevel[];

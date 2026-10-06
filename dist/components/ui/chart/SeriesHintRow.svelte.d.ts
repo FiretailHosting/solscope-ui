@@ -2,7 +2,7 @@ import type { Snippet } from 'svelte';
 type $$ComponentProps = {
     /** What a point is, as the chart's `noun`. */
     noun?: string;
-    /** The chart's own `hint`, if it has one: held instead of the default. */
+    /** The chart's own `hint`, if it has one: held instead of the default, or with the marker hint under markersPossible. */
     hint?: string;
     /** Hold the hint with markers, as the chart's `markersPossible`. */
     markersPossible?: boolean;
