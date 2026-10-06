@@ -38,6 +38,7 @@
 		type PageSearchResult,
 		type PageSearchSection,
 		type SegmentedOption,
+		type SeriesLevel,
 		type SeriesMarker,
 		type TabBarItem
 	} from '$lib';
@@ -205,6 +206,25 @@
 		return { t: lowest.t, price: low - (Math.max(...highs) - low) * 0.03, side: 'buy', title: 'Sam Okafor bought 4,200 WIF below the low', name: 'Sam Okafor' };
 	});
 	let showMarkers = $state(true);
+
+	// Order levels: a take profit just above the highest price, which widens
+	// the view to fit; a limit buy inside the range, pending so dashed; a stop
+	// loss far below, pinned to the bottom edge; and a trailing stop that
+	// follows the live price, updated in place by its key.
+	const priceLevels = $derived.by((): SeriesLevel[] => {
+		const series = livePriceSeries;
+		const prices = series.map((point) => point.p);
+		const high = Math.max(...prices);
+		const low = Math.min(...prices);
+		const latest = series[series.length - 1].p;
+		return [
+			{ key: 'tp', value: high + (high - low) * 0.06, label: 'Take profit', tone: 'up' },
+			{ key: 'limit', value: low + (high - low) * 0.3, label: 'Limit buy', tone: 'neutral', dashed: true },
+			{ key: 'trail', value: latest - (high - low) * 0.12, label: 'Trailing stop', tone: 'down', dashed: true },
+			{ key: 'sl', value: low * 0.5, label: 'Stop loss', tone: 'down' }
+		];
+	});
+	let showLevels = $state(true);
 
 	// Profit and loss around zero, for the baseline chart.
 	const pnlSeries = Array.from({ length: 48 }, (_, index) => ({ t: now - (47 - index) * hour, p: Math.round(Math.sin(index / 6) * 180 + index * 5 - 90) }));
@@ -414,11 +434,13 @@
 		<div class="chart-controls">
 			<RangePicker label="Chart range" options={priceRanges} bind:value={priceRange} collapseBelow={700} />
 			<label class="marker-toggle"><input type="checkbox" bind:checked={showMarkers} /> {markerCount + 1} trades</label>
+			<label class="marker-toggle"><input type="checkbox" bind:checked={showLevels} /> Levels</label>
 		</div>
 		<SeriesChart
 			points={livePriceSeries}
 			kind={priceKind}
 			markers={showMarkers ? [...priceMarkers, lowFill] : []}
+			levels={showLevels ? priceLevels : []}
 			byTime
 			live
 			height={220}

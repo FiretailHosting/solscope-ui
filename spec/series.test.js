@@ -1,6 +1,6 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
-import { chartRows, chartSlots, colorWithAlpha, seriesSummary, slotAtTime, xAtSlot, candleReading, candleTrend, candleWidth, carriedIndex, guideLabels, guideValues, SHORT_PLOT_HEIGHT, hasCandles, inGap, inspectHint, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight, markersInRange, boundsWithMarkers, MARKER_PRICE_TOLERANCE } from '../src/lib/chart/series.ts';
+import { seriesSummary, xAtTime, candleReading, candleTrend, candleWidth, carriedIndex, guideLabels, guideValues, SHORT_PLOT_HEIGHT, hasCandles, inGap, inspectHint, lonePoints, markerKey, markersInTime, nearestIndex, plotPoints, timeTicks, valueBounds, withinPlotHeight, markersInRange, boundsWithMarkers, MARKER_PRICE_TOLERANCE } from '../src/lib/chart/series.ts';
 import { axisTime, chartDay, chartTime, spansYears } from '../src/lib/chart/dates.ts';
 
 const HOUR = 3_600_000;
@@ -219,67 +219,22 @@ test('an inspection ends when its moment is gone, and nothing inspected stays so
 	assert.equal(carriedIndex([], before, 0), null);
 });
 
-test('points placed evenly take one slot each', () => {
-	const plotted = plotPoints([at(0, 1), at(1, 2), at(9, 3)], false, 0);
-	assert.deepEqual(chartSlots(plotted, false, 0), [0, 1, 2]);
-});
-
-test('points placed by time take slots in proportion to time, the closest one apart', () => {
-	const plotted = plotPoints([at(0, 1), at(1, 2), at(2, 3), at(6, 4)], true, 0);
-	assert.deepEqual(chartSlots(plotted, true, 0), [0, 1, 2, 6]);
-});
-
-test('a gap wider than the limit leaves an empty slot, even between neighbours', () => {
-	const plotted = plotPoints([at(0, 1), at(1, 2), at(3, 3)], true, 1.5 * HOUR);
-	const slots = chartSlots(plotted, true, 1.5 * HOUR);
-	assert.deepEqual(slots, [0, 1, 3]);
-	const rows = chartRows(plotted, slots, false);
-	assert.deepEqual(rows, [{ time: 1, value: 1 }, { time: 2, value: 2 }, { time: 3 }, { time: 4, value: 3 }]);
-});
-
-test('a long range with a few close points is capped, and every point keeps its own slot', () => {
-	const plotted = plotPoints([at(0, 1), at(0.001, 2), at(1000, 3), at(1000.001, 4)], true, 0);
-	const slots = chartSlots(plotted, true, 0, 100);
-	assert.deepEqual(slots, [0, 1, 100, 101]);
-	assert.equal(chartRows(plotted, slots, false).length, 102);
-});
-
-test('the line runs straight through the slots between two points, and candles leave them empty', () => {
-	const plotted = plotPoints([at(0, 1), at(1, 2), at(4, 5)], true, 0);
-	const slots = chartSlots(plotted, true, 0);
-	assert.deepEqual(chartRows(plotted, slots, false).map((row) => Number(row.value.toFixed(9))), [1, 2, 3, 4, 5]);
-	const candles = plotPoints([{ ...at(0, 1), o: 1, h: 2, l: 0 }, { ...at(1, 2), o: 1, h: 3, l: 1 }, { ...at(3, 3), o: 2, h: 4, l: 1 }], true, 0);
-	assert.deepEqual(chartRows(candles, chartSlots(candles, true, 0), true), [
-		{ time: 1, open: 1, high: 2, low: 0, close: 1 },
-		{ time: 2, open: 1, high: 3, low: 1, close: 2 },
-		{ time: 3 },
-		{ time: 4, open: 2, high: 4, low: 1, close: 3 }
-	]);
-});
-
-test('a moment falls between the slots of its neighbours, and pins to the ends outside them', () => {
+test('a moment placed evenly falls between its neighbours\' indexes, and pins to the ends outside them', () => {
 	const plotted = plotPoints([at(0, 1), at(1, 2), at(5, 3)], false, 0);
-	const slots = chartSlots(plotted, false, 0);
-	assert.equal(slotAtTime(plotted, slots, start + 0.5 * HOUR), 0.5);
-	assert.equal(slotAtTime(plotted, slots, start + 3 * HOUR), 1.5);
-	assert.equal(slotAtTime(plotted, slots, start - HOUR), 0);
-	assert.equal(slotAtTime(plotted, slots, start + 9 * HOUR), 2);
+	assert.equal(xAtTime(plotted, start + 0.5 * HOUR), 0.5);
+	assert.equal(xAtTime(plotted, start + 3 * HOUR), 1.5);
+	assert.equal(xAtTime(plotted, start - HOUR), 0);
+	assert.equal(xAtTime(plotted, start + 9 * HOUR), 2);
+	assert.equal(xAtTime([], start), 0);
 });
 
-test('a slot under the pointer turns back into x, so the nearest point and gaps are found as before', () => {
+test('a moment placed by time is its own x, clamped to the range, and gaps are found from it', () => {
 	const plotted = plotPoints([at(0, 1), at(1, 2), at(5, 3)], true, 2 * HOUR);
-	const slots = chartSlots(plotted, true, 2 * HOUR);
-	assert.equal(xAtSlot(plotted, slots, 0), start);
-	assert.equal(xAtSlot(plotted, slots, slots[2]), start + 5 * HOUR);
-	assert.equal(xAtSlot(plotted, slots, -3), start);
-	assert.equal(xAtSlot(plotted, slots, 99), start + 5 * HOUR);
-	const middle = xAtSlot(plotted, slots, 3);
-	assert.equal(middle, start + 3 * HOUR);
-	const index = nearestIndex(plotted, middle);
-	assert.ok(inGap(plotted[index], middle, true, 2 * HOUR));
-	// Evenly placed, the slot is the index, and x is too.
-	const even = plotPoints([at(0, 1), at(1, 2), at(5, 3)], false, 0);
-	assert.equal(nearestIndex(even, xAtSlot(even, chartSlots(even, false, 0), 1.4)), 1);
+	assert.equal(xAtTime(plotted, start + 3 * HOUR), start + 3 * HOUR);
+	assert.equal(xAtTime(plotted, start - HOUR), start);
+	assert.equal(xAtTime(plotted, start + 9 * HOUR), start + 5 * HOUR);
+	const x = xAtTime(plotted, start + 3 * HOUR);
+	assert.ok(inGap(plotted[nearestIndex(plotted, x)], x, true, 2 * HOUR));
 });
 
 test('the summary gives the span, the count, the ends and the extremes', () => {
@@ -289,13 +244,4 @@ test('the summary gives the span, the count, the ends and the extremes', () => {
 	const candles = [{ ...at(0, 2), o: 1, h: 6, l: 0.5 }, { ...at(1, 3), o: 2, h: 4, l: 1 }];
 	assert.equal(seriesSummary(candles, true, format, time, false), 'From T0 to T1: 2 candles, opened at $1, closed at $3, high $6, low $0.5.');
 	assert.equal(seriesSummary([at(0, 1)], false, format, time, false), '');
-});
-
-test('colour tokens take an opacity for the canvas', () => {
-	assert.equal(colorWithAlpha('#1d7a4c', 0.28), 'rgba(29, 122, 76, 0.28)');
-	assert.equal(colorWithAlpha(' #fff ', 0), 'rgba(255, 255, 255, 0)');
-	assert.equal(colorWithAlpha('#1d7a4cff', 0.5), 'rgba(29, 122, 76, 0.5)');
-	assert.equal(colorWithAlpha('rgb(1, 2, 3)', 0.1), 'rgba(1, 2, 3, 0.1)');
-	assert.equal(colorWithAlpha('rgba(1 2 3 / 50%)', 0.1), 'rgba(1, 2, 3, 0.1)');
-	assert.equal(colorWithAlpha('oklch(0.6 0.1 150)', 0.1), 'oklch(0.6 0.1 150)');
 });

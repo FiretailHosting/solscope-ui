@@ -1,3 +1,5 @@
+import { type Component } from 'svelte';
+import { type SeriesLevel } from '../../../chart/levels.js';
 import { type SeriesMarker, type SeriesPoint } from '../../../chart/series.js';
 type $$ComponentProps = {
     points: SeriesPoint[];
@@ -6,6 +8,8 @@ type $$ComponentProps = {
     height?: number;
     /** Trades on the chart; each may carry the trader's `avatar` picture and `name`. */
     markers?: SeriesMarker[];
+    /** Prices marked across the plot, such as an open order or a take profit, each with its label and value at the right edge; updated in place by key. */
+    levels?: SeriesLevel[];
     label?: string;
     /** What a point is, for the default hint: "price", "market cap". */
     noun?: string;
@@ -13,7 +17,7 @@ type $$ComponentProps = {
     hint?: string;
     /** Shown in place of the chart when there are fewer than two points. */
     empty?: string;
-    /** The chart's description for screen readers; by default its span, start, end, high and low. */
+    /** The chart's description for screen readers; by default its span, start, end, high and low. The levels are read after it. */
     summary?: string;
     /** Place points by their time rather than evenly, so gaps show. */
     byTime?: boolean;
@@ -43,6 +47,6 @@ type $$ComponentProps = {
     change?: (difference: number) => string;
     class?: string;
 };
-declare const SeriesChart: import("svelte").Component<$$ComponentProps, {}, "">;
+declare const SeriesChart: Component<$$ComponentProps, {}, "">;
 type SeriesChart = ReturnType<typeof SeriesChart>;
 export default SeriesChart;
