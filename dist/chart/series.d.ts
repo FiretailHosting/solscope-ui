@@ -75,6 +75,19 @@ export declare function valueBounds(points: SeriesPoint[], baseline: boolean, ca
  * power of ten, and all inside the range.
  */
 export declare function guideValues(min: number, span: number, count?: number): number[];
+/**
+ * The least height of a SeriesChart's plot, in pixels, whatever its width:
+ * a plot that scales with its width would be under 100px tall in a 300px
+ * card, too short to read a price or fit its levels' tags.
+ */
+export declare const SERIES_CHART_MIN_HEIGHT = 220;
+/**
+ * seriesMinHeight is the least height SeriesChart gives a plot that scales
+ * with its width, by default: SERIES_CHART_MIN_HEIGHT, or `height` when that
+ * is less, so a short chart never grows past the height it asked for. A
+ * stand-in for the chart takes the same, so nothing moves when it lands.
+ */
+export declare function seriesMinHeight(height: number): number;
 /** Below this plot height, in pixels, the guides keep one label at most. */
 export declare const SHORT_PLOT_HEIGHT = 150;
 /**

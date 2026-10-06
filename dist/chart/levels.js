@@ -95,3 +95,62 @@ export function stackLabels(wanted, height, top, bottom) {
     order.forEach((entry, i) => (result[entry.index] = placed[i]));
     return result;
 }
+/**
+ * layoutLevelTags places the level tags at the right edge between `top` and
+ * `bottom`, each `height` pixels apart. A level pinned beyond an edge joins
+ * that edge's group, shown as one chip in the edge's slot rather than a tag
+ * each, so far levels never stack over the series. When the tags on the
+ * plot still do not fit in the slots left, the outermost go into a group
+ * too, the one already there first, so no tag is ever pushed off the plot.
+ * The tags left keep their order and move apart with stackLabels.
+ */
+export function layoutLevelTags(levels, height, top, bottom) {
+    const above = [];
+    const below = [];
+    const tagged = [];
+    levels.forEach((level, index) => (level.pinned === 'above' ? above : level.pinned === 'below' ? below : tagged).push(index));
+    tagged.sort((a, b) => levels[a].wanted - levels[b].wanted || a - b);
+    const room = () => bottom - top - (above.length > 0 ? height : 0) - (below.length > 0 ? height : 0);
+    while (tagged.length > 0 && tagged.length * height > room()) {
+        const first = tagged[0];
+        const last = tagged[tagged.length - 1];
+        let edge;
+        if (above.length > 0 && below.length === 0)
+            edge = 'above';
+        else if (below.length > 0 && above.length === 0)
+            edge = 'below';
+        else
+            edge = levels[first].wanted - top <= bottom - levels[last].wanted ? 'above' : 'below';
+        if (edge === 'above')
+            above.push(tagged.shift());
+        else
+            below.push(tagged.pop());
+    }
+    const highestFirst = (a, b) => levels[b].value - levels[a].value || a - b;
+    above.sort(highestFirst);
+    below.sort(highestFirst);
+    const aboveChip = above.length > 0 ? top + height / 2 : null;
+    const belowChip = below.length > 0 ? bottom - height / 2 : null;
+    const tags = new Array(levels.length).fill(null);
+    const stacked = stackLabels(tagged.map((index) => levels[index].wanted), height, top + (aboveChip == null ? 0 : height), bottom - (belowChip == null ? 0 : height));
+    tagged.forEach((index, i) => (tags[index] = stacked[i]));
+    return { tags, above, below, aboveChip, belowChip };
+}
+/**
+ * levelGroupText says an edge group of levels in words, so the arrow's
+ * direction never rests on colour or shape alone: `chip` on the chip, "6
+ * below"; `name`, the chip's accessible name, which starts with the chip's
+ * words, "6 below the chart"; and `heading`, read when the list opens, "6
+ * levels below the chart". A group that holds levels on the plot, whose
+ * tags had no room, says "3 more" and "at the top" or "at the bottom".
+ */
+export function levelGroupText(edge, members) {
+    const count = members.length;
+    const levels = count === 1 ? 'level' : 'levels';
+    if (members.every((member) => member.pinned === edge)) {
+        const where = `${edge} the chart`;
+        return { chip: `${count} ${edge}`, name: `${count} ${where}`, heading: `${count} ${levels} ${where}` };
+    }
+    const where = edge === 'above' ? 'at the top' : 'at the bottom';
+    return { chip: `${count} more`, name: `${count} more ${levels} ${where}`, heading: `${count} more ${levels} ${where}` };
+}

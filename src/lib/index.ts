@@ -30,6 +30,8 @@ export {
 	markersInTime,
 	nearestIndex,
 	plotPoints,
+	SERIES_CHART_MIN_HEIGHT,
+	seriesMinHeight,
 	seriesSummary,
 	THIN_CANDLE_WIDTH,
 	timeTicks,
@@ -57,13 +59,18 @@ export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
 export {
 	boundsWithLevels,
 	LEVEL_PRICE_TOLERANCE,
+	layoutLevelTags,
+	levelGroupText,
 	levelPin,
 	levelsInRange,
 	levelsSummary,
 	levelText,
 	placeLevels,
 	stackLabels,
+	type LevelEdge,
 	type LevelPin,
+	type LevelTagLayout,
+	type LevelTagWant,
 	type PlacedLevel,
 	type SeriesLevel
 } from './chart/levels.js';

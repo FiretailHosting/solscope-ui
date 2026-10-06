@@ -226,6 +226,37 @@
 	});
 	let showLevels = $state(true);
 
+	// A trader with many orders, as on a narrow token page: the far ones
+	// gather into a chip per edge, "2 above" and "6 below", which lists them.
+	const manyLevels = $derived.by((): SeriesLevel[] => {
+		const prices = livePriceSeries.map((point) => point.p);
+		const high = Math.max(...prices);
+		const low = Math.min(...prices);
+		const span = high - low;
+		return [
+			{ key: 'tp-1', value: high + span * 0.9, label: 'Take profit', tone: 'up' },
+			{ key: 'tp-2', value: high + span * 1.4, label: 'Take profit', tone: 'up' },
+			{ key: 'sell', value: low + span * 0.55, label: 'Limit sell', dashed: true },
+			{ key: 'buy-1', value: low - span * 0.15, label: 'Limit buy', dashed: true },
+			{ key: 'buy-2', value: low - span * 0.5, label: 'Limit buy', dashed: true },
+			{ key: 'trail', value: low - span * 0.8, label: 'Trailing stop', tone: 'down', dashed: true },
+			{ key: 'stop-1', value: low - span * 1.0, label: 'Stop loss', tone: 'down' },
+			{ key: 'stop-2', value: low - span * 1.2, label: 'Stop loss', tone: 'down' },
+			{ key: 'far', value: low * 0.35, label: 'Limit buy', dashed: true }
+		];
+	});
+	// A ladder of orders inside the prices, more than the tags have room for:
+	// the outermost gather into an edge chip rather than leave the plot.
+	const ladderLevels = $derived.by((): SeriesLevel[] => {
+		const prices = priceSeries.map((point) => point.p);
+		const high = Math.max(...prices);
+		const low = Math.min(...prices);
+		return Array.from({ length: 16 }, (_, index) => {
+			const sell = index < 6;
+			return { key: `rung-${index}`, value: low + ((high - low) * (15.5 - index)) / 16, label: sell ? 'Limit sell' : 'Limit buy', tone: sell ? 'up' : 'neutral', dashed: true };
+		});
+	});
+
 	// Profit and loss around zero, for the baseline chart.
 	const pnlSeries = Array.from({ length: 48 }, (_, index) => ({ t: now - (47 - index) * hour, p: Math.round(Math.sin(index / 6) * 180 + index * 5 - 90) }));
 	const signed = (value: number) => `${value < 0 ? '-' : '+'}$${Math.abs(value).toLocaleString('en-US')}`;
@@ -449,6 +480,15 @@
 			change={(difference) => `${difference < 0 ? '-' : '+'}$${Math.abs(difference).toFixed(5)}`}
 		/>
 	</Card>
+
+	<div class="narrow-row">
+		<Card title="Many levels" icon="markets">
+			<SeriesChart points={livePriceSeries} levels={manyLevels} byTime live height={260} format={formatPrice} axisFormat={formatPriceAxis} label="Price history with many orders" />
+		</Card>
+		<Card title="Order ladder" icon="markets">
+			<SeriesChart points={priceSeries} levels={ladderLevels} byTime height={260} format={formatPrice} axisFormat={formatPriceAxis} label="Price history with an order ladder" />
+		</Card>
+	</div>
 
 	<div class="row">
 		<Card title="Profit/loss" icon="portfolio">
@@ -770,6 +810,17 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
 		gap: var(--space-4);
+	}
+	/* A card as narrow as a token page's chart beside its trade form. */
+	.narrow-row {
+		display: grid;
+		grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+		gap: var(--space-4);
+	}
+	@media (max-width: 700px) {
+		.narrow-row {
+			grid-template-columns: minmax(0, 1fr);
+		}
 	}
 
 	.pagination-demo {

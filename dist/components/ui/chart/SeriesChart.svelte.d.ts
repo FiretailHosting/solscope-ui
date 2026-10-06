@@ -29,6 +29,8 @@ type $$ComponentProps = {
     gap?: number;
     /** Keep height in pixels at any width, rather than scaling with it. */
     fixed?: boolean;
+    /** Without `fixed`, the plot's least height in pixels, so a narrow card still gets a readable plot; by default seriesMinHeight(height): 220, or `height` when less. */
+    minHeight?: number;
     /** Draw a zero line, keep it in view and fill toward it: above it reads as gain, below as loss. */
     baseline?: boolean;
     /** Faint horizontal lines at round values, labelled at the left edge. */
