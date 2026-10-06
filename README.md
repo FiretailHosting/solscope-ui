@@ -3,14 +3,14 @@
 UI component library for [solscope](https://github.com/FiretailHosting/solscope).
 Built on Svelte 5 with a flat, corporate design: neutral greys, one navy accent, no gradients or shadows.
 Dark and light mode, CSS variable theming, and a technical icon set drawn for the library.
-Charts are the one part with dependencies: [Lightweight Charts](https://github.com/tradingview/lightweight-charts) (Apache-2.0, TradingView) draws `SeriesChart`, and [LayerChart](https://layerchart.com) the rest.
+Charts are the one part with a dependency: [LayerChart](https://layerchart.com) draws them, `SeriesChart` included.
 
 ## Install
 
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.18.3"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.0"
 ```
 
 ## Usage
@@ -51,7 +51,7 @@ Then use components:
 | `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
 | `ChartHint` | What a chart says while nothing is inspected: hover wording for a mouse, drag wording on a touch screen |
-| `SeriesChart` | A price or value over time as a line over a gradient fill or as candles, drawn by Lightweight Charts, with guides, a time axis, a crosshair, trade markers with traders' pictures and the same inspection by pointer, finger, keyboard and screen reader; see [Series chart](#series-chart) |
+| `SeriesChart` | A price or value over time as a line over a gradient fill or as candles, drawn by LayerChart, with guides, a time axis, a crosshair, price levels, trade markers with traders' pictures and the same inspection by pointer, finger, keyboard and screen reader; see [Series chart](#series-chart) |
 | `ChartTooltip` | Tooltip for a chart inside `ChartContainer`, with `indicator` dot, line or dashed; no glide or fade under reduced motion; `aria-hidden` goes on its outermost element |
 | `Dialog` | Modal over a native `<dialog>`: `title` or `label`, close button, Escape, backdrop tap, swipe down on phones, focus return; a centred card on desktop and a bottom sheet on phones; see [Dialog](#dialog) |
 | `EmptyState` | Icon, title, text and actions for a list with nothing in it |
@@ -489,22 +489,22 @@ Medium (500) and Bold (700) are used less and can load on demand.
 It fits the data rather than zero, or keeps zero in view with `baseline`, where the line above zero reads as gain and below as loss.
 Round-value `guides` run across the plot with labels at the left edge, kept out of the `timeAxis` row along the bottom and down to one on a plot under 150px tall, and `live` pulses the last point three times, and again when a new last point arrives.
 Rising candles are hollow and falling ones filled, so direction does not rest on colour alone.
+Candles under 3px wide, as many in a narrow plot, are a high-low line with a thicker body line, so at that density rise and fall show by colour and the readout names each candle's open and close; a doji is a level line with its wick through it.
+Placed by time, candles size to the closest two, so a burst never overlaps.
 A pointer shows a crosshair, a value tag and a tooltip; a finger drags and reads the readout under the chart, which stays after it lifts; the keyboard moves a hidden slider that announces each point, a candle as open, high, low and close; Escape hides the tooltip.
 An inspected point stays on its moment when new points arrive, so a live tick does not move it; it ends when that moment is gone.
 Only what an inspection shows is a live region, never the hint, so a hint that changes with each tick is not read out.
 `markers` place trades on the line as buttons that can be hovered, tapped or focused, and `change` adds each point's change since the first; see [Trade markers](#trade-markers).
 `format`, `formatTime` and `formatDay` say how values and times read, and `axisFormat` (by default `format`) how the plot's guide, zero and level labels read, so they can be shorter than the readout; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
 A new series, another range or kind, wipes in from the left, a live tick does not, and nothing moves under reduced motion; `animate={false}` turns it off.
-The canvas is a picture to screen readers, named by `label` and described by `summary`, by default a sentence with the span, start, end, high and low, also in the reading order as visually hidden text; the slider is not described by it, so it is read once.
-[Lightweight Charts](https://github.com/tradingview/lightweight-charts) paints the series on a canvas, loaded in its own chunk once a chart mounts, so server rendering and pages without a chart never load it.
-Everything read or reached is DOM over the canvas, placed with the chart's own coordinates and moved on every resize: the labels, crosshair, tooltip, slider and markers.
-Its license asks for TradingView's attribution notice and a link to <https://www.tradingview.com/>: a small "Charts by TradingView" link, a 24px target, sits in its own row under the plot, never over the series, a label or a marker, named "Charts by TradingView (opens in a new tab)" and last in the chart's tab order.
-Show `TRADINGVIEW_NOTICE`, the notice word for word, once on a page your users can reach, such as an about or licenses page.
-The row is `CHART_ATTRIBUTION_HEIGHT` (16) pixels tall, margins included; reserve it under a loading skeleton so nothing moves when the chart arrives.
-The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `markersInRange`, `boundsWithMarkers`, `chartSlots`, `slotAtTime`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
+The picture is an image to screen readers, named by `label` and described by `summary`, by default a sentence with the span, start, end, high and low, then the levels, also in the reading order as visually hidden text; the slider is not described by it, so it is read once.
+[LayerChart](https://layerchart.com) draws the series in SVG from a chunk of its own, with only the pieces it uses, loaded once a chart mounts, so server rendering and pages without a chart never load it.
+Everything read or reached is DOM over the picture, placed with the chart's own scales and moved on every resize: the labels, levels, crosshair, tooltip, slider and markers.
+The readout sits right under the plot, a `--space-2` gap below it, with no attribution row.
+The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `markersInRange`, `boundsWithMarkers`, `xAtTime`, `levelsInRange`, `boundsWithLevels`, `placeLevels`, `stackLabels`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
 
 ```svelte
-<SeriesChart points={history} kind={candles ? 'candles' : 'line'} markers={trades} byTime live format={usd} change={signedUsd} />
+<SeriesChart points={history} kind={candles ? 'candles' : 'line'} markers={trades} byTime live levels={levels} format={usd} change={signedUsd} />
 ```
 
 #### Trade markers
@@ -525,6 +525,23 @@ Hover or focus shows a trade or a group's count in the readout, with no floating
 The readout speaks only when a press changes the pick, "12 trades picked", so a pick shown again after focus moves on is not read twice.
 Targets are 24px, 44px on a touch screen; the markers come after the slider in the tab order, in time order.
 A trade priced a little outside the series, up to 5% of its range, as a fill just under a 1-minute candle's low, widens the view to fit, so it sits at its true price inside the plot; one further off is left out.
+
+#### Price levels
+
+```ts
+const levels: SeriesLevel[] = [
+  { key: order.id, value: order.limit, label: 'Limit buy', dashed: true },
+  { key: 'tp', value: takeProfit, label: 'Take profit', tone: 'up' },
+  { key: 'sl', value: stopLoss, label: 'Stop loss', tone: 'down' }
+];
+```
+
+Each level is `{ key, value, label }` with an optional `tone` (`up`, `down` or `neutral`, the default) and `dashed`, such as for a pending order.
+It draws as a 1px line across the plot with a tag at the right edge, its label and value in `axisFormat`; the tag's words say what it is, so the tone's colour is never the only signal.
+A level updates in place by `key`, so a live price moving a trailing stop does not redraw the rest.
+One a little outside the prices, up to 10% of their range (`LEVEL_PRICE_TOLERANCE`), widens the view to fit, as a trade does; one further off is pinned to the top or bottom edge, a tag with an up or down arrow and its value and no line, so it never flattens the series.
+Tags move apart so none covers another, stay out of the time axis row and sit over the markers, which still take presses through them.
+Screen readers hear the levels after the summary, "Take profit at $0.0123", and "Stop loss at $0.0040, below the chart" for a pinned one.
 
 ### Range picker
 

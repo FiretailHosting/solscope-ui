@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { IChartApi, ISeriesApi, Logical, SeriesType } from 'lightweight-charts';
-	import { tick, untrack } from 'svelte';
+	import type { ChartState } from 'layerchart';
+	import { tick, untrack, type Component } from 'svelte';
 	import { forgetAvatarWaiter, loadAvatar, avatarStatus, settleAvatar } from '../../../chart/avatars.js';
-	import { CHART_ATTRIBUTION_HEIGHT, TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from '../../../chart/attribution.js';
+	import { boundsWithLevels, levelsInRange, levelsSummary, placeLevels, stackLabels, type SeriesLevel } from '../../../chart/levels.js';
 	import { axisTime, chartDay, chartTime, spansYears } from '../../../chart/dates.js';
 	import {
 		clusterKey,
@@ -19,9 +19,6 @@
 		boundsWithMarkers,
 		candleReading,
 		carriedIndex,
-		chartRows,
-		chartSlots,
-		colorWithAlpha,
 		guideLabels,
 		guideValues,
 		hasCandles,
@@ -34,24 +31,23 @@
 		nearestIndex,
 		plotPoints,
 		seriesSummary,
-		slotAtTime,
 		timeTicks,
 		valueBounds,
-		xAtSlot,
+		xAtTime,
 		type PlottedPoint,
 		type SeriesMarker,
 		type SeriesPoint
 	} from '../../../chart/series.js';
 	import ChartHint from './ChartHint.svelte';
 
-	// A price or value over time, drawn by Lightweight Charts (TradingView,
-	// Apache-2.0) on a canvas, and inspected by pointer, finger, keyboard and
-	// screen reader alike. The canvas only paints the line, area or candles;
-	// everything a person reads or reaches is DOM laid over it with the
-	// chart's own coordinates: the guides and time labels, the crosshair, a
-	// tooltip for a mouse, the readout under the chart for touch and screen
-	// readers, a hidden range slider for the keyboard, and the trade markers
-	// as real buttons. Escape hides the tooltip.
+	// A price or value over time, drawn by LayerChart in SVG, and inspected
+	// by pointer, finger, keyboard and screen reader alike. The SVG only
+	// paints the line, area or candles; everything a person reads or reaches
+	// is DOM laid over it with the chart's own scales: the guides and time
+	// labels, the price levels, the crosshair, a tooltip for a mouse, the
+	// readout under the chart for touch and screen readers, a hidden range
+	// slider for the keyboard, and the trade markers as real buttons. Escape
+	// hides the tooltip.
 
 	const uid = $props.id();
 
@@ -60,6 +56,7 @@
 		kind = 'line',
 		height = 260,
 		markers = [],
+		levels = [],
 		label = 'Price history',
 		noun = 'price',
 		hint,
@@ -86,6 +83,8 @@
 		height?: number;
 		/** Trades on the chart; each may carry the trader's `avatar` picture and `name`. */
 		markers?: SeriesMarker[];
+		/** Prices marked across the plot, such as an open order or a take profit, each with its label and value at the right edge; updated in place by key. */
+		levels?: SeriesLevel[];
 		label?: string;
 		/** What a point is, for the default hint: "price", "market cap". */
 		noun?: string;
@@ -93,7 +92,7 @@
 		hint?: string;
 		/** Shown in place of the chart when there are fewer than two points. */
 		empty?: string;
-		/** The chart's description for screen readers; by default its span, start, end, high and low. */
+		/** The chart's description for screen readers; by default its span, start, end, high and low. The levels are read after it. */
 		summary?: string;
 		/** Place points by their time rather than evenly, so gaps show. */
 		byTime?: boolean;
@@ -130,6 +129,9 @@
 	const TICK_ROW = 16;
 	// The most trades a picked group lists before the list scrolls.
 	const LIST_ROWS = 4;
+	// A level's label, in pixels, and the space kept between two stacked labels.
+	const LEVEL_LABEL = 16;
+	const LEVEL_LABEL_GAP = 2;
 
 	const formatAxis = $derived(axisFormat ?? format);
 	const candles = $derived(kind === 'candles' && hasCandles(points));
@@ -145,14 +147,17 @@
 	// fits them too, so a fill just outside the prices sits at its true price
 	// inside the plot, never over the time axis or under the plot.
 	const markersShown = $derived(markersInRange(markersInTime(points, markers), bounds));
-	const fittedBounds = $derived(bounds ? boundsWithMarkers(bounds, markersShown) : null);
+	// Levels a little outside the prices widen the view the same way; a far
+	// one pins to the top or bottom edge instead, so it never flattens the
+	// series.
+	const fittedBounds = $derived(bounds ? boundsWithLevels(boundsWithMarkers(bounds, markersShown), levelsInRange(levels, bounds)) : null);
+	const placedLevels = $derived(fittedBounds ? placeLevels(levels, fittedBounds) : []);
+	const yDomain = $derived<[number, number]>(fittedBounds ? [fittedBounds.min, fittedBounds.min + fittedBounds.span] : [0, 1]);
 	const withYear = $derived(spansYears(points));
 	const spanMs = $derived(points.length > 1 ? points[points.length - 1].t - points[0].t : 0);
-	// Each point's slot on the canvas's evenly spaced time scale, and what
-	// fills every slot: the points, the line between them, or nothing.
-	const slots = $derived(chartSlots(plotted, byTime, gap));
-	const rows = $derived(chartRows(plotted, slots, candles));
-	const description = $derived(summary ?? seriesSummary(points, candles, format, formatTime, withYear));
+	const description = $derived(
+		[summary ?? seriesSummary(points, candles, format, formatTime, withYear), levelsSummary(placedLevels, format)].filter(Boolean).join(' ')
+	);
 
 	// Green when the range ends higher than it started, red when lower. The
 	// line, its fill and the end dot all take this one colour.
@@ -160,69 +165,51 @@
 	const lineColor = $derived(up ? 'var(--up)' : 'var(--down)');
 	const sizing = $derived(fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}`);
 
-	// The canvas chart. It is made in the browser once the plot is on the
-	// page, from a chunk of its own, so pages without a chart and server
-	// rendering never load it. Its coordinates change on every resize and new
-	// series, and layoutVersion moves then, so what is placed with them moves.
+	// The picture, drawn by LayerChart. It is loaded in the browser once the
+	// plot is on the page, from a chunk of its own, so pages without a chart
+	// and server rendering never load it. Its scales follow every resize and
+	// new series, and what is laid over it is placed with them.
 	let host = $state<HTMLElement>();
 	let plotElement = $state<HTMLElement>();
 	let overlay = $state<HTMLElement>();
-	let library_: typeof import('lightweight-charts') | null = null;
-	let chart: IChartApi | null = null;
-	let series: ISeriesApi<SeriesType> | null = null;
-	let seriesShape = '';
-	let ready = $state(false);
-	let layoutVersion = $state(0);
-	let plotWidth = $state(0);
-	let plotHeight = $state(0);
+	let Plot = $state<Component<any> | null>(null);
+	let context = $state<ChartState<PlottedPoint>>();
+	// A chunk that fails to load, as offline, shows the empty text in the plot's place.
+	let plotFailed = $state(false);
+	const ready = $derived(Plot != null && context != null && context.isMeasured && context.width > 0 && context.height > 0);
+	const plotWidth = $derived(context?.width ?? 0);
+	const plotHeight = $derived(context?.height ?? 0);
 
-	/** xAt is the left of a fractional slot on the plot, in pixels. */
-	function xAt(slot: number): number {
-		void layoutVersion;
-		if (!chart) return 0;
-		// The time scale converts whole slots; a slot between two is placed between them.
-		const scale = chart.timeScale();
-		const below = Math.floor(slot);
-		const from = scale.logicalToCoordinate(below as Logical) ?? 0;
-		if (slot === below) return from;
-		const to = scale.logicalToCoordinate((below + 1) as Logical) ?? from;
-		return from + (to - from) * (slot - below);
+	$effect(() => {
+		if (!host || Plot) return;
+		let disposed = false;
+		import('./SeriesPlot.svelte').then(
+			(module) => {
+				if (!disposed) Plot = module.default;
+			},
+			() => {
+				if (!disposed) plotFailed = true;
+			}
+		);
+		return () => {
+			disposed = true;
+		};
+	});
+
+	/** xAt is the left of a value along the x axis, a time or an index as plotPoints placed it, in pixels. */
+	function xAt(x: number): number {
+		return context ? context.xScale(x) : 0;
 	}
 
 	/** yAt is the top of a value on the plot, in pixels. */
 	function yAt(value: number): number {
-		void layoutVersion;
-		return series?.priceToCoordinate(value) ?? 0;
+		return context ? context.yScale(value) : 0;
 	}
 
 	/** pointLeft is where the plotted point at this index sits across the plot. */
 	function pointLeft(index: number): number {
-		return xAt(slots[index] ?? 0);
+		return xAt(plotted[index]?.x ?? 0);
 	}
-
-	// The theme's colours, for the canvas, which cannot read CSS variables.
-	// Read again when the theme changes, by the toggle or the system.
-	let palette = $state({ up: '', down: '' });
-
-	function readPalette() {
-		if (!plotElement) return;
-		const style = getComputedStyle(plotElement);
-		const next = { up: style.getPropertyValue('--up').trim() || '#1d7a4c', down: style.getPropertyValue('--down').trim() || '#b4322c' };
-		if (next.up !== palette.up || next.down !== palette.down) palette = next;
-	}
-
-	$effect(() => {
-		if (!plotElement) return;
-		readPalette();
-		const dark = window.matchMedia('(prefers-color-scheme: dark)');
-		const observer = new MutationObserver(readPalette);
-		observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] });
-		dark.addEventListener('change', readPalette);
-		return () => {
-			observer.disconnect();
-			dark.removeEventListener('change', readPalette);
-		};
-	});
 
 	// A finger needs markers further apart before they group.
 	let coarse = $state(false);
@@ -234,134 +221,15 @@
 		return () => query.removeEventListener('change', update);
 	});
 
-	let layoutFrame = 0;
-	/** relayout moves the DOM layer once the canvas has redrawn, at most once a frame. */
-	function relayout() {
-		if (layoutFrame) return;
-		layoutFrame = requestAnimationFrame(() => {
-			layoutFrame = 0;
-			if (!host || !chart) return;
-			plotWidth = host.clientWidth;
-			plotHeight = host.clientHeight;
-			layoutVersion++;
-		});
-	}
-
-	/** fit keeps the whole series in view with PAD pixels above and below it, as the plot's size changes. */
-	function fit() {
-		if (!host || !chart) return;
-		const margin = host.clientHeight > 0 ? Math.min(0.2, PAD / host.clientHeight) : 0.05;
-		chart.priceScale('right').applyOptions({ scaleMargins: { top: margin, bottom: margin } });
-		chart.timeScale().fitContent();
-		relayout();
-	}
-
-	// Made once the plot is on the page, and removed with it.
-	$effect(() => {
-		const element = host;
-		if (!element) return;
-		let disposed = false;
-		let resizeObserver: ResizeObserver | undefined;
-		import('lightweight-charts').then((library) => {
-			if (disposed) return;
-			library_ = library;
-			chart = library.createChart(element, {
-				autoSize: true,
-				layout: { background: { type: library.ColorType.Solid, color: 'transparent' }, attributionLogo: false, textColor: '#888' },
-				grid: { vertLines: { visible: false }, horzLines: { visible: false } },
-				rightPriceScale: { visible: false, scaleMargins: { top: 0.05, bottom: 0.05 } },
-				leftPriceScale: { visible: false },
-				timeScale: { visible: false, fixLeftEdge: true, fixRightEdge: true, rightOffset: 0, minBarSpacing: 0.001, lockVisibleTimeRangeOnResize: true },
-				crosshair: { mode: library.CrosshairMode.Hidden, vertLine: { visible: false, labelVisible: false }, horzLine: { visible: false, labelVisible: false } },
-				handleScroll: false,
-				handleScale: false,
-				kineticScroll: { touch: false, mouse: false }
-			});
-			// The chart lays itself out in a table; it is not a data table.
-			element.querySelector('table')?.setAttribute('role', 'presentation');
-			chart.timeScale().subscribeVisibleLogicalRangeChange(relayout);
-			resizeObserver = new ResizeObserver(fit);
-			resizeObserver.observe(element);
-			ready = true;
-		});
-		return () => {
-			disposed = true;
-			resizeObserver?.disconnect();
-			if (layoutFrame) cancelAnimationFrame(layoutFrame);
-			layoutFrame = 0;
-			chart?.remove();
-			chart = null;
-			series = null;
-			seriesShape = '';
-			ready = false;
-		};
-	});
-
-	let currentBounds: { min: number; span: number } | null = null;
+	// A new series, another range or kind, wipes in from the left; a live
+	// tick, which keeps the first point, does not.
 	let revealedKey = '';
-
-	// Draws the series whenever the points, the kind or the theme change.
+	const revealKey = $derived(`${candles ? 'candles' : baseline ? 'baseline' : 'area'}|${plotted[0]?.t}`);
 	$effect(() => {
-		const data = rows;
-		const shape = candles ? 'candles' : baseline ? 'baseline' : 'area';
-		const colors = { ...palette, line: up ? palette.up : palette.down };
-		const fitBounds = fittedBounds;
-		const first = plotted[0]?.t;
+		const key = revealKey;
 		if (!ready) return;
-		untrack(() => {
-			if (!chart || !library_) return;
-			currentBounds = fitBounds;
-			if (shape !== seriesShape) {
-				if (series) chart.removeSeries(series);
-				series = addSeries(library_, chart, shape);
-				seriesShape = shape;
-			}
-			series?.applyOptions(seriesColors(shape, colors));
-			series?.setData(data as never[]);
-			fit();
-			reveal(`${shape}|${first}`);
-		});
+		untrack(() => reveal(key));
 	});
-
-	function addSeries(library: typeof import('lightweight-charts'), target: IChartApi, shape: string): ISeriesApi<SeriesType> {
-		const common = {
-			priceLineVisible: false,
-			lastValueVisible: false,
-			// The view fits the data rather than zero, or keeps zero in view with a baseline.
-			autoscaleInfoProvider: () => (currentBounds ? { priceRange: { minValue: currentBounds.min, maxValue: currentBounds.min + currentBounds.span } } : null)
-		};
-		if (shape === 'candles') return target.addSeries(library.CandlestickSeries, { ...common, borderVisible: true });
-		if (shape === 'baseline') {
-			return target.addSeries(library.BaselineSeries, { ...common, baseValue: { type: 'price', price: 0 }, lineWidth: 2, crosshairMarkerVisible: false });
-		}
-		return target.addSeries(library.AreaSeries, { ...common, lineWidth: 2, crosshairMarkerVisible: false, lineType: library.LineType.Simple });
-	}
-
-	/** seriesColors paints the series from the theme: hollow rising candles, a gain and loss baseline, or a line over a fading fill. */
-	function seriesColors(shape: string, colors: { up: string; down: string; line: string }) {
-		if (shape === 'candles') {
-			// Shape as well as colour: a rising candle is hollow, a falling one filled.
-			return {
-				upColor: 'rgba(0, 0, 0, 0)',
-				borderUpColor: colors.up,
-				wickUpColor: colors.up,
-				downColor: colors.down,
-				borderDownColor: colors.down,
-				wickDownColor: colors.down
-			};
-		}
-		if (shape === 'baseline') {
-			return {
-				topLineColor: colors.up,
-				topFillColor1: colorWithAlpha(colors.up, 0.28),
-				topFillColor2: colorWithAlpha(colors.up, 0.04),
-				bottomLineColor: colors.down,
-				bottomFillColor1: colorWithAlpha(colors.down, 0.04),
-				bottomFillColor2: colorWithAlpha(colors.down, 0.28)
-			};
-		}
-		return { lineColor: colors.line, topColor: colorWithAlpha(colors.line, 0.28), bottomColor: colorWithAlpha(colors.line, 0) };
-	}
 
 	/** reveal wipes a new series in from the left; a live tick on the same series does not. Nothing moves under reduced motion. */
 	function reveal(key: string) {
@@ -425,11 +293,10 @@
 
 	// The markers in pixels, grouped where they would cover each other.
 	const clusters = $derived.by((): MarkerCluster<PlacedMarker>[] => {
-		void layoutVersion;
 		if (!ready || plotHeight <= 0) return [];
 		const placed: PlacedMarker[] = [];
 		for (const marker of markersShown) {
-			placed.push({ ...marker, left: xAt(slotAtTime(plotted, slots, marker.t)), top: yAt(marker.price) });
+			placed.push({ ...marker, left: xAt(xAtTime(plotted, marker.t)), top: yAt(marker.price) });
 		}
 		return clusterMarkers(placed, coarse ? MARKER_CLUSTER_DISTANCE_COARSE : MARKER_CLUSTER_DISTANCE);
 	});
@@ -506,10 +373,9 @@
 
 	/** inspectAt finds the point under a pointer at this many pixels from the left of the plot. */
 	function inspectAt(left: number) {
-		if (!chart || plotted.length === 0) return;
-		const logical = chart.timeScale().coordinateToLogical(left);
-		if (logical == null) return;
-		const x = xAtSlot(plotted, slots, logical);
+		if (!context || plotted.length === 0) return;
+		const x = context.xScale.invert?.(left);
+		if (x == null || !Number.isFinite(x)) return;
 		const index = nearestIndex(plotted, x);
 		inspectedIndex = index;
 		pointerInGap = inGap(plotted[index], x, byTime, gap);
@@ -519,7 +385,7 @@
 
 	function onPlotPointer(event: PointerEvent) {
 		const target = event.target as Element;
-		if (!overlay || target.closest('.marker, a, .scrub')) return;
+		if (!overlay || target.closest('.marker, .scrub')) return;
 		touching = event.pointerType === 'touch';
 		inspectAt(event.clientX - overlay.getBoundingClientRect().left);
 	}
@@ -634,11 +500,39 @@
 	const last = $derived(plotted[lastIndex]);
 	const active = $derived(inspected && !pointerInGap ? inspected : null);
 
+	// Each level tag's width, so a tag over the line's live end dot can fade
+	// and let the latest price show through.
+	let levelTagWidths = $state<number[]>([]);
+	const END_DOT_REACH = 6;
+	function coversEnd(index: number): boolean {
+		if (!ready || candles || !last || active) return false;
+		const top = levelLabelTops[index];
+		const width = levelTagWidths[index] ?? 0;
+		if (top == null || width === 0) return false;
+		const x = pointLeft(lastIndex);
+		const y = yAt(last.p);
+		return x >= plotWidth - width - END_DOT_REACH && y >= top - END_DOT_REACH && y <= top + LEVEL_LABEL + END_DOT_REACH;
+	}
+
 	/** The guides that get a label: none in the time axis's row, and one at most on a short chart. */
 	const labelledGuides = $derived.by(() => {
 		if (!ready) return [];
 		const placed = guideLines.map((value) => ({ value, y: yAt(value) }));
 		return guideLabels(placed, plotHeight, tickLabels.length > 0 ? TICK_ROW : 0);
+	});
+
+	// The levels' labels at the right edge: just above a level's line, or at
+	// the edge it is pinned to, moved apart so none covers another and kept
+	// out of the time axis's row.
+	const levelLabelTops = $derived.by(() => {
+		if (!ready || placedLevels.length === 0) return [];
+		const bottom = plotHeight - (tickLabels.length > 0 ? TICK_ROW : 0);
+		const wanted = placedLevels.map((level) => {
+			if (level.pinned === 'above') return 0;
+			if (level.pinned === 'below') return bottom;
+			return yAt(level.value) - LEVEL_LABEL / 2 - 1;
+		});
+		return stackLabels(wanted, LEVEL_LABEL + LEVEL_LABEL_GAP, 0, bottom).map((centre) => centre - LEVEL_LABEL / 2);
 	});
 
 	/** The ring and badge side of a marker or group, as a class. */
@@ -663,7 +557,7 @@
 	</svg>
 {/snippet}
 
-{#if !bounds}
+{#if !bounds || plotFailed}
 	<p class="sui-series-empty" style={fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}`}>{empty}</p>
 {:else}
 	<div
@@ -703,7 +597,7 @@
 				oninput={(event) => inspectIndex(event.currentTarget.valueAsNumber)}
 			/>
 
-			<!-- Behind the canvas: the guides and the zero line. -->
+			<!-- Behind the picture: the guides and the zero line. -->
 			<div class="layer back" aria-hidden="true">
 				{#if ready}
 					{#each guideLines as value (value)}
@@ -721,10 +615,17 @@
 			<!-- Visually hidden rather than hidden, so browse mode reads it too. -->
 			<span id="{uid}-summary" class="visually-hidden">{description}</span>
 
-			<!-- Over the canvas: the labels, the crosshair and the dots. They
-			     repeat what the slider and the readout say, so screen readers skip them. -->
+			<!-- Over the picture: the labels, the levels, the crosshair and the
+			     dots. They repeat what the slider, the summary and the readout
+			     say, so screen readers skip them. -->
 			<div class="layer front" aria-hidden="true">
 				{#if ready}
+					{#each placedLevels as level, index (level.key)}
+						<!-- A level's line at its value, or none when it is pinned to an edge. -->
+						{#if !level.pinned}
+							<span class="level-line {level.tone ?? 'neutral'}" class:dashed={level.dashed} style="top: {yAt(level.value)}px"></span>
+						{/if}
+					{/each}
 					{#each labelledGuides as value (value)}
 						<span class="guide-label" style="top: {yAt(value)}px">{formatAxis(value)}</span>
 					{/each}
@@ -818,6 +719,32 @@
 				{/each}
 			</div>
 
+			<!-- The levels' tags at the right edge, over the markers so a trade
+			     never hides what a level is; presses pass through to the markers.
+			     A pinned level's arrow says which way it lies. -->
+			<!-- Under the crosshair and its value while something is inspected. -->
+			<div class="layer levels" class:under={active != null} aria-hidden="true">
+				{#if ready}
+					{#each placedLevels as level, index (level.key)}
+						<span
+							class="level-tag {level.tone ?? 'neutral'}"
+							class:pinned={level.pinned}
+							class:faded={coversEnd(index)}
+							style="top: {levelLabelTops[index] ?? 0}px"
+							bind:offsetWidth={levelTagWidths[index]}
+						>
+							{#if level.pinned}
+								<svg viewBox="0 0 8 8" width="8" height="8" class="pin-arrow">
+									<polygon points={level.pinned === 'above' ? '4,0.5 7.5,7 0.5,7' : '0.5,1 7.5,1 4,7.5'} />
+								</svg>
+							{/if}
+							<span>{level.label}</span>
+							<span class="level-value">{formatAxis(level.value)}</span>
+						</span>
+					{/each}
+				{/if}
+			</div>
+
 			{#if ready && tooltipShown}
 				<div class="tooltip" class:flip={tooltipLeft > plotWidth / 2} style="left: {tooltipLeft}px" aria-hidden="true">
 					{#if inspected}
@@ -836,16 +763,13 @@
 				</div>
 			{/if}
 
-			<!-- Lightweight Charts paints here. -->
-			<div class="host" bind:this={host}></div>
+			<!-- LayerChart paints here. -->
+			<div class="host" bind:this={host}>
+				{#if Plot}
+					<Plot bind:context {plotted} {candles} {baseline} byTime={byTime && plotted.length > 1 && plotted[plotted.length - 1].t > plotted[0].t} {yDomain} pad={PAD} id="sui-series-{uid.replace(/[^a-zA-Z0-9_-]/g, '')}" />
+				{/if}
+			</div>
 		</div>
-		<!-- TradingView's attribution, which Lightweight Charts' license asks
-		     for: in its own row under the plot, so it never covers the series
-		     or a label, and rendered with the page, so nothing moves when the
-		     chart loads. After the markers in the tab order. -->
-		<p class="sui-series-attribution" style="--attribution-height: {CHART_ATTRIBUTION_HEIGHT}px">
-			<a href={TRADINGVIEW_URL} target="_blank" rel="noopener noreferrer" aria-label="{TRADINGVIEW_CREDIT} (opens in a new tab)" title={TRADINGVIEW_NOTICE}>{TRADINGVIEW_CREDIT}</a>
-		</p>
 	</div>
 
 	<div class="sui-series-readout">
@@ -915,7 +839,7 @@
 		outline-offset: 2px;
 		border-radius: var(--radius-sm);
 	}
-	/* Its own stacking order: the guides behind the canvas, the labels,
+	/* Its own stacking order: the guides behind the picture, the labels,
 	   markers and tooltip over it. */
 	.plot {
 		position: relative;
@@ -945,6 +869,13 @@
 	.layer.markers {
 		z-index: 5;
 	}
+	.layer.levels {
+		z-index: 6;
+		overflow: hidden;
+	}
+	.layer.levels.under {
+		z-index: 3;
+	}
 	.scrub {
 		position: absolute;
 		left: 100%;
@@ -958,42 +889,6 @@
 		white-space: nowrap;
 		opacity: 0;
 		pointer-events: none;
-	}
-
-	/* TradingView's attribution: one small line of fixed height under the
-	   plot, CHART_ATTRIBUTION_HEIGHT, at the right, outside the plot and its
-	   labels at any height.
-	   The link is a 24px target that reaches into the readout's empty top
-	   margin, never up into the plot, and paints over any marker that
-	   spills below the plot; the rest of the row lets presses through. */
-	.sui-series-attribution {
-		position: relative;
-		z-index: 1;
-		height: var(--attribution-height);
-		margin: 0;
-		text-align: right;
-		font-size: var(--text-2xs);
-		line-height: 24px;
-		white-space: nowrap;
-		pointer-events: none;
-	}
-	.sui-series-attribution a {
-		display: inline-block;
-		min-height: 24px;
-		margin-bottom: calc(var(--attribution-height) - 24px);
-		padding: 0 var(--space-1);
-		color: var(--muted);
-		text-decoration: none;
-		pointer-events: auto;
-	}
-	.sui-series-attribution a:hover {
-		color: var(--fg);
-		text-decoration: underline;
-	}
-	.sui-series-attribution a:focus-visible {
-		outline: 2px solid var(--accent);
-		outline-offset: 2px;
-		border-radius: var(--radius-sm);
 	}
 
 	/* The guides, the zero line and the crosshair: dashed 1px lines. */
@@ -1066,6 +961,61 @@
 		background: var(--fg);
 		color: var(--bg);
 		font-weight: 600;
+	}
+	/* A level: a 1px line across the plot in its tone, dashed when pending,
+	   and a tag at the right edge whose words say what it is, so the colour
+	   is never the only signal. Above the series, under the markers. */
+	.level-line {
+		position: absolute;
+		left: 0;
+		right: 0;
+		height: 1px;
+		margin-top: -0.5px;
+		background: var(--level);
+		opacity: 0.9;
+	}
+	.level-line.dashed {
+		background: repeating-linear-gradient(to right, var(--level) 0 5px, transparent 5px 9px);
+	}
+	.level-tag {
+		position: absolute;
+		right: 0;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		box-sizing: border-box;
+		height: 16px;
+		max-width: 70%;
+		padding: 0 var(--space-1);
+		border: 1px solid var(--level);
+		border-radius: var(--radius-sm);
+		background: var(--card);
+		color: var(--fg);
+		font-size: var(--text-2xs);
+		line-height: 1;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.level-tag.faded {
+		opacity: 0.85;
+	}
+	.level-value {
+		font-variant-numeric: tabular-nums;
+		font-weight: 600;
+	}
+	.level-tag .pin-arrow {
+		flex: none;
+		fill: var(--level);
+	}
+	.up {
+		--level: var(--up);
+	}
+	.down {
+		--level: var(--down);
+	}
+	.neutral {
+		--level: var(--muted);
 	}
 	.lone {
 		position: absolute;
@@ -1269,7 +1219,7 @@
 	.tooltip {
 		position: absolute;
 		top: var(--space-2);
-		z-index: 6;
+		z-index: 7;
 		display: grid;
 		gap: var(--space-1);
 		min-width: 7rem;

@@ -10,10 +10,10 @@ export { default as ChartContainer } from './components/ui/chart/ChartContainer.
 export { default as ChartTooltip } from './components/ui/chart/ChartTooltip.svelte';
 export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
-export { boundsWithMarkers, candleWidth, carriedIndex, chartRows, chartSlots, colorWithAlpha, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, MARKER_PRICE_TOLERANCE, markersInRange, markersInTime, nearestIndex, plotPoints, seriesSummary, slotAtTime, timeTicks, valueBounds, withinPlotHeight, xAtSlot, type ChartRow, type PlottedPoint, type SeriesMarker, type SeriesPoint } from './chart/series.js';
+export { boundsWithMarkers, candleMarks, candleWidth, candleWidthByStep, carriedIndex, FLAT_CANDLE_HEIGHT, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, MARKER_PRICE_TOLERANCE, markersInRange, markersInTime, nearestIndex, plotPoints, seriesSummary, THIN_CANDLE_WIDTH, timeTicks, valueBounds, withinPlotHeight, xAtTime, type CandleMarks, type PlottedPoint, type SeriesMarker, type SeriesPoint } from './chart/series.js';
 export { clusterLabel, clusterMarkers, clusterSide, initials, markerFace, markerLabel, type AvatarStatus, type MarkerCluster, type MarkerFace, type PlacedMarker } from './chart/markers.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
-export { CHART_ATTRIBUTION_HEIGHT, TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from './chart/attribution.js';
+export { boundsWithLevels, LEVEL_PRICE_TOLERANCE, levelPin, levelsInRange, levelsSummary, levelText, placeLevels, stackLabels, type LevelPin, type PlacedLevel, type SeriesLevel } from './chart/levels.js';
 export { getPayloadConfigFromPayload, type ChartConfig } from './components/ui/chart/chart-utils.js';
 export { default as EmptyState } from './components/ui/EmptyState.svelte';
 export { default as FormField } from './components/ui/FormField.svelte';

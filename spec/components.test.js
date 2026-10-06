@@ -2,7 +2,6 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { render } from 'svelte/server';
 import { stopBusyClick } from '../src/lib/busy-click.ts';
-import { CHART_ATTRIBUTION_HEIGHT, TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from '../src/lib/chart/attribution.ts';
 import Button from '../src/lib/components/ui/Button.svelte';
 import SeriesChart from '../src/lib/components/ui/chart/SeriesChart.svelte';
 
@@ -83,30 +82,22 @@ test('fewer than two points show the empty text, with no chart', () => {
 	assert.ok(!html.includes('type="range"'));
 });
 
-test('TradingView is credited in its own row under the plot, rendered with the page, linking where its license asks', () => {
+test('the chart has no attribution row: the readout follows the plot', () => {
 	const html = render(SeriesChart, { props: { points } }).body;
-	const credit = html.match(/<p class="sui-series-attribution[^"]*"[^>]*>\s*(<a\b[^>]*>)([^<]*)<\/a>/);
-	assert.ok(credit, 'the credit renders on the server, so nothing moves when the chart loads');
-	const [, link, text] = credit;
-	assert.equal(text, TRADINGVIEW_CREDIT);
-	assert.ok(link.includes(`href="${TRADINGVIEW_URL}"`), link);
-	assert.match(link, /target="_blank"/);
-	assert.match(link, /rel="noopener noreferrer"/);
-	assert.match(link, /aria-label="Charts by TradingView \(opens in a new tab\)"/);
-	assert.ok(link.includes(`title="${TRADINGVIEW_NOTICE}"`), 'the notice is its description');
-	// Outside the plot, so it never covers the series or a label.
-	const plot = html.slice(html.indexOf('class="plot'), html.indexOf('class="sui-series-attribution'));
-	assert.ok(plot.includes('class="host'), 'the plot comes first');
-	assert.ok(!plot.includes('tradingview.com'), 'nothing in the plot links to TradingView');
+	assert.ok(!/tradingview|attribution/i.test(html), 'nothing credits a chart library');
+	const after = html.slice(html.indexOf('class="plot'));
+	assert.ok(after.includes('class="host'), 'the plot comes first');
+	assert.ok(!/<a\b/.test(html), 'no link in or under the chart');
 });
 
-test('the attribution row is CHART_ATTRIBUTION_HEIGHT tall, the same constant an app reserves in a skeleton', () => {
-	assert.equal(CHART_ATTRIBUTION_HEIGHT, 16);
-	const html = render(SeriesChart, { props: { points } }).body;
-	assert.match(html, new RegExp(`<p class="sui-series-attribution[^"]*" style="--attribution-height: ${CHART_ATTRIBUTION_HEIGHT}px;?"`));
-});
-
-test('the notice is word for word the one in Lightweight Charts\' NOTICE file', () => {
-	assert.equal(TRADINGVIEW_URL, 'https://www.tradingview.com/');
-	assert.equal(TRADINGVIEW_NOTICE, 'TradingView Lightweight Charts™ Copyright (с) 2025 TradingView, Inc. https://www.tradingview.com/');
+test('levels are read after the summary, a pinned one saying where it lies', () => {
+	const format = (n) => `$${n.toFixed(2)}`;
+	const levels = [
+		{ key: 'tp', value: 0.33, label: 'Take profit', tone: 'up' },
+		{ key: 'sl', value: -5, label: 'Stop loss', tone: 'down' }
+	];
+	const html = render(SeriesChart, { props: { points, levels, format } }).body;
+	assert.match(html, /visually-hidden[^>]*>From [^<]*low \$0\.12\. Take profit at \$0\.33\. Stop loss at \$-5\.00, below the chart\.<\/span>/);
+	const custom = render(SeriesChart, { props: { points, levels: levels.slice(0, 1), format, summary: 'Up this week.' } }).body;
+	assert.match(custom, /visually-hidden[^>]*>Up this week\. Take profit at \$0\.33\.<\/span>/);
 });

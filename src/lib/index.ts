@@ -13,11 +13,11 @@ export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
 export {
 	boundsWithMarkers,
+	candleMarks,
 	candleWidth,
+	candleWidthByStep,
 	carriedIndex,
-	chartRows,
-	chartSlots,
-	colorWithAlpha,
+	FLAT_CANDLE_HEIGHT,
 	guideValues,
 	hasCandles,
 	inGap,
@@ -31,12 +31,12 @@ export {
 	nearestIndex,
 	plotPoints,
 	seriesSummary,
-	slotAtTime,
+	THIN_CANDLE_WIDTH,
 	timeTicks,
 	valueBounds,
 	withinPlotHeight,
-	xAtSlot,
-	type ChartRow,
+	xAtTime,
+	type CandleMarks,
 	type PlottedPoint,
 	type SeriesMarker,
 	type SeriesPoint
@@ -54,7 +54,19 @@ export {
 	type PlacedMarker
 } from './chart/markers.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
-export { CHART_ATTRIBUTION_HEIGHT, TRADINGVIEW_CREDIT, TRADINGVIEW_NOTICE, TRADINGVIEW_URL } from './chart/attribution.js';
+export {
+	boundsWithLevels,
+	LEVEL_PRICE_TOLERANCE,
+	levelPin,
+	levelsInRange,
+	levelsSummary,
+	levelText,
+	placeLevels,
+	stackLabels,
+	type LevelPin,
+	type PlacedLevel,
+	type SeriesLevel
+} from './chart/levels.js';
 export {
 	getPayloadConfigFromPayload,
 	type ChartConfig

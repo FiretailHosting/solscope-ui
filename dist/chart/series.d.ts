@@ -96,11 +96,59 @@ export declare function timeTicks(plotted: PlottedPoint[], count?: number): Plot
 /**
  * candleWidth is how wide a candle's body is, in pixels, for a plot this wide
  * holding this many candles, leaving a gap between neighbours and never so
- * thin it vanishes or so wide it looks like a bar chart. SeriesChart no
- * longer uses it, since Lightweight Charts sizes its candles, but it stays
- * exported for code that draws its own.
+ * thin it vanishes or so wide it looks like a bar chart.
  */
 export declare function candleWidth(plotWidth: number, count: number): number;
+/**
+ * candleWidthByStep is how wide a candle's body is, in pixels, for candles
+ * placed by time: from the smallest distance between two neighbours, so
+ * candles close in time never overlap, never thinner than 1 or wider than
+ * 14, as candleWidth. xs are the candles' x values in order, and the plot
+ * is plotWidth pixels across from the first to the last.
+ */
+export declare function candleWidthByStep(plotWidth: number, xs: number[]): number;
+/** Below this body width, in pixels, a candle is a line: too narrow to show hollow or filled. */
+export declare const THIN_CANDLE_WIDTH = 3;
+/** Below this body height, in pixels, a candle's body is a level line: it opened and closed at about the same price. */
+export declare const FLAT_CANDLE_HEIGHT = 2;
+/**
+ * How a candle is drawn, in pixels. A thin one is a 1px line from high to
+ * low with a 2px line over its body, since a body under THIN_CANDLE_WIDTH
+ * cannot show hollow or filled, so colour alone tells rise from fall there
+ * and the readout names it. A flat one, a doji, is a wick straight through
+ * a level line across the body's width. Any other is a body box with a wick
+ * above and below it, hollow when rising.
+ */
+export type CandleMarks = {
+    kind: 'thin';
+    x: number;
+    high: number;
+    low: number;
+    top: number;
+    bottom: number;
+} | {
+    kind: 'flat';
+    x: number;
+    high: number;
+    low: number;
+    y: number;
+    left: number;
+    right: number;
+} | {
+    kind: 'body';
+    x: number;
+    high: number;
+    low: number;
+    top: number;
+    bottom: number;
+    left: number;
+    width: number;
+};
+/**
+ * candleMarks places one candle: its centre x, the y of its high, low, and
+ * body top and bottom, as the y scale gives them, and its body width.
+ */
+export declare function candleMarks(x: number, high: number, low: number, top: number, bottom: number, width: number): CandleMarks;
 /**
  * nearestIndex is the plotted point closest to x, in the chart's x units.
  * Points are in x order, so it bisects.
@@ -130,7 +178,7 @@ export declare function markerKey(marker: SeriesMarker): string;
 /**
  * markersInTime keeps the markers within the points' time range, each with how
  * far along it sits in time, from 0 to 1; SeriesChart places them between
- * their neighbouring points with slotAtTime instead. Price history is cached and sampled, so it
+ * their neighbouring points with xAtTime instead. Price history is cached and sampled, so it
  * usually ends a little before now; trades since then pin to the right edge
  * instead of vanishing. Markers that show the same thing at the same time
  * would sit on top of each other, so only the first is kept.
@@ -172,54 +220,14 @@ export declare function boundsWithMarkers(bounds: {
  */
 export declare function withinPlotHeight(top: number, plotHeight: number, tolerance?: number): boolean;
 /**
- * The most slots a chart placed by time spreads its points across, on top of
- * one per point, so a long range with a few close points stays cheap to draw.
+ * xAtTime is where a moment falls along the x axis, in the chart's x units
+ * as plotPoints placed them. Placed by time, it is the moment itself;
+ * placed evenly, it falls between the indexes of the points either side of
+ * it, in proportion to time. A moment before the first point is the first
+ * point's x, and after the last, as a trade since the last sample, the
+ * last's.
  */
-export declare const MAX_TIME_SLOTS = 4000;
-/**
- * chartSlots places each plotted point in a slot of the chart's time scale,
- * which Lightweight Charts draws evenly spaced. Placed evenly, point i is
- * slot i. Placed by time, slots follow time, with the closest neighbours one
- * slot apart and never finer than the span over maxSlots, so gaps show as
- * space; every point gets its own slot, and a gap wider than `gap` ms leaves
- * at least one empty slot, which breaks the line there.
- */
-export declare function chartSlots(plotted: PlottedPoint[], byTime: boolean, gap: number, maxSlots?: number): number[];
-/**
- * One slot of the chart's time scale, in the shape Lightweight Charts takes:
- * time is the slot number plus one, as it needs unique ascending times; a
- * line slot has a value, a candle slot open, high, low and close, and an
- * empty slot neither.
- */
-export type ChartRow = {
-    time: number;
-    value?: number;
-    open?: number;
-    high?: number;
-    low?: number;
-    close?: number;
-};
-/**
- * chartRows fills every slot from the first point's to the last's. A point's
- * slot holds the point. Between two points of one run, a line's slots hold
- * values on the straight line between them, so the line looks unbroken
- * however far apart they sit; between runs, and between candles, slots stay
- * empty, which shows as a break or a space.
- */
-export declare function chartRows(plotted: PlottedPoint[], slots: number[], candles: boolean): ChartRow[];
-/**
- * slotAtTime is where a moment falls on the time scale, as a fractional
- * slot: between the slots of the points either side of it, in proportion to
- * time. A moment before the first point is the first slot, and after the
- * last, as a trade since the last sample, the last slot.
- */
-export declare function slotAtTime(plotted: PlottedPoint[], slots: number[], t: number): number;
-/**
- * xAtSlot turns a fractional slot, such as one under the pointer, back into
- * the chart's x units, a time or an index as plotPoints placed them, so
- * nearestIndex and inGap work on it. It is clamped to the plotted range.
- */
-export declare function xAtSlot(plotted: PlottedPoint[], slots: number[], slot: number): number;
+export declare function xAtTime(plotted: PlottedPoint[], t: number): number;
 /**
  * seriesSummary describes a whole series in a sentence for screen readers,
  * as the chart's description: its span, how many points, where it started
@@ -227,10 +235,3 @@ export declare function xAtSlot(plotted: PlottedPoint[], slots: number[], slot: 
  * close, and the highs and lows of the candles.
  */
 export declare function seriesSummary(points: SeriesPoint[], candles: boolean, format: (n: number) => string, formatTime: (t: number, withYear: boolean) => string, withYear: boolean): string;
-/**
- * colorWithAlpha is a colour token at this opacity, for the canvas, which
- * cannot read CSS variables or mix colours: "#1d7a4c" at 0.28 is
- * "rgba(29, 122, 76, 0.28)". Hex and rgb() colours are mixed; any other
- * colour comes back as it is.
- */
-export declare function colorWithAlpha(color: string, alpha: number): string;
