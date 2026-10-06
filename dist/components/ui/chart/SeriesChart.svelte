@@ -39,7 +39,7 @@
 		markersInTime,
 		nearestIndex,
 		plotPoints,
-		seriesMinHeight,
+		seriesPlotStyle,
 		seriesSummary,
 		timeTicks,
 		valueBounds,
@@ -185,8 +185,11 @@
 	const lineColor = $derived(up ? 'var(--up)' : 'var(--down)');
 	// The plot scales with its width but is never shorter than its least
 	// height, so a chart in a narrow card stays readable; a stand-in for it
-	// takes the same least height, seriesMinHeight, so nothing moves.
-	const sizing = $derived(fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}; min-height: ${minHeight ?? seriesMinHeight(height)}px`);
+	// takes the same style, seriesPlotStyle, so nothing moves. The height
+	// follows the width of the size container around the plot, and never
+	// the other way: an aspect ratio with a least height would give the
+	// plot a least width too, wider than a narrow card.
+	const sizing = $derived(seriesPlotStyle(height, { fixed, minHeight }));
 
 	// The picture, drawn by LayerChart. It is loaded in the browser once the
 	// plot is on the page, from a chunk of its own, so pages without a chart
@@ -623,9 +626,9 @@
 {/snippet}
 
 {#if !bounds}
-	<p class="sui-series-empty" style={sizing}>{empty}</p>
+	<div class="sui-series-frame"><p class="sui-series-empty" style={sizing}>{empty}</p></div>
 {:else if plotFailed}
-	<p class="sui-series-empty" style={sizing}>{failed}</p>
+	<div class="sui-series-frame"><p class="sui-series-empty" style={sizing}>{failed}</p></div>
 	<div class="sui-series-readout" aria-hidden="true"></div>
 {:else}
 	<div
@@ -946,6 +949,12 @@
 	.sui-series-chart {
 		position: relative;
 		touch-action: pan-y;
+	}
+	/* The plot's height follows these boxes' width. As size containers they
+	   are as wide as their parent gives them, whatever is inside. */
+	.sui-series-chart,
+	.sui-series-frame {
+		container-type: inline-size;
 	}
 	.sui-series-chart:has(.scrub:focus-visible) {
 		outline: 2px solid var(--accent);

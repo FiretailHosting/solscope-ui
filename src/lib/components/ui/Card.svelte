@@ -80,6 +80,15 @@
 		gap: var(--space-2);
 	}
 
+	/* Beside a title, the actions take the room the title leaves, at the
+	   end, so they give up room before the title wraps, down to their own
+	   least width, such as a RangePicker collapsing to its select. */
+	h2 + .actions {
+		flex: 1 1 0;
+		justify-content: flex-end;
+		--sui-range-picker-justify: end;
+	}
+
 	.body {
 		padding: var(--space-4) var(--space-4);
 	}

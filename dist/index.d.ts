@@ -10,7 +10,7 @@ export { default as ChartContainer } from './components/ui/chart/ChartContainer.
 export { default as ChartTooltip } from './components/ui/chart/ChartTooltip.svelte';
 export { default as ChartHint } from './components/ui/chart/ChartHint.svelte';
 export { default as SeriesChart } from './components/ui/chart/SeriesChart.svelte';
-export { boundsWithMarkers, candleMarks, candleWidth, candleWidthByStep, carriedIndex, FLAT_CANDLE_HEIGHT, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, MARKER_PRICE_TOLERANCE, markersInRange, markersInTime, nearestIndex, plotPoints, SERIES_CHART_MIN_HEIGHT, seriesMinHeight, seriesSummary, THIN_CANDLE_WIDTH, timeTicks, valueBounds, withinPlotHeight, xAtTime, type CandleMarks, type PlottedPoint, type SeriesMarker, type SeriesPoint } from './chart/series.js';
+export { boundsWithMarkers, candleMarks, candleWidth, candleWidthByStep, carriedIndex, FLAT_CANDLE_HEIGHT, guideValues, hasCandles, inGap, inspectHint, isCandle, lonePoints, markerKey, MARKER_PRICE_TOLERANCE, markersInRange, markersInTime, nearestIndex, plotPoints, SERIES_CHART_MIN_HEIGHT, seriesMinHeight, seriesPlotStyle, seriesSummary, THIN_CANDLE_WIDTH, timeTicks, valueBounds, withinPlotHeight, xAtTime, type CandleMarks, type PlottedPoint, type SeriesMarker, type SeriesPoint } from './chart/series.js';
 export { clusterLabel, clusterMarkers, clusterSide, initials, markerFace, markerLabel, type AvatarStatus, type MarkerCluster, type MarkerFace, type PlacedMarker } from './chart/markers.js';
 export { axisTime, chartDay, chartTime, spansYears } from './chart/dates.js';
 export { boundsWithLevels, LEVEL_PRICE_TOLERANCE, layoutLevelTags, levelGroupText, levelPin, levelsInRange, levelsSummary, levelText, placeLevels, stackLabels, type LevelEdge, type LevelPin, type LevelTagLayout, type LevelTagWant, type PlacedLevel, type SeriesLevel } from './chart/levels.js';
@@ -29,7 +29,7 @@ export { countPhrase, filterPages, searchSummary, type PageSearchItem, type Page
 export { default as Pagination } from './components/ui/Pagination.svelte';
 export { default as Pill } from './components/ui/Pill.svelte';
 export { default as RangePicker } from './components/ui/RangePicker.svelte';
-export { optionForSelectValue, selectedOptionIndex, type RangeOption } from './range-options.js';
+export { optionForSelectValue, rangeButtonsFit, selectedOptionIndex, type RangeBox, type RangeOption } from './range-options.js';
 export { default as RowItem } from './components/ui/RowItem.svelte';
 export { default as RowList } from './components/ui/RowList.svelte';
 export { default as Select } from './components/ui/Select.svelte';

@@ -6,7 +6,7 @@ declare function $$render<Value>(): {
         value?: Value;
         /** Names the button group and the select: "Chart range". */
         label: string;
-        /** Below this screen width, in pixels, a select shows instead of the buttons; 0 never. */
+        /** Below this screen width, in pixels, the select shows even where the buttons fit; 0 never. */
         collapseBelow?: number;
         onchange?: (value: Value) => void;
         class?: string;

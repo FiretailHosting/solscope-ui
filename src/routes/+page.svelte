@@ -119,6 +119,8 @@
 		'1y': { count: 365, step: day }
 	};
 	let priceRange = $state<PriceRange>('7d');
+	let levelsRange = $state<PriceRange>('24h');
+	let ladderRange = $state<PriceRange>('24h');
 	function priceHistory(range: PriceRange) {
 		const { count, step } = rangeSteps[range];
 		return Array.from({ length: count }, (_, index) => {
@@ -406,7 +408,7 @@
 	<div class="row">
 		<Card title="Account value" icon="portfolio">
 			{#snippet actions()}
-				<SegmentedControl label="Chart range" options={ranges} bind:value={range} />
+				<RangePicker label="Chart range" options={ranges} bind:value={range} collapseBelow={0} />
 			{/snippet}
 			<ChartContainer config={valueConfig}>
 				<LineChart
@@ -483,9 +485,15 @@
 
 	<div class="narrow-row">
 		<Card title="Many levels" icon="markets">
+			{#snippet actions()}
+				<RangePicker label="Many levels range" options={priceRanges} bind:value={levelsRange} collapseBelow={0} />
+			{/snippet}
 			<SeriesChart points={livePriceSeries} levels={manyLevels} byTime live height={260} format={formatPrice} axisFormat={formatPriceAxis} label="Price history with many orders" />
 		</Card>
 		<Card title="Order ladder" icon="markets">
+			{#snippet actions()}
+				<RangePicker label="Order ladder range" options={priceRanges} bind:value={ladderRange} collapseBelow={0} />
+			{/snippet}
 			<SeriesChart points={priceSeries} levels={ladderLevels} byTime height={260} format={formatPrice} axisFormat={formatPriceAxis} label="Price history with an order ladder" />
 		</Card>
 	</div>
@@ -564,7 +572,7 @@
 						<button class:active={tab === 'one'} onclick={() => (tab = 'one')}>One</button>
 						<button class:active={tab === 'two'} onclick={() => (tab = 'two')}>Two</button>
 					</SegmentedControl>
-					<SegmentedControl label="Chart range" options={ranges} bind:value={range} />
+					<RangePicker label="Chart range" options={ranges} bind:value={range} collapseBelow={0} />
 					<ModeSwitch bind:value={mode} liveEnabled />
 					<ModeSwitch onliveunavailable={() => (liveHelp = true)} />
 					<span class="muted">Dialog closed {liveHelpCloses} times</span>
@@ -839,7 +847,7 @@
 
 	.tokens {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
 		gap: var(--space-4);
 	}
 

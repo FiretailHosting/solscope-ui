@@ -32,6 +32,7 @@ export {
 	plotPoints,
 	SERIES_CHART_MIN_HEIGHT,
 	seriesMinHeight,
+	seriesPlotStyle,
 	seriesSummary,
 	THIN_CANDLE_WIDTH,
 	timeTicks,
@@ -100,7 +101,7 @@ export {
 export { default as Pagination } from './components/ui/Pagination.svelte';
 export { default as Pill } from './components/ui/Pill.svelte';
 export { default as RangePicker } from './components/ui/RangePicker.svelte';
-export { optionForSelectValue, selectedOptionIndex, type RangeOption } from './range-options.js';
+export { optionForSelectValue, rangeButtonsFit, selectedOptionIndex, type RangeBox, type RangeOption } from './range-options.js';
 export { default as RowItem } from './components/ui/RowItem.svelte';
 export { default as RowList } from './components/ui/RowList.svelte';
 export { default as Select } from './components/ui/Select.svelte';

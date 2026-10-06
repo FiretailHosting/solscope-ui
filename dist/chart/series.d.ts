@@ -88,6 +88,19 @@ export declare const SERIES_CHART_MIN_HEIGHT = 220;
  * stand-in for the chart takes the same, so nothing moves when it lands.
  */
 export declare function seriesMinHeight(height: number): number;
+/**
+ * seriesPlotStyle is the inline style that sizes a SeriesChart's plot, so a
+ * stand-in for the chart, such as a skeleton, can take exactly its size.
+ * Fixed, it is `height` pixels tall. Otherwise it is as wide as its nearest
+ * size container and `height` pixels tall per 800 pixels of width, but never
+ * shorter than `minHeight`. The width never follows the least height, so a
+ * narrow card never grows sideways: give the stand-in's parent
+ * `container-type: inline-size`, as SeriesChart does for its plot.
+ */
+export declare function seriesPlotStyle(height: number, { fixed, minHeight }?: {
+    fixed?: boolean;
+    minHeight?: number;
+}): string;
 /** Below this plot height, in pixels, the guides keep one label at most. */
 export declare const SHORT_PLOT_HEIGHT = 150;
 /**
