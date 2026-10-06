@@ -5,11 +5,12 @@
 	// The row under a SeriesChart's plot: its readout and hint. The hint is
 	// held unseen in the row's one grid cell, under what shows there, so the
 	// row is as tall as the hint wraps at any width and font size, whatever
-	// shows. markersPossible holds the longer hint that also says how to see
-	// a trade, so the row keeps its height when markers come and go. On its
-	// own it stands in for the row while a chart loads, hidden from screen
-	// readers, with children such as a skeleton bar over the held hint;
-	// SeriesChart draws its readout in the same row with standIn off.
+	// shows. markersPossible also holds the longer hint that says how to see
+	// a trade, beside the chart's own hint if it has one, so the row keeps
+	// its height when markers or that hint come and go. On its own it stands
+	// in for the row while a chart loads, hidden from screen readers, with
+	// children such as a skeleton bar over the held hint; SeriesChart draws
+	// its readout in the same row with standIn off.
 	let {
 		noun = 'price',
 		hint,
@@ -19,7 +20,7 @@
 	}: {
 		/** What a point is, as the chart's `noun`. */
 		noun?: string;
-		/** The chart's own `hint`, if it has one: held instead of the default. */
+		/** The chart's own `hint`, if it has one: held instead of the default, or with the marker hint under markersPossible. */
 		hint?: string;
 		/** Hold the hint with markers, as the chart's `markersPossible`. */
 		markersPossible?: boolean;
@@ -34,9 +35,10 @@
 	<!-- Only holds the row's size: never seen or read. -->
 	<div class="held" aria-hidden="true">
 		{#if hint}
-			<span class="hint">{hint}</span>
-		{:else}
-			<ChartHint {noun} withMarkers={markersPossible} />
+			<div><span class="hint">{hint}</span></div>
+		{/if}
+		{#if !hint || markersPossible}
+			<div><ChartHint {noun} withMarkers={markersPossible} /></div>
 		{/if}
 	</div>
 	{#if children}
@@ -54,11 +56,14 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.held,
-	.shown {
+	.shown,
+	.held > div {
 		grid-area: 1 / 1;
 		min-width: 0;
 	}
+	/* Held hints sit on top of each other too: the taller one counts. */
 	.held {
+		display: grid;
 		visibility: hidden;
 	}
 	.sui-series-readout :global(.hint) {

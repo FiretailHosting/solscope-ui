@@ -501,7 +501,7 @@ Otherwise the plot is as wide as its parent and `height` pixels tall per 800 pix
 The height follows the width of a size container around the plot and never the other way, so a narrow card never grows sideways; give the chart a width where its parent sizes to its content, such as a flex row item.
 A stand-in for the chart, such as a skeleton, takes `seriesPlotStyle(height, { fixed, minHeight })` in a parent with `container-type: inline-size`, so nothing moves when it lands.
 The hint under the plot says how to see a trade only while markers show, so it is longer then and can wrap to another line.
-`markersPossible` keeps that longer hint's room whether or not markers show, so the chart does not move when trades come and go; the plain hint still shows, and screen readers hear only what shows.
+`markersPossible` keeps that longer hint's room whether or not markers show, also beside a `hint` of your own, so the chart does not move when trades or that hint come and go; only what shows is seen and read.
 The row holds its hint unseen under the readout, so inspecting a point does not shorten it either.
 A stand-in holds the same row with `SeriesHintRow`, given the chart's `noun`, `hint` and `markersPossible`, with anything to show over it as children:
 

@@ -108,8 +108,19 @@ const MARKER_HINT = 'Select a marker to see the trade.';
 /** The readout row and the part of it that only holds its size, unseen. */
 function hintRow(html) {
 	const row = html.slice(html.lastIndexOf('<div', html.indexOf('class="sui-series-readout')));
-	const held = row.match(/<div class="held[^"]*" aria-hidden="true">([\s\S]*?)<\/div>/);
-	return { row, held: held?.[1] ?? '', shown: held ? row.replace(held[0], '') : row };
+	const start = row.indexOf('<div class="held');
+	// The held part ends where its opening div closes.
+	let end = start;
+	for (let depth = 0; start !== -1; ) {
+		const tag = row.slice(end).match(/<\/?div\b/);
+		end += tag.index + tag[0].length;
+		depth += tag[0] === '<div' ? 1 : -1;
+		if (depth === 0) break;
+	}
+	const held = start === -1 ? '' : row.slice(start, row.indexOf('>', end) + 1);
+	// Without hydration markers, so a stand-in and a chart compare.
+	const text = (html) => html.replace(/<!--[\s\S]*?-->/g, '').trim();
+	return { row, held: text(held), shown: text(row.replace(held, '')) };
 }
 
 test('a chart where markers may show holds the marker hint unseen and does not say it', () => {
@@ -144,4 +155,12 @@ test('a stand-in holds the chart\'s own hint when it has one', () => {
 	const { row, held } = hintRow(render(SeriesHintRow, { props: { noun: 'value', hint: 'Latest $1' } }).body);
 	assert.match(openingTag(row, 'div'), /aria-hidden="true"/);
 	assert.ok(held.includes('Latest $1'));
+});
+
+test('a hint of your own is held beside the marker hint when markers may show', () => {
+	const { held, shown } = hintRow(render(SeriesChart, { props: { points, hint: 'No candle data.', markersPossible: true } }).body);
+	assert.ok(held.includes('No candle data.') && held.includes(MARKER_HINT), 'both hold the row');
+	assert.ok(shown.includes('No candle data.') && !shown.includes(MARKER_HINT), 'only the hint of your own shows');
+	const plain = hintRow(render(SeriesChart, { props: { points, hint: 'No candle data.' } }).body);
+	assert.ok(!plain.held.includes(MARKER_HINT), 'without markersPossible only that hint is held');
 });
