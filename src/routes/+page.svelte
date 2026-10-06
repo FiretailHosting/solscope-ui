@@ -26,6 +26,8 @@
 		SegmentedControl,
 		Select,
 		SeriesChart,
+		SeriesHintRow,
+		seriesPlotStyle,
 		Skeleton,
 		Stat,
 		TabBar,
@@ -473,6 +475,7 @@
 			points={livePriceSeries}
 			kind={priceKind}
 			markers={showMarkers ? [...priceMarkers, lowFill] : []}
+			markersPossible
 			levels={showLevels ? priceLevels : []}
 			byTime
 			live
@@ -495,6 +498,16 @@
 				<RangePicker label="Order ladder range" options={priceRanges} bind:value={ladderRange} collapseBelow={0} />
 			{/snippet}
 			<SeriesChart points={priceSeries} levels={ladderLevels} byTime height={260} format={formatPrice} axisFormat={formatPriceAxis} label="Price history with an order ladder" />
+		</Card>
+	</div>
+
+	<div class="stand-in-row">
+		<Card title="Loading" icon="markets">
+			<div class="plot-frame"><div style={seriesPlotStyle(260)}><Skeleton height="100%" radius="var(--radius)" /></div></div>
+			<SeriesHintRow markersPossible><Skeleton width="12rem" /></SeriesHintRow>
+		</Card>
+		<Card title="No trades yet" icon="markets">
+			<SeriesChart points={priceSeries} markersPossible byTime height={260} format={formatPrice} axisFormat={formatPriceAxis} label="Price history with no trades yet" />
 		</Card>
 	</div>
 
@@ -820,6 +833,22 @@
 		gap: var(--space-4);
 	}
 	/* A card as narrow as a token page's chart beside its trade form. */
+	/* The size container a stand-in plot's height follows. */
+	.plot-frame {
+		container-type: inline-size;
+	}
+	/* A chart and its stand-in at the same narrow width, so their heights compare. */
+	.stand-in-row {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 21rem));
+		align-items: start;
+		gap: var(--space-4);
+	}
+	@media (max-width: 700px) {
+		.stand-in-row {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
 	.narrow-row {
 		display: grid;
 		grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);

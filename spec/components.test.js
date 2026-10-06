@@ -4,6 +4,7 @@ import { render } from 'svelte/server';
 import { stopBusyClick } from '../src/lib/busy-click.ts';
 import Button from '../src/lib/components/ui/Button.svelte';
 import SeriesChart from '../src/lib/components/ui/chart/SeriesChart.svelte';
+import SeriesHintRow from '../src/lib/components/ui/chart/SeriesHintRow.svelte';
 
 const HOUR = 3_600_000;
 const start = Date.parse('2026-09-01T00:00:00Z');
@@ -100,4 +101,47 @@ test('levels are read after the summary, a pinned one saying where it lies', () 
 	assert.match(html, /visually-hidden[^>]*>From [^<]*low \$0\.12\. Take profit at \$0\.33\. Stop loss at \$-5\.00, below the chart\.<\/span>/);
 	const custom = render(SeriesChart, { props: { points, levels: levels.slice(0, 1), format, summary: 'Up this week.' } }).body;
 	assert.match(custom, /visually-hidden[^>]*>Up this week\. Take profit at \$0\.33\.<\/span>/);
+});
+
+const MARKER_HINT = 'Select a marker to see the trade.';
+
+/** The readout row and the part of it that only holds its size, unseen. */
+function hintRow(html) {
+	const row = html.slice(html.lastIndexOf('<div', html.indexOf('class="sui-series-readout')));
+	const held = row.match(/<div class="held[^"]*" aria-hidden="true">([\s\S]*?)<\/div>/);
+	return { row, held: held?.[1] ?? '', shown: held ? row.replace(held[0], '') : row };
+}
+
+test('a chart where markers may show holds the marker hint unseen and does not say it', () => {
+	const { held, shown } = hintRow(render(SeriesChart, { props: { points, markersPossible: true } }).body);
+	assert.ok(held.includes(MARKER_HINT), 'the marker hint holds the row');
+	assert.ok(!shown.includes(MARKER_HINT), 'with no markers it is not shown or read');
+	assert.ok(shown.includes('to see a price.'), 'the plain hint shows');
+});
+
+test('without markersPossible the row holds the hint it shows', () => {
+	const { held } = hintRow(render(SeriesChart, { props: { points } }).body);
+	assert.ok(held.includes('to see a price.'));
+	assert.ok(!held.includes(MARKER_HINT));
+});
+
+test('a chart with markers shows the marker hint and holds it', () => {
+	const markers = [{ t: points[1].t, price: points[1].p, side: 'buy', title: 'Bought' }];
+	const { held, shown } = hintRow(render(SeriesChart, { props: { points, markers } }).body);
+	assert.ok(held.includes(MARKER_HINT));
+	assert.ok(shown.includes(MARKER_HINT));
+});
+
+test('a hint row stand-in is hidden from screen readers and holds the same hint as its chart', () => {
+	const standIn = hintRow(render(SeriesHintRow, { props: { markersPossible: true } }).body);
+	assert.match(openingTag(standIn.row, 'div'), /aria-hidden="true"/);
+	const chart = hintRow(render(SeriesChart, { props: { points, markersPossible: true } }).body);
+	assert.equal(standIn.held, chart.held);
+	assert.ok(!/aria-hidden/.test(openingTag(chart.row, 'div')), 'the chart\'s own row is read');
+});
+
+test('a stand-in holds the chart\'s own hint when it has one', () => {
+	const { row, held } = hintRow(render(SeriesHintRow, { props: { noun: 'value', hint: 'Latest $1' } }).body);
+	assert.match(openingTag(row, 'div'), /aria-hidden="true"/);
+	assert.ok(held.includes('Latest $1'));
 });

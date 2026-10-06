@@ -49,6 +49,7 @@
 		type SeriesPoint
 	} from '../../../chart/series.js';
 	import ChartHint from './ChartHint.svelte';
+	import SeriesHintRow from './SeriesHintRow.svelte';
 
 	// A price or value over time, drawn by LayerChart in SVG, and inspected
 	// by pointer, finger, keyboard and screen reader alike. The SVG only
@@ -66,6 +67,7 @@
 		kind = 'line',
 		height = 260,
 		markers = [],
+		markersPossible = false,
 		levels = [],
 		label = 'Price history',
 		noun = 'price',
@@ -96,6 +98,8 @@
 		height?: number;
 		/** Trades on the chart; each may carry the trader's `avatar` picture and `name`. */
 		markers?: SeriesMarker[];
+		/** Markers may show on this chart, now or later: the hint row keeps the room of the hint with markers, so it does not move when they come or go. */
+		markersPossible?: boolean;
 		/** Prices marked across the plot, such as an open order or a take profit, each with its label and value at the right edge; updated in place by key. */
 		levels?: SeriesLevel[];
 		label?: string;
@@ -629,7 +633,7 @@
 	<div class="sui-series-frame"><p class="sui-series-empty" style={sizing}>{empty}</p></div>
 {:else if plotFailed}
 	<div class="sui-series-frame"><p class="sui-series-empty" style={sizing}>{failed}</p></div>
-	<div class="sui-series-readout" aria-hidden="true"></div>
+	<SeriesHintRow {noun} {hint} markersPossible={markersPossible} />
 {:else}
 	<div
 		class="sui-series-chart {extraClass}"
@@ -863,7 +867,7 @@
 		</div>
 	</div>
 
-	<div class="sui-series-readout">
+	<SeriesHintRow {noun} {hint} markersPossible={markersPossible || withMarkers} standIn={false}>
 		<div class="readout-inspected" aria-live={readoutLive ? 'polite' : 'off'}>
 			{#if shownGroup && shownGroup.length === 1}
 				{@const trade = shownGroup[0]}
@@ -941,7 +945,7 @@
 				<ChartHint {noun} {withMarkers} />
 			{/if}
 		{/if}
-	</div>
+	</SeriesHintRow>
 {/if}
 
 <style>
@@ -1461,12 +1465,7 @@
 		color: var(--down);
 	}
 
-	/* The readout under the chart */
-	.sui-series-readout {
-		min-height: 1.5rem;
-		margin-top: var(--space-2);
-		font-variant-numeric: tabular-nums;
-	}
+	/* The readout under the chart, in SeriesHintRow's row. */
 	/* Empty while the hint shows, so it takes no room. */
 	.readout-inspected {
 		display: flex;
@@ -1474,10 +1473,10 @@
 		gap: var(--space-0-5) var(--space-3);
 		align-items: baseline;
 	}
-	.sui-series-readout span {
+	:global(.sui-series-readout) span {
 		font-size: var(--text-sm);
 	}
-	.sui-series-readout span:not(.up-text, .down-text) {
+	:global(.sui-series-readout) span:not(.up-text, .down-text) {
 		color: var(--muted);
 	}
 	.buy-text,
@@ -1513,13 +1512,6 @@
 		gap: var(--space-0-5) var(--space-3);
 		align-items: baseline;
 	}
-	/* On a phone the hint and a trade wrap to two lines; keep room for them
-	   so the page below does not jump. */
-	@media (max-width: 600px) {
-		.sui-series-readout {
-			min-height: 2.6rem;
-		}
-	}
 	.visually-hidden {
 		position: absolute;
 		width: 1px;
@@ -1538,8 +1530,7 @@
 		color: var(--muted);
 		font-size: var(--text-md);
 	}
-	.hint,
-	.sui-series-readout :global(.hint) {
+	.hint {
 		color: var(--muted);
 		font-size: var(--text-md);
 	}
