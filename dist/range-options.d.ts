@@ -10,3 +10,15 @@ export declare function selectedOptionIndex<Value>(options: RangeOption<Value>[]
 export declare function optionForSelectValue<Value>(options: RangeOption<Value>[], selectValue: string): RangeOption<Value> | undefined;
 /** collapseQuery is the media query under which the picker shows a select, or null when it never does. */
 export declare function collapseQuery(collapseBelow: number): string | null;
+/** Where a button, or the space the buttons have, sits on the page, in pixels. */
+export type RangeBox = {
+    top: number;
+    left: number;
+    right: number;
+};
+/**
+ * rangeButtonsFit says the picker's buttons fit the space it is given: they
+ * sit on one row, as a row that runs out of room wraps, and none of them
+ * reaches past the space's edges. Half a pixel of slack absorbs rounding.
+ */
+export declare function rangeButtonsFit(buttons: readonly RangeBox[], space: Omit<RangeBox, 'top'>): boolean;

@@ -18,3 +18,14 @@ export function collapseQuery(collapseBelow) {
         return null;
     return `(max-width: ${Math.round(collapseBelow) - 0.02}px)`;
 }
+/**
+ * rangeButtonsFit says the picker's buttons fit the space it is given: they
+ * sit on one row, as a row that runs out of room wraps, and none of them
+ * reaches past the space's edges. Half a pixel of slack absorbs rounding.
+ */
+export function rangeButtonsFit(buttons, space) {
+    if (buttons.length === 0)
+        return true;
+    const top = buttons[0].top;
+    return buttons.every((button) => Math.abs(button.top - top) < 1 && button.left >= space.left - 0.5 && button.right <= space.right + 0.5);
+}

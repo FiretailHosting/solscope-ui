@@ -12,7 +12,7 @@ import {
 	placeLevels,
 	stackLabels
 } from '../src/lib/chart/levels.ts';
-import { boundsWithMarkers, markersInRange, SERIES_CHART_MIN_HEIGHT, seriesMinHeight } from '../src/lib/chart/series.ts';
+import { boundsWithMarkers, markersInRange, SERIES_CHART_MIN_HEIGHT, seriesMinHeight, seriesPlotStyle } from '../src/lib/chart/series.ts';
 
 const bounds = { min: 10, span: 10 };
 const level = (key, value, extra = {}) => ({ key, value, label: key, ...extra });
@@ -101,6 +101,14 @@ test('a plot is never shorter than its least height, nor taller than the height 
 	assert.equal(SERIES_CHART_MIN_HEIGHT, 220);
 	assert.equal(seriesMinHeight(260), 220);
 	assert.equal(seriesMinHeight(96), 96);
+});
+
+test('a plot is as wide as its size container, with a height that follows that width and never the other way', () => {
+	assert.equal(seriesPlotStyle(260), 'width: 100%; height: max(220px, calc(100cqw * 260 / 800))');
+	assert.equal(seriesPlotStyle(96), 'width: 100%; height: max(96px, calc(100cqw * 96 / 800))');
+	assert.equal(seriesPlotStyle(260, { minHeight: 180 }), 'width: 100%; height: max(180px, calc(100cqw * 260 / 800))');
+	assert.equal(seriesPlotStyle(220, { fixed: true }), 'height: 220px');
+	assert.ok(!seriesPlotStyle(260).includes('aspect-ratio'), 'an aspect ratio with a least height would give the plot a least width');
 });
 
 test('levels pinned beyond an edge gather into one chip per edge rather than a tag each', () => {

@@ -22,3 +22,19 @@ export function collapseQuery(collapseBelow: number): string | null {
 	if (!Number.isFinite(collapseBelow) || collapseBelow <= 0) return null;
 	return `(max-width: ${Math.round(collapseBelow) - 0.02}px)`;
 }
+
+/** Where a button, or the space the buttons have, sits on the page, in pixels. */
+export type RangeBox = { top: number; left: number; right: number };
+
+/**
+ * rangeButtonsFit says the picker's buttons fit the space it is given: they
+ * sit on one row, as a row that runs out of room wraps, and none of them
+ * reaches past the space's edges. Half a pixel of slack absorbs rounding.
+ */
+export function rangeButtonsFit(buttons: readonly RangeBox[], space: Omit<RangeBox, 'top'>): boolean {
+	if (buttons.length === 0) return true;
+	const top = buttons[0].top;
+	return buttons.every(
+		(button) => Math.abs(button.top - top) < 1 && button.left >= space.left - 0.5 && button.right <= space.right + 0.5
+	);
+}

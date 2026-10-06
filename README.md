@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com) 
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.2"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.3"
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ Then use components:
 | `Badge` | Inline status badge (default, up, down, accent) |
 | `Balance` | A balance above an amount field: `label`, the value as children with an optional `title`, `busy` while it loads and an `action` snippet at the end, such as a link Button for Max |
 | `Button` | Button or link (`href`), variants default, primary, danger, ghost and link, which is text alone in the accent colour for Max or Try again inside a line; optional `icon`; `loading` shows a spinner, ignores presses (no second submit) and keeps the width, staying enabled with `aria-disabled` and `aria-busy` so it keeps focus, while `disabled` stays native; `aria-disabled="true"` dims it but keeps it focusable and tappable, so a press can say why; a dimmed primary loses its fill for a dashed outline, so the state does not rest on colour alone |
-| `Card` | Container with an optional header: `title`, `icon`, `actions`; `flush` for edge-to-edge tables |
+| `Card` | Container with an optional header: `title`, `icon`, `actions`, which give up room before the title wraps; `flush` for edge-to-edge tables |
 | `ChartContainer` | Wraps a LayerChart chart: themes it from the tokens and sets `--color-<key>` for each series in `config` |
 | `ChartHint` | What a chart says while nothing is inspected: hover wording for a mouse, drag wording on a touch screen |
 | `SeriesChart` | A price or value over time as a line over a gradient fill or as candles, drawn by LayerChart, with guides, a time axis, a crosshair, price levels, trade markers with traders' pictures and the same inspection by pointer, finger, keyboard and screen reader; see [Series chart](#series-chart) |
@@ -66,7 +66,7 @@ Then use components:
 | `PageSearch` | A sheet with one field and the app's pages with their icons, filtered as you type; Return or a tap goes to the page and closes it; `sections` adds result sections the app searches, such as coins; see [Page search](#page-search) |
 | `Pagination` | Previous and Next buttons, "Page 2 of 14" and the row range for a long table; see [Pagination](#pagination) |
 | `Pill` | Status pill (default, live, ok) |
-| `RangePicker` | A chart's range as segmented buttons, or a labelled native select below `collapseBelow` pixels of screen width; see [Range picker](#range-picker) |
+| `RangePicker` | A chart's range as segmented buttons, or a labelled native select where the buttons do not fit the space it is given or below `collapseBelow` pixels of screen width; see [Range picker](#range-picker) |
 | `RowList` | A list of `RowItem`s for a phone, where a table would scroll sideways; `label` names it, `busy` says rows are loading; see [Row list](#row-list) |
 | `RowItem` | One row: a name with a `detail` under it, a `value` with a `note` under it, `href` makes the row a link and `actions` sit outside it |
 | `Select` | Styled select dropdown |
@@ -496,14 +496,16 @@ An inspected point stays on its moment when new points arrive, so a live tick do
 Only what an inspection shows is a live region, never the hint, so a hint that changes with each tick is not read out.
 `markers` place trades on the line as buttons that can be hovered, tapped or focused, and `change` adds each point's change since the first; see [Trade markers](#trade-markers).
 `format`, `formatTime` and `formatDay` say how values and times read, and `axisFormat` (by default `format`) how the plot's guide, zero and level labels read, so they can be shorter than the readout; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
-Otherwise the plot scales with its width but is never shorter than `minHeight`, by default `seriesMinHeight(height)`: `SERIES_CHART_MIN_HEIGHT` (220px), or `height` when less; a stand-in for the chart should take the same least height, so nothing moves when it lands.
+Otherwise the plot is as wide as its parent and `height` pixels tall per 800 pixels of width, but never shorter than `minHeight`, by default `seriesMinHeight(height)`: `SERIES_CHART_MIN_HEIGHT` (220px), or `height` when less.
+The height follows the width of a size container around the plot and never the other way, so a narrow card never grows sideways; give the chart a width where its parent sizes to its content, such as a flex row item.
+A stand-in for the chart, such as a skeleton, takes `seriesPlotStyle(height, { fixed, minHeight })` in a parent with `container-type: inline-size`, so nothing moves when it lands.
 A new series, another range or kind, wipes in from the left, a live tick does not, and nothing moves under reduced motion; `animate={false}` turns it off.
 The picture is an image to screen readers, named by `label` and described by `summary`, by default a sentence with the span, start, end, high and low, then the levels, also in the reading order as visually hidden text; the slider is not described by it, so it is read once.
 [LayerChart](https://layerchart.com) draws the series in SVG from a chunk of its own, with only the pieces it uses, loaded once a chart mounts, so server rendering and pages without a chart never load it.
 Fewer than two points show `empty` in the plot's place; a chunk that fails to load, as offline, shows `failed` (default "Could not load the chart.") at the plot's size and keeps the readout row's space, so nothing below moves, and calls `onfailed`.
 Everything read or reached is DOM over the picture, placed with the chart's own scales and moved on every resize: the labels, levels, crosshair, tooltip, slider and markers.
 The readout sits right under the plot, a `--space-2` gap below it, with no attribution row.
-The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `markersInRange`, `boundsWithMarkers`, `xAtTime`, `levelsInRange`, `boundsWithLevels`, `placeLevels`, `stackLabels`, `layoutLevelTags`, `levelGroupText`, `seriesMinHeight`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
+The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `markersInRange`, `boundsWithMarkers`, `xAtTime`, `levelsInRange`, `boundsWithLevels`, `placeLevels`, `stackLabels`, `layoutLevelTags`, `levelGroupText`, `seriesMinHeight`, `seriesPlotStyle`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
 
 ```svelte
 <SeriesChart points={history} kind={candles ? 'candles' : 'line'} markers={trades} byTime live levels={levels} format={usd} change={signedUsd} />
@@ -566,8 +568,13 @@ Screen readers hear every level after the summary, "Take profit at $0.0123", and
 ```
 
 Options are `{ value, label, disabled? }`, the same shape as `SegmentedOption`, and values can be numbers or strings.
-At `collapseBelow` pixels of screen width and up it shows a [SegmentedControl](#segmented-control); below, a native select named by `label`, which a phone opens as its own picker.
-Both are rendered and a media query shows one, so the server renders the right one and nothing jumps when the page starts; `collapseBelow={0}` keeps the buttons.
+It shows a [SegmentedControl](#segmented-control) where its buttons fit the space it is given on one row, and otherwise a native select named by `label`, which a phone opens as its own picker.
+The picker shrinks with its space, down to its widest button or the select, and measures its buttons on every resize, so a narrow card collapses it whatever the window's width.
+Below `collapseBelow` pixels of screen width (default 480) it shows the select even where the buttons fit; `collapseBelow={0}` leaves it to the space alone.
+Both share one grid cell, so the picker keeps its width and height in either state and nothing moves when it switches; the hidden one is out of the tab order and the accessibility tree, and focus inside it moves to the one shown.
+The select shows until the buttons are measured, so they never overflow on first paint; a server-rendered page shows it until the app starts.
+`--sui-range-picker-justify` (default `start`) places the select in a picker given more room than it shows; a Card's header sets `end`.
+`rangeButtonsFit` is the fit test, for code and tests.
 A value no option has selects nothing.
 
 ### Charts

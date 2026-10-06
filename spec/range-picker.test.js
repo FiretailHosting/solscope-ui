@@ -2,7 +2,7 @@ import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { render } from 'svelte/server';
 import RangePicker from '../src/lib/components/ui/RangePicker.svelte';
-import { collapseQuery, optionForSelectValue, selectedOptionIndex } from '../src/lib/range-options.ts';
+import { collapseQuery, optionForSelectValue, rangeButtonsFit, selectedOptionIndex } from '../src/lib/range-options.ts';
 
 const ranges = [
 	{ value: 1, label: '1D' },
@@ -50,4 +50,20 @@ test('a value no option has selects nothing, and collapseBelow 0 leaves the butt
 	assert.ok(!/aria-pressed="true"/.test(html));
 	assert.match(html, /<option value="" disabled[^>]*selected/);
 	assert.ok(!html.includes('@media'));
+});
+
+test('the buttons fit when they share one row inside the space, and not once the row wraps or overflows', () => {
+	const space = { left: 0, right: 300 };
+	const row = (tops, width = 40) => tops.map((top, index) => ({ top, left: index * width, right: (index + 1) * width }));
+	assert.equal(rangeButtonsFit(row([10, 10, 10]), space), true);
+	assert.equal(rangeButtonsFit(row([10, 10.4, 10]), space), true, 'subpixel rounding is one row');
+	assert.equal(rangeButtonsFit(row([10, 10, 38]), space), false, 'a wrapped button sits lower');
+	assert.equal(rangeButtonsFit(row([10], 320), space), false, 'one button wider than the space');
+	assert.equal(rangeButtonsFit(row([10, 10], 150.2), space), true, 'half a pixel of slack');
+	assert.equal(rangeButtonsFit([], space), true);
+});
+
+test('the picker shows the select until it has measured the buttons, so they never overflow on first paint', () => {
+	const html = render(RangePicker, { props: { options: ranges, value: 7, label: 'Chart range' } }).body;
+	assert.ok(!html.includes('data-fit'));
 });
