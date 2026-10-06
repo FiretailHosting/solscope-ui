@@ -2,7 +2,16 @@
 	import type { ChartState } from 'layerchart';
 	import { tick, untrack, type Component } from 'svelte';
 	import { forgetAvatarWaiter, loadAvatar, avatarStatus, settleAvatar } from '../../../chart/avatars.js';
-	import { boundsWithLevels, levelsInRange, levelsSummary, placeLevels, stackLabels, type SeriesLevel } from '../../../chart/levels.js';
+	import {
+		boundsWithLevels,
+		layoutLevelTags,
+		levelGroupText,
+		levelsInRange,
+		levelsSummary,
+		placeLevels,
+		type LevelEdge,
+		type SeriesLevel
+	} from '../../../chart/levels.js';
 	import { axisTime, chartDay, chartTime, spansYears } from '../../../chart/dates.js';
 	import {
 		clusterKey,
@@ -30,6 +39,7 @@
 		markersInTime,
 		nearestIndex,
 		plotPoints,
+		seriesMinHeight,
 		seriesSummary,
 		timeTicks,
 		valueBounds,
@@ -67,6 +77,7 @@
 		byTime = false,
 		gap = 0,
 		fixed = false,
+		minHeight,
 		baseline = false,
 		guides = true,
 		timeAxis = true,
@@ -106,6 +117,8 @@
 		gap?: number;
 		/** Keep height in pixels at any width, rather than scaling with it. */
 		fixed?: boolean;
+		/** Without `fixed`, the plot's least height in pixels, so a narrow card still gets a readable plot; by default seriesMinHeight(height): 220, or `height` when less. */
+		minHeight?: number;
 		/** Draw a zero line, keep it in view and fill toward it: above it reads as gain, below as loss. */
 		baseline?: boolean;
 		/** Faint horizontal lines at round values, labelled at the left edge. */
@@ -138,6 +151,7 @@
 	// A level's label, in pixels, and the space kept between two stacked labels.
 	const LEVEL_LABEL = 16;
 	const LEVEL_LABEL_GAP = 2;
+	const LEVEL_SLOT = LEVEL_LABEL + LEVEL_LABEL_GAP;
 
 	const formatAxis = $derived(axisFormat ?? format);
 	const candles = $derived(kind === 'candles' && hasCandles(points));
@@ -169,7 +183,10 @@
 	// line, its fill and the end dot all take this one colour.
 	const up = $derived(points.length > 1 ? points[points.length - 1].p >= points[0].p : true);
 	const lineColor = $derived(up ? 'var(--up)' : 'var(--down)');
-	const sizing = $derived(fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}`);
+	// The plot scales with its width but is never shorter than its least
+	// height, so a chart in a narrow card stays readable; a stand-in for it
+	// takes the same least height, seriesMinHeight, so nothing moves.
+	const sizing = $derived(fixed ? `height: ${height}px` : `aspect-ratio: 800 / ${height}; min-height: ${minHeight ?? seriesMinHeight(height)}px`);
 
 	// The picture, drawn by LayerChart. It is loaded in the browser once the
 	// plot is on the page, from a chunk of its own, so pages without a chart
@@ -395,7 +412,7 @@
 
 	function onPlotPointer(event: PointerEvent) {
 		const target = event.target as Element;
-		if (!overlay || target.closest('.marker, .scrub')) return;
+		if (!overlay || target.closest('.marker, .scrub, .level-chip')) return;
 		touching = event.pointerType === 'touch';
 		inspectAt(event.clientX - overlay.getBoundingClientRect().left);
 	}
@@ -411,6 +428,7 @@
 
 	function togglePick(members: SeriesMarker[]) {
 		pickedGroup = pickedKey === clusterKey(members) ? null : members;
+		openEdge = null;
 		// A press shows the pick in full, the list of a group's trades with it.
 		hoveredGroup = null;
 		pickChanged = true;
@@ -531,19 +549,56 @@
 		return guideLabels(placed, plotHeight, tickLabels.length > 0 ? TICK_ROW : 0);
 	});
 
-	// The levels' labels at the right edge: just above a level's line, or at
-	// the edge it is pinned to, moved apart so none covers another and kept
-	// out of the time axis's row.
-	const levelLabelTops = $derived.by(() => {
-		if (!ready || placedLevels.length === 0) return [];
+	// The levels' tags at the right edge, each just above its line, moved
+	// apart so none covers another and kept out of the time axis's row. The
+	// levels pinned beyond an edge gather into one chip at that edge, and so
+	// do the outermost tags when there is no room for them all, so no tag
+	// stacks over the series or leaves the plot.
+	const levelLayout = $derived.by(() => {
+		if (!ready || placedLevels.length === 0) return null;
 		const bottom = plotHeight - (tickLabels.length > 0 ? TICK_ROW : 0);
-		const wanted = placedLevels.map((level) => {
-			if (level.pinned === 'above') return 0;
-			if (level.pinned === 'below') return bottom;
-			return yAt(level.value) - LEVEL_LABEL / 2 - 1;
-		});
-		return stackLabels(wanted, LEVEL_LABEL + LEVEL_LABEL_GAP, 0, bottom).map((centre) => centre - LEVEL_LABEL / 2);
+		const wanted = placedLevels.map((level) => ({ wanted: level.pinned ? 0 : yAt(level.value) - LEVEL_LABEL / 2 - 1, value: level.value, pinned: level.pinned }));
+		return layoutLevelTags(wanted, LEVEL_SLOT, 0, bottom);
 	});
+	const levelLabelTops = $derived(levelLayout ? levelLayout.tags.map((centre) => (centre == null ? null : centre - LEVEL_LABEL / 2)) : []);
+	const levelGroups = $derived.by(() => {
+		const layout = levelLayout;
+		if (!layout) return [];
+		return (['above', 'below'] as const).flatMap((edge) => {
+			const centre = edge === 'above' ? layout.aboveChip : layout.belowChip;
+			if (centre == null) return [];
+			const members = layout[edge].map((index) => placedLevels[index]);
+			const allPinned = members.every((level) => level.pinned === edge);
+			return [{ edge, members, allPinned, top: centre - LEVEL_LABEL / 2, text: levelGroupText(edge, members) }];
+		});
+	});
+
+	// The edge group whose levels are listed under the chart, opened by its
+	// chip as a disclosure, as a group of trades is.
+	let openEdge = $state<LevelEdge | null>(null);
+	const openGroup = $derived(levelGroups.find((group) => group.edge === openEdge) ?? null);
+	const levelListShown = $derived(!inspected && openGroup != null);
+	const levelListId = `${uid}-levels`;
+
+	function toggleLevels(edge: LevelEdge) {
+		openEdge = openEdge === edge ? null : edge;
+		pickedGroup = null;
+		hoveredGroup = null;
+		pickChanged = true;
+	}
+
+	// A chip moves left of the latest price rather than cover it: the line's
+	// end dot, or the last candle from its high to its low.
+	let chipWidths = $state<Record<string, number>>({});
+	function chipRight(edge: LevelEdge, top: number): number {
+		if (!ready || !last) return 0;
+		const x = pointLeft(lastIndex);
+		const width = chipWidths[edge] ?? 0;
+		const high = yAt(candles && isCandle(last) ? last.h : last.p);
+		const low = yAt(candles && isCandle(last) ? last.l : last.p);
+		const covers = x >= plotWidth - width - END_DOT_REACH && low >= top - END_DOT_REACH && high <= top + LEVEL_LABEL + END_DOT_REACH;
+		return covers ? Math.max(0, plotWidth - x) + 2 * END_DOT_REACH : 0;
+	}
 
 	/** The ring and badge side of a marker or group, as a class. */
 	function sideClass(members: SeriesMarker[]) {
@@ -734,28 +789,48 @@
 
 			<!-- The levels' tags at the right edge, over the markers so a trade
 			     never hides what a level is; presses pass through to the markers.
-			     A pinned level's arrow says which way it lies. -->
+			     Levels beyond an edge, or with no room for a tag, are in its chip. -->
 			<!-- Under the crosshair and its value while something is inspected. -->
 			<div class="layer levels" class:under={active != null} aria-hidden="true">
 				{#if ready}
 					{#each placedLevels as level, index (level.key)}
-						<span
-							class="level-tag {level.tone ?? 'neutral'}"
-							class:pinned={level.pinned}
-							class:faded={coversEnd(index)}
-							style="top: {levelLabelTops[index] ?? 0}px"
-							bind:offsetWidth={levelTagWidths[index]}
-						>
-							{#if level.pinned}
-								<svg viewBox="0 0 8 8" width="8" height="8" class="pin-arrow">
-									<polygon points={level.pinned === 'above' ? '4,0.5 7.5,7 0.5,7' : '0.5,1 7.5,1 4,7.5'} />
-								</svg>
-							{/if}
-							<span>{level.label}</span>
-							<span class="level-value">{formatAxis(level.value)}</span>
-						</span>
+						{@const top = levelLabelTops[index]}
+						{#if top != null}
+							<span class="level-tag {level.tone ?? 'neutral'}" class:faded={coversEnd(index)} style="top: {top}px" bind:offsetWidth={levelTagWidths[index]}>
+								<span>{level.label}</span>
+								<span class="level-value">{formatAxis(level.value)}</span>
+							</span>
+						{/if}
 					{/each}
 				{/if}
+			</div>
+
+			<!-- The levels gathered at an edge, one chip each, after the markers
+			     in the tab order. The arrow and the words say which way they
+			     lie; a press lists them under the chart. -->
+			<div class="layer level-chips" class:under={active != null}>
+				{#each levelGroups as group (group.edge)}
+					<button
+						type="button"
+						class="level-chip {group.edge}"
+						class:open={openEdge === group.edge}
+						style="top: {group.top}px; right: {chipRight(group.edge, group.top)}px"
+						bind:offsetWidth={chipWidths[group.edge]}
+						aria-label={group.text.name}
+						aria-expanded={openEdge === group.edge}
+						aria-controls={openEdge === group.edge && levelListShown ? levelListId : undefined}
+						onclick={() => toggleLevels(group.edge)}
+						onpointerenter={() => {
+							inspectedIndex = null;
+							pointerInGap = false;
+						}}
+					>
+						<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
+							<polygon points={group.edge === 'above' ? '4,0.5 7.5,7 0.5,7' : '0.5,1 7.5,1 4,7.5'} />
+						</svg>
+						<span>{group.text.chip}</span>
+					</button>
+				{/each}
 			</div>
 
 			{#if ready && tooltipShown}
@@ -801,6 +876,9 @@
 			{:else if shownGroup}
 				<strong>{shownGroup.length} trades</strong>
 				<span>{groupSpan(shownGroup)}</span>
+			{:else if levelListShown && openGroup}
+				<!-- Says what opened, so the press is heard; the list follows. -->
+				<strong>{openGroup.text.heading}</strong>
 			{:else if inspected && pointerInGap}
 				<span class="hint">No snapshots in this gap</span>
 			{:else if inspected}
@@ -831,7 +909,29 @@
 				{/each}
 			</ul>
 		{/if}
-		{#if !shownGroup && !inspected}
+		{#if levelListShown && openGroup}
+			<!-- Outside the live part, as a group's trades are. -->
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<ul
+				id={levelListId}
+				class="trade-list level-list"
+				class:scrolls={openGroup.members.length > LIST_ROWS}
+				tabindex={openGroup.members.length > LIST_ROWS ? 0 : undefined}
+				aria-label={openGroup.text.heading}
+			>
+				{#each openGroup.members as level (level.key)}
+					<li>
+						<span class="level-swatch {level.tone ?? 'neutral'}" class:dashed={level.dashed} aria-hidden="true"></span>
+						<strong>{level.label}</strong>
+						<span>{format(level.value)}</span>
+						{#if level.pinned && !openGroup.allPinned}
+							<span>{level.pinned} the chart</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		{#if !shownGroup && !inspected && !levelListShown}
 			{#if hint}
 				<span class="hint">{hint}</span>
 			{:else}
@@ -1017,9 +1117,80 @@
 		font-variant-numeric: tabular-nums;
 		font-weight: 600;
 	}
-	.level-tag .pin-arrow {
+	/* An edge's levels as one chip, a button with a 24px target, 44px on a
+	   touch screen, that reaches into the plot and never out of it. */
+	.layer.level-chips {
+		z-index: 6;
+	}
+	.layer.level-chips.under {
+		z-index: 3;
+	}
+	.level-chip {
+		position: absolute;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		box-sizing: border-box;
+		height: 16px;
+		margin: 0;
+		padding: 0 var(--space-1-5);
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius-sm);
+		background: var(--card);
+		color: var(--fg);
+		font: inherit;
+		font-size: var(--text-2xs);
+		font-weight: 600;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		cursor: pointer;
+		pointer-events: auto;
+	}
+	.level-chip::before {
+		content: '';
+		position: absolute;
+		inset: 0 -1px -9px;
+	}
+	.level-chip.below::before {
+		inset: -9px -1px 0;
+	}
+	.level-chip svg {
 		flex: none;
-		fill: var(--level);
+		fill: currentColor;
+	}
+	.level-chip:hover {
+		background: var(--card-alt);
+	}
+	.level-chip.open {
+		border-color: var(--fg);
+		background: var(--fg);
+		color: var(--bg);
+	}
+	.level-chip:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+	@media (pointer: coarse) {
+		.level-chip::before {
+			inset: 0 -6px -29px;
+		}
+		.level-chip.below::before {
+			inset: -29px -6px 0;
+		}
+	}
+	/* An edge's levels listed, each after a short line in its tone, dashed when pending. */
+	.level-list li {
+		align-items: center;
+	}
+	.level-swatch {
+		flex: none;
+		width: 12px;
+		height: 2px;
+		background: var(--level);
+	}
+	.level-swatch.dashed {
+		background: repeating-linear-gradient(to right, var(--level) 0 4px, transparent 4px 6px);
 	}
 	.up {
 		--level: var(--up);

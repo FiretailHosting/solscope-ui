@@ -76,3 +76,47 @@ export declare function levelsSummary(levels: (Pick<PlacedLevel, 'label' | 'valu
  * past it. The result is in the order given.
  */
 export declare function stackLabels(wanted: number[], height: number, top: number, bottom: number): number[];
+/** The edge a group of level tags gathers at: the top of the plot or the bottom. */
+export type LevelEdge = 'above' | 'below';
+/** Where a level's tag goes: its value on the plot, or `pinned` beyond an edge, as placeLevels says. */
+export type LevelTagWant = {
+    wanted: number;
+    value: number;
+    pinned: LevelPin;
+};
+/** Where the level tags and the two edge groups sit, in pixels. */
+export type LevelTagLayout = {
+    /** Each level's tag centre, in the order given, or null when the level is in an edge group. */
+    tags: (number | null)[];
+    /** The levels in the top group by index, highest value first. */
+    above: number[];
+    /** The levels in the bottom group by index, highest value first. */
+    below: number[];
+    /** The top group's chip centre, or null with no group. */
+    aboveChip: number | null;
+    /** The bottom group's chip centre, or null with no group. */
+    belowChip: number | null;
+};
+/**
+ * layoutLevelTags places the level tags at the right edge between `top` and
+ * `bottom`, each `height` pixels apart. A level pinned beyond an edge joins
+ * that edge's group, shown as one chip in the edge's slot rather than a tag
+ * each, so far levels never stack over the series. When the tags on the
+ * plot still do not fit in the slots left, the outermost go into a group
+ * too, the one already there first, so no tag is ever pushed off the plot.
+ * The tags left keep their order and move apart with stackLabels.
+ */
+export declare function layoutLevelTags(levels: LevelTagWant[], height: number, top: number, bottom: number): LevelTagLayout;
+/**
+ * levelGroupText says an edge group of levels in words, so the arrow's
+ * direction never rests on colour or shape alone: `chip` on the chip, "6
+ * below"; `name`, the chip's accessible name, which starts with the chip's
+ * words, "6 below the chart"; and `heading`, read when the list opens, "6
+ * levels below the chart". A group that holds levels on the plot, whose
+ * tags had no room, says "3 more" and "at the top" or "at the bottom".
+ */
+export declare function levelGroupText(edge: LevelEdge, members: Pick<PlacedLevel, 'pinned'>[]): {
+    chip: string;
+    name: string;
+    heading: string;
+};

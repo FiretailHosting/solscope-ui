@@ -72,6 +72,21 @@ export function guideValues(min, span, count = 3) {
     }
     return values;
 }
+/**
+ * The least height of a SeriesChart's plot, in pixels, whatever its width:
+ * a plot that scales with its width would be under 100px tall in a 300px
+ * card, too short to read a price or fit its levels' tags.
+ */
+export const SERIES_CHART_MIN_HEIGHT = 220;
+/**
+ * seriesMinHeight is the least height SeriesChart gives a plot that scales
+ * with its width, by default: SERIES_CHART_MIN_HEIGHT, or `height` when that
+ * is less, so a short chart never grows past the height it asked for. A
+ * stand-in for the chart takes the same, so nothing moves when it lands.
+ */
+export function seriesMinHeight(height) {
+    return Math.min(SERIES_CHART_MIN_HEIGHT, height);
+}
 /** Below this plot height, in pixels, the guides keep one label at most. */
 export const SHORT_PLOT_HEIGHT = 150;
 /**

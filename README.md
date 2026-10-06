@@ -10,7 +10,7 @@ Charts are the one part with a dependency: [LayerChart](https://layerchart.com) 
 The built `dist/` is committed, so the package installs straight from a tag with no registry or token:
 
 ```
-"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.1"
+"@firetailhosting/solscope-ui": "github:FiretailHosting/solscope-ui#v0.19.2"
 ```
 
 ## Usage
@@ -496,13 +496,14 @@ An inspected point stays on its moment when new points arrive, so a live tick do
 Only what an inspection shows is a live region, never the hint, so a hint that changes with each tick is not read out.
 `markers` place trades on the line as buttons that can be hovered, tapped or focused, and `change` adds each point's change since the first; see [Trade markers](#trade-markers).
 `format`, `formatTime` and `formatDay` say how values and times read, and `axisFormat` (by default `format`) how the plot's guide, zero and level labels read, so they can be shorter than the readout; `byTime` places points by time so gaps show and `gap` breaks the line across them; `fixed` keeps `height` in pixels at any width.
+Otherwise the plot scales with its width but is never shorter than `minHeight`, by default `seriesMinHeight(height)`: `SERIES_CHART_MIN_HEIGHT` (220px), or `height` when less; a stand-in for the chart should take the same least height, so nothing moves when it lands.
 A new series, another range or kind, wipes in from the left, a live tick does not, and nothing moves under reduced motion; `animate={false}` turns it off.
 The picture is an image to screen readers, named by `label` and described by `summary`, by default a sentence with the span, start, end, high and low, then the levels, also in the reading order as visually hidden text; the slider is not described by it, so it is read once.
 [LayerChart](https://layerchart.com) draws the series in SVG from a chunk of its own, with only the pieces it uses, loaded once a chart mounts, so server rendering and pages without a chart never load it.
 Fewer than two points show `empty` in the plot's place; a chunk that fails to load, as offline, shows `failed` (default "Could not load the chart.") at the plot's size and keeps the readout row's space, so nothing below moves, and calls `onfailed`.
 Everything read or reached is DOM over the picture, placed with the chart's own scales and moved on every resize: the labels, levels, crosshair, tooltip, slider and markers.
 The readout sits right under the plot, a `--space-2` gap below it, with no attribution row.
-The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `markersInRange`, `boundsWithMarkers`, `xAtTime`, `levelsInRange`, `boundsWithLevels`, `placeLevels`, `stackLabels`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
+The placement maths is exported too (`plotPoints`, `valueBounds`, `guideValues`, `markersInTime`, `markersInRange`, `boundsWithMarkers`, `xAtTime`, `levelsInRange`, `boundsWithLevels`, `placeLevels`, `stackLabels`, `layoutLevelTags`, `levelGroupText`, `seriesMinHeight`, `clusterMarkers` and the rest) with the date helpers `chartTime`, `chartDay`, `axisTime` and `spansYears`, also from `@firetailhosting/solscope-ui/chart`, which carries no Svelte component, so plain modules and their tests can import it.
 
 ```svelte
 <SeriesChart points={history} kind={candles ? 'candles' : 'line'} markers={trades} byTime live levels={levels} format={usd} change={signedUsd} />
@@ -540,9 +541,12 @@ const levels: SeriesLevel[] = [
 Each level is `{ key, value, label }` with an optional `tone` (`up`, `down` or `neutral`, the default) and `dashed`, such as for a pending order.
 It draws as a 1px line across the plot with a tag at the right edge, its label and value in `axisFormat`; the tag's words say what it is, so the tone's colour is never the only signal.
 A level updates in place by `key`, so a live price moving a trailing stop does not redraw the rest.
-One a little outside the prices, up to 10% of their range (`LEVEL_PRICE_TOLERANCE`), widens the view to fit, as a trade does; one further off is pinned to the top or bottom edge, a tag with an up or down arrow and its value and no line, so it never flattens the series.
+One a little outside the prices, up to 10% of their range (`LEVEL_PRICE_TOLERANCE`), widens the view to fit, as a trade does; one further off has no line and gathers with the others beyond that edge into one chip, "▲ 2 above" or "▼ 6 below", so it never flattens the series.
 Tags move apart so none covers another, stay out of the time axis row and sit over the markers, which still take presses through them.
-Screen readers hear the levels after the summary, "Take profit at $0.0123", and "Stop loss at $0.0040, below the chart" for a pinned one.
+When there is no room for every tag, the outermost join the edge's chip, which then says "3 more", so no tag is ever pushed off the plot; their lines still show.
+A chip moves left of the latest price rather than cover it.
+It is a button and a disclosure, after the markers in the tab order: a press says "6 levels below the chart" and lists each level's label and value under the chart, as a group of trades is listed.
+Screen readers hear every level after the summary, "Take profit at $0.0123", and "Stop loss at $0.0040, below the chart" for one beyond an edge.
 
 ### Range picker
 
